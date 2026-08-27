@@ -27,6 +27,11 @@ footage); the motion filter (`camera/classify.py`) cuts 84-91% of those but
 31-53/min remain. The detector itself must learn what a bird is. Full
 reasoning: "Birds and lighting" section of phase2-results.md.
 
+All commands in this section are plain `python ...` and run on native Windows
+(desktop app) as well as Linux/macOS — no WSL2 needed for this task. See the
+native-Windows quickstart at the top of [pc-setup.md](pc-setup.md), especially
+the CUDA-torch install trap.
+
 Everything needed is IN THIS REPO:
 
 - `data/finetune/` — the built training set (2,307 train tiles / 440 val

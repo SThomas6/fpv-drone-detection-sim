@@ -11,7 +11,43 @@ are first-class on Linux. The PC is better on every axis that matters:
 | RAM headroom | forced headless, 720p camera | GUI + higher-res camera fine |
 | PX4 + Gazebo + ROS 2 | community-supported (SIH workaround) | **first-class platform** — full physics-in-Gazebo mode (`gz_x500`) works natively |
 
-## Recommended setup: WSL2 Ubuntu 24.04
+## Fastest start: native Windows, no WSL2 (fine-tune + evaluation only)
+
+The current task — training the two-class model and evaluating it — is pure
+Python and runs natively on Windows with the desktop app. The SIMULATOR is the
+only part that needs WSL2, and that can wait until sim work resumes.
+
+In the Claude Code desktop app (or PowerShell), after installing Git and
+Python 3.12 from winget/python.org:
+
+```text
+git clone <REPO_URL> fpv-drone-detection-sim
+cd fpv-drone-detection-sim
+python -m venv .venv
+.venv\Scriptsctivate
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+pip install ultralytics sahi huggingface_hub pillow numpy "lap>=0.5.12"
+python -c "import torch; print(torch.cuda.is_available())"
+```
+
+**The torch line matters**: on Windows, plain `pip install torch` (or letting
+ultralytics pull it) installs a CPU-ONLY build and training silently crawls.
+Install from the cu126 index first, as above, and confirm the last command
+prints `True` before training. (`lap` is optional — only ultralytics' own
+tracker needs it; skip it if it fails to install.)
+
+Then train and evaluate exactly per [handoff.md](handoff.md):
+
+```text
+python camera/finetune.py --batch 32 --epochs 25
+```
+
+Note: the `.sh` scripts in `scripts/` are bash and will NOT run on native
+Windows — but the whole fine-tune/eval task uses only `python ...` commands,
+which are cross-platform. When you later want the simulator on this PC, come
+back to the WSL2 section below.
+
+## Simulator setup: WSL2 Ubuntu 24.04
 
 Keeps Windows intact; NVIDIA CUDA passes straight through into WSL2 with any
 recent Windows driver (no CUDA install inside WSL needed for PyTorch — its pip
