@@ -1,0 +1,20 @@
+{
+  "world": "detection_world",
+  "width": 1280,
+  "height": 720,
+  "fx": 1108.77,
+  "interval_s": 0.4,
+  "frames": 600,
+  "visible_frames": 504,
+  "buckets": {
+    "<16px": 504
+  },
+  "note": "HELD-OUT EVAL: mission pattern + 8 birds seed 42, midday",
+  "stale_frames_skipped": 0,
+  "label_verification": {
+    "checked": 504,
+    "with_dark_object": 504,
+    "median_px_err": 1.3,
+    "fraction_within_15px": 0.994
+  }
+}

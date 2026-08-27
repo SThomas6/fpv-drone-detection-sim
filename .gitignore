@@ -16,8 +16,10 @@ logs/
 
 # Recorded clips: regenerate with scripts/run_test_matrix.sh
 data/clips/
-# Fine-tune dataset + training runs: regenerate with camera/build_finetune_dataset.py
-data/finetune/
+# Recorded clips are ignored, but the built fine-tune dataset IS committed
+# (60 MB) so the PC can train immediately after cloning, before the simulator
+# is even set up there. Training runs stay local.
+data/finetune/runs/
 # Trained weights (binary artifacts; rebuild with camera/finetune.py)
 camera/weights/
 *.ulg

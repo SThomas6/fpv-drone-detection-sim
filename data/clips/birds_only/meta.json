@@ -1,0 +1,18 @@
+{
+  "world": "detection_world",
+  "width": 1280,
+  "height": 720,
+  "fx": 1108.77,
+  "interval_s": 0.4,
+  "frames": 325,
+  "visible_frames": 0,
+  "buckets": {},
+  "note": "birds flying, drone parked out of view - false positives on birds",
+  "stale_frames_skipped": 0,
+  "label_verification": {
+    "checked": 0,
+    "with_dark_object": 0,
+    "median_px_err": null,
+    "fraction_within_15px": null
+  }
+}

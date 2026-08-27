@@ -176,8 +176,10 @@ def main():
     print(f"  {vc}")
 
     yaml = out / "dataset.yaml"
+    # "path: ." keeps the dataset portable; finetune.py rewrites it to an
+    # absolute path at run time so ultralytics never guesses a datasets_dir.
     yaml.write_text(
-        f"path: {out.resolve()}\n"
+        "path: .\n"
         "train: images/train\n"
         "val: images/val\n"
         "names:\n  0: drone\n  1: bird\n")

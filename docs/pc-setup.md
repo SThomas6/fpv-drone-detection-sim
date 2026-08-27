@@ -27,6 +27,20 @@ wsl --install -d Ubuntu-24.04
 
 Everything below happens inside the Ubuntu shell.
 
+## 0. Train the model FIRST (no simulator needed)
+
+The fine-tune dataset and the held-out evaluation clips are committed to the
+repo, so the highest-value task runs immediately after cloning — before any of
+the simulator stack below is installed. You only need the conda env's Python
+side (or even a plain venv with `pip install ultralytics sahi huggingface_hub
+pillow "lap>=0.5.12" numpy`):
+
+```bash
+python camera/finetune.py --batch 32 --epochs 25   # ~15 min on the 3060 Ti
+```
+
+Then follow the evaluation steps in [handoff.md](handoff.md).
+
 ## 1. Base tools
 
 ```bash
@@ -88,7 +102,7 @@ conda activate dronesim && python tests/test_phase1.py
 python camera/detect_live.py --classify
 ```
 
-## 6. Regenerate the data (not in git)
+## 6. Regenerate the rest of the data (not in git)
 
 Recorded clips, the fine-tune dataset and trained weights are git-ignored.
 Either copy `data/` and `camera/weights/` across manually, or regenerate:
@@ -102,9 +116,9 @@ python camera/classify.py train --drone data/clips/baseline data/clips/crossing 
                                 --bird data/clips/birds_only
 ```
 
-The trained two-class weights `camera/weights/drone_bird_v1.pt` ARE committed
-to the repo (small, and saves an hour of retraining) — regenerating is only
-needed if you change the dataset.
+Training was interrupted on the Mac (thermals), so the weights are NOT in the
+repo yet — the PC trains them (step 0 above) and should commit them:
+`git add -f camera/weights/drone_bird_v1.pt`.
 
 ## Worth doing once on the PC (was impossible on 8 GB / macOS)
 
@@ -125,3 +139,27 @@ needed if you change the dataset.
   `scripts/capture_clip.py` for visuals, exactly as on the Mac.
 - Keep the repo in the Linux filesystem (`~/...`), NOT under `/mnt/c/...` —
   cross-filesystem I/O is 10x slower and PX4's build will crawl.
+
+## Claude Code on the PC (continuing this chat's work)
+
+The conversation history and Claude's per-project memory live on the Mac and
+do not sync between machines. The intended handoff is the repo itself:
+[handoff.md](handoff.md) tells a fresh session exactly where the project
+stands and what to do next.
+
+Inside WSL2 Ubuntu:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash    # or: npm install -g @anthropic-ai/claude-code
+cd ~/fpv-drone-system
+claude
+```
+
+First message to give it: "Read docs/handoff.md and continue from there."
+
+To *view* a session from another device, Claude Code also has remote/cloud
+options (the desktop and web apps at claude.ai/code can show cloud sessions,
+and newer builds can hand a local session over to the cloud). Check `/help`
+in your build for what it offers — but for actual work on the PC, a fresh
+local session + handoff.md is the reliable route, and it keeps the heavy
+compute on the PC where you want it.

@@ -1,0 +1,30 @@
+{
+  "train_clips": [
+    "data/clips/birds_only",
+    "data/clips/birds_drone",
+    "data/clips/train_mix_dusk",
+    "data/clips/baseline",
+    "data/clips/crossing",
+    "data/clips/low_altitude",
+    "data/clips/backlit"
+  ],
+  "val_clips": [
+    "data/clips/backlit_birds"
+  ],
+  "tile": 640,
+  "seed": 0,
+  "train_counts": {
+    "drone_tiles": 1100,
+    "bird_tiles": 1096,
+    "bg_tiles": 111,
+    "drone_boxes": 1598,
+    "bird_boxes": 6481
+  },
+  "val_counts": {
+    "drone_tiles": 220,
+    "bird_tiles": 220,
+    "bg_tiles": 0,
+    "drone_boxes": 338,
+    "bird_boxes": 2234
+  }
+}

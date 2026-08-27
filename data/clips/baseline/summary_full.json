@@ -1,0 +1,77 @@
+{
+  "clip": "baseline",
+  "mode": "full",
+  "operating_conf": 0.05,
+  "recall": 1.0,
+  "precision": 0.9804,
+  "fp_per_min": 2.0,
+  "by_bucket": {
+    "<16px": {
+      "hit": 250,
+      "total": 250,
+      "recall": 1.0
+    }
+  },
+  "by_range": {
+    "40-60m": {
+      "hit": 117,
+      "total": 117,
+      "recall": 1.0
+    },
+    "60-80m": {
+      "hit": 133,
+      "total": 133,
+      "recall": 1.0
+    }
+  },
+  "sweep": [
+    {
+      "conf": 0.05,
+      "recall": 1.0,
+      "precision": 0.9804,
+      "fp_per_min": 2.0
+    },
+    {
+      "conf": 0.1,
+      "recall": 1.0,
+      "precision": 0.9921,
+      "fp_per_min": 0.8
+    },
+    {
+      "conf": 0.15,
+      "recall": 1.0,
+      "precision": 0.996,
+      "fp_per_min": 0.4
+    },
+    {
+      "conf": 0.2,
+      "recall": 1.0,
+      "precision": 0.996,
+      "fp_per_min": 0.4
+    },
+    {
+      "conf": 0.25,
+      "recall": 1.0,
+      "precision": 0.996,
+      "fp_per_min": 0.4
+    },
+    {
+      "conf": 0.3,
+      "recall": 0.996,
+      "precision": 0.996,
+      "fp_per_min": 0.4
+    },
+    {
+      "conf": 0.4,
+      "recall": 0.952,
+      "precision": 1.0,
+      "fp_per_min": 0.0
+    },
+    {
+      "conf": 0.5,
+      "recall": 0.812,
+      "precision": 1.0,
+      "fp_per_min": 0.0
+    }
+  ]
+}

@@ -41,6 +41,15 @@ def main():
     from huggingface_hub import hf_hub_download
     from ultralytics import YOLO
 
+    # Normalise the dataset path: the committed yaml says "path: ." so it works
+    # on any machine; ultralytics wants it absolute.
+    data_yaml = Path(args.data).resolve()
+    text = data_yaml.read_text()
+    if "path: ." in text:
+        data_yaml.write_text(text.replace("path: .", f"path: {data_yaml.parent}"))
+        print(f"resolved dataset path -> {data_yaml.parent}")
+    args.data = str(data_yaml)
+
     base = hf_hub_download(WEIGHTS_REPO, WEIGHTS_FILE)
     print(f"starting from {base}")
     model = YOLO(base)

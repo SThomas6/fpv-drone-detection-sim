@@ -1,0 +1,20 @@
+{
+  "world": "detection_world",
+  "width": 1280,
+  "height": 720,
+  "fx": 1108.77,
+  "interval_s": 0.5,
+  "frames": 300,
+  "visible_frames": 250,
+  "buckets": {
+    "<16px": 250
+  },
+  "note": "default mission pattern, clear daylight, mixed sky/terrain",
+  "stale_frames_skipped": 0,
+  "label_verification": {
+    "checked": 250,
+    "with_dark_object": 250,
+    "median_px_err": 1.43,
+    "fraction_within_15px": 1.0
+  }
+}
