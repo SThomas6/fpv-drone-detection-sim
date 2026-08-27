@@ -1,0 +1,28 @@
+# Third-party source trees (installed by scripts/install.sh, not vendored)
+third_party/
+# A symlink to ~/Projects/PX4-Autopilot, so no trailing slash (that would only
+# match a real directory). PX4's build system cannot handle the space in this
+# project's path, which is why it lives outside the repo.
+PX4-Autopilot
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Sim runtime artifacts
+logs/
+
+# Recorded clips: regenerate with scripts/run_test_matrix.sh
+data/clips/
+# Fine-tune dataset + training runs: regenerate with camera/build_finetune_dataset.py
+data/finetune/
+# Trained weights (binary artifacts; rebuild with camera/finetune.py)
+camera/weights/
+*.ulg
+.sim_pids
+build/
+
+# macOS
+.DS_Store

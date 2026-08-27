@@ -1,0 +1,24 @@
+# ByteTrack tuned for tiny, low-confidence drone targets on a fixed camera.
+#
+# Lives outside the ultralytics package tree on purpose: check_yaml() globs the
+# package for matching names and raises if a same-named file is found twice.
+#
+# fuse_score: false is the critical setting. With the shipped default (true)
+# the association gate becomes IoU >= (1 - match_thresh) / score, so a
+# detection scoring <= 0.20 can never match at ANY IoU — and distant drones
+# score 0.2-0.5. With it false the gate is plain IoU >= 1 - match_thresh.
+#
+# match_thresh is a limit on COST (1 - IoU), so HIGHER is MORE permissive.
+# Raised deliberately: with a single drone in frame there is nothing to
+# confuse it with, and few-pixel boxes lose IoU very fast between frames.
+#
+# track_buffer is a raw frame count in ultralytics 8.4.x (no fps scaling),
+# so 45 frames ~= 3.0 s of coasting at the station camera's 15 Hz.
+
+tracker_type: bytetrack
+track_high_thresh: 0.10   # also the floor for creating tracks and the only way a Lost track revives
+track_low_thresh: 0.03    # strict >; anything at or below is discarded outright
+new_track_thresh: 0.10    # effective value is max(this, track_high_thresh)
+track_buffer: 45          # frames, not seconds
+match_thresh: 0.95        # cost limit on (1 - IoU); higher = more permissive
+fuse_score: false         # see above — the highest-leverage setting for faint targets

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.9">
+  <model name="target_drone">
+    <!-- Non-static so it appears on /world/.../dynamic_pose/info (ground
+         truth). Gravity off + no collisions: physics applies no forces, so it
+         stays exactly where pose_mirror.py teleports it each tick. -->
+    <static>false</static>
+    <link name="body">
+      <gravity>false</gravity>
+      <inertial>
+        <mass>0.6</mass>
+        <inertia>
+          <ixx>0.005</ixx><iyy>0.005</iyy><izz>0.009</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <!-- central stack -->
+      <visual name="frame">
+        <geometry><box><size>0.12 0.12 0.05</size></box></geometry>
+        <material>
+          <ambient>0.08 0.08 0.08 1</ambient>
+          <diffuse>0.08 0.08 0.08 1</diffuse>
+        </material>
+      </visual>
+      <!-- arms (X frame) -->
+      <visual name="arm_fr">
+        <pose>0.06 -0.06 0 0 0 -0.785</pose>
+        <geometry><box><size>0.13 0.015 0.008</size></box></geometry>
+        <material><ambient>0.08 0.08 0.08 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse></material>
+      </visual>
+      <visual name="arm_fl">
+        <pose>0.06 0.06 0 0 0 0.785</pose>
+        <geometry><box><size>0.13 0.015 0.008</size></box></geometry>
+        <material><ambient>0.08 0.08 0.08 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse></material>
+      </visual>
+      <visual name="arm_br">
+        <pose>-0.06 -0.06 0 0 0 0.785</pose>
+        <geometry><box><size>0.13 0.015 0.008</size></box></geometry>
+        <material><ambient>0.08 0.08 0.08 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse></material>
+      </visual>
+      <visual name="arm_bl">
+        <pose>-0.06 0.06 0 0 0 -0.785</pose>
+        <geometry><box><size>0.13 0.015 0.008</size></box></geometry>
+        <material><ambient>0.08 0.08 0.08 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse></material>
+      </visual>
+      <!-- prop discs (5 inch ≈ 0.063 m radius) -->
+      <visual name="prop_fr">
+        <pose>0.105 -0.105 0.03 0 0 0</pose>
+        <geometry><cylinder><radius>0.063</radius><length>0.004</length></cylinder></geometry>
+        <material><ambient>0.15 0.15 0.15 0.9</ambient><diffuse>0.15 0.15 0.15 0.9</diffuse></material>
+      </visual>
+      <visual name="prop_fl">
+        <pose>0.105 0.105 0.03 0 0 0</pose>
+        <geometry><cylinder><radius>0.063</radius><length>0.004</length></cylinder></geometry>
+        <material><ambient>0.15 0.15 0.15 0.9</ambient><diffuse>0.15 0.15 0.15 0.9</diffuse></material>
+      </visual>
+      <visual name="prop_br">
+        <pose>-0.105 -0.105 0.03 0 0 0</pose>
+        <geometry><cylinder><radius>0.063</radius><length>0.004</length></cylinder></geometry>
+        <material><ambient>0.15 0.15 0.15 0.9</ambient><diffuse>0.15 0.15 0.15 0.9</diffuse></material>
+      </visual>
+      <visual name="prop_bl">
+        <pose>-0.105 0.105 0.03 0 0 0</pose>
+        <geometry><cylinder><radius>0.063</radius><length>0.004</length></cylinder></geometry>
+        <material><ambient>0.15 0.15 0.15 0.9</ambient><diffuse>0.15 0.15 0.15 0.9</diffuse></material>
+      </visual>
+      <!-- camera pod, gives it the classic FPV silhouette -->
+      <visual name="fpv_cam">
+        <pose>0.07 0 0.03 0 -0.3 0</pose>
+        <geometry><box><size>0.03 0.03 0.03</size></box></geometry>
+        <material><ambient>0.3 0.05 0.05 1</ambient><diffuse>0.3 0.05 0.05 1</diffuse></material>
+      </visual>
+    </link>
+  </model>
+</sdf>

@@ -1,0 +1,27 @@
+# ros_gz_bridge parameter_bridge config: Gazebo topics -> ROS 2 topics.
+# Detection code (Phase 2+) subscribes to the ROS side with rclpy.
+- gz_topic_name: "/detection_station/camera/image"
+  ros_topic_name: "/detection_station/camera/image"
+  gz_type_name: "gz.msgs.Image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  direction: GZ_TO_ROS
+
+- gz_topic_name: "/detection_station/camera/camera_info"
+  ros_topic_name: "/detection_station/camera/camera_info"
+  gz_type_name: "gz.msgs.CameraInfo"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  direction: GZ_TO_ROS
+
+- gz_topic_name: "/world/detection_world/clock"
+  ros_topic_name: "/clock"
+  gz_type_name: "gz.msgs.Clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  direction: GZ_TO_ROS
+
+# Ground-truth poses of every moving entity (the target drone). Phase 4's
+# radar model and Phase 2's accuracy checks read truth from here.
+- gz_topic_name: "/world/detection_world/dynamic_pose/info"
+  ros_topic_name: "/world/detection_world/dynamic_pose/info"
+  gz_type_name: "gz.msgs.Pose_V"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  direction: GZ_TO_ROS
