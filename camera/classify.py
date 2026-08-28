@@ -151,7 +151,15 @@ FEATURE_NAMES_V3 = [
     "speed_cv",          # speed variability
     "step_cv",           # step-length variability, width-free
     "dwell_fraction",    # steps below a quarter of this track's OWN median
-    "width_cv",          # projected-size variability (birds flap: AUC < 0.5 everywhere)
+    # Size-shape features, ZEROED below 8 px median width. At 2-4 px a
+    # one-pixel box jitter is a 25-50% coefficient of variation, so width_cv
+    # measures quantisation noise, not wingbeat, and penalises every tiny
+    # target regardless of class. Measured: ungated, width_cv took weight
+    # -0.702 and rejected the long-range sweep drone (v1 passed 97.7% of its
+    # drone track-windows, the ungated model 62.4%). 8 px is the same
+    # threshold the bird-mute policy already uses to decide when appearance
+    # evidence is trustworthy (`med_w < 8.0`).
+    "width_cv",          # projected-size variability — birds flap
     "width_trend",       # |slope of width| / mean width — a closing target
     "ir_frac",           # share of the track's samples the thermal channel fed
     "mv_frac",           # share the motion channel fed
@@ -189,6 +197,7 @@ def features_v3_from_history(history) -> np.ndarray | None:
     mean_w = float(w.mean()) or 1.0
     span = float(t[-1] - t[0])
     n = len(cls)
+    big = float(np.median(w)) >= 8.0
 
     return np.array([
         sum(1 for c in cls if c == "drone") / n,
@@ -199,9 +208,9 @@ def features_v3_from_history(history) -> np.ndarray | None:
         min(float(speed.std() / (speed.mean() + 1e-6)), 10.0),
         min(float(step.std() / (step.mean() + 1e-6)), 10.0),
         float(np.mean(step < 0.25 * med_step)),
-        float(w.std() / (w.mean() + 1e-6)),
-        min(float(abs(np.polyfit(t, w, 1)[0]) / mean_w) if span > 1e-6 else 0.0,
-            10.0),
+        float(w.std() / (w.mean() + 1e-6)) if big else 0.0,
+        (min(float(abs(np.polyfit(t, w, 1)[0]) / mean_w), 10.0)
+         if big and span > 1e-6 else 0.0),
         sum(1 for c in cls if c == "hotspot") / len(cls),
         sum(1 for c in cls if c == "mover") / len(cls),
     ], dtype=float)
