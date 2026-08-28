@@ -175,6 +175,16 @@ def main():
     ap.add_argument("--rgb-tag", default=None,
                     help="read detections_<mode>_<tag>.jsonl instead of the "
                          "untagged cache (candidate-model evaluation)")
+    ap.add_argument("--class-consistent", dest="class_consistent",
+                    action="store_true", default=True)
+    ap.add_argument("--no-class-consistent", dest="class_consistent",
+                    action="store_false",
+                    help="let a detection join a track whose majority class "
+                         "contradicts it. The consistency gate protects "
+                         "terrain tracks from bird pollution, but when the "
+                         "detector misnames the TARGET (m3 flips the sky "
+                         "drone to 'bird' in 25%% of frames near birds) it "
+                         "locks the target's own detections out of its track")
     ap.add_argument("--coast-alarms", default="all",
                     choices=["all", "judged", "none"],
                     help="may a track declare on a frame where it was NOT "
@@ -220,7 +230,7 @@ def main():
     }
     results = {}
     for mode, select in modes.items():
-        tracker = CentroidTracker(class_consistent=True,
+        tracker = CentroidTracker(class_consistent=args.class_consistent,
                                   suppress_spawn_near_coasting=True)
         ir_seen = defaultdict(lambda: deque(maxlen=90))
         obs = []
