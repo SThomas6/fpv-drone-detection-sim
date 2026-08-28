@@ -89,10 +89,21 @@ CALLS bird, so clutter naming helps too.
 train_ir_canopy). `train_ir_sweep` is deliberately absent from the new
 tiles: it is the checkpoint-SELECTION clip (training-pool, never eval).
 
-**Run state:** `runs/experiments/m3_birdnamer/`, 20 epochs, per-epoch
-checkpoints (`save_period=1`), batch 8 / workers 0 / lr0 5e-4, CPU affinity
-2 cores + BelowNormal (the user is gaming on this box — keep it that way
-until they say otherwise). ~2.5 h wall. Log: `runs/m3_birdnamer.log`.
+**Run state:** run A `runs/experiments/m3_birdnamer/` completed epochs 1–4
+(epoch4.pt) at 2-core affinity, then was deliberately stopped and CONTINUED
+as run B `runs/experiments/m3_birdnamer_b/` from A's last.pt — 15 epochs,
+batch 8 / workers 2 / 4-core affinity (user approved 33% CPU while gaming;
+BelowNormal priority throughout). The LR schedule restarts over 15 epochs,
+which is fine: checkpoint selection is by measurement, not schedule. Sweep
+checkpoints from BOTH directories (A epochs 1–4, B epochs 1–15). Logs:
+`runs/m3_birdnamer.log`, `runs/m3_birdnamer_b.log`.
+
+**Windows trap hit here, worth keeping:** the venv `python.exe` is a
+launcher that SPAWNS the real interpreter as a child, so affinity/priority
+set on the launched PID die with the launcher or miss the child entirely
+(the child pre-dates the setting). Launch via `cmd /c start /belownormal
+/affinity F ...` so creation-time attributes inherit, and verify with
+Get-Process afterwards on ALL python PIDs.
 
 **When it finishes (the plan, so any agent can execute it):**
 1. Pick a checkpoint: score epochs {4,8,12,16,20} on `train_ir_sweep`
