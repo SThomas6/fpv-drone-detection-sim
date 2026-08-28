@@ -73,47 +73,76 @@ absence of one is not proof a clip is fair game.
 
 Everything below elaborates. If you read only one section, read this one.
 
-**The single most important thing to do next:** retrain the v3 classifier on
-the clean, complete training set (`baseline`, `birds_only`,
-`train_terrain_canopy`, `train_terrain_mission`, `train_zoom_a`,
-`train_zoom_b` — **not** `backlit_birds`), then re-run the fused matrix. The
-zoom clips' cached detections were generated at the very end of the session;
-if `data/clips/train_zoom_b/detections_motion.jsonl` is missing, regenerate it
-with `camera/motion_detector.py run --clip data/clips/train_zoom_b` (~7 min).
+**The single most important thing to do next: capture a THERMAL TRAINING
+CLIP.** It is the one blocker that new analysis cannot remove. Every clip
+that has a thermal stream (`terrain_ir_*`) is in the evaluation set, so the
+track classifier has never seen a thermal-carried target. Two measurable
+consequences: `ir_frac` learns weight exactly **+0.000** (constant in
+training, so it standardises away — the model is structurally unable to use
+thermal as evidence), and the model instead learns "RGB sees it ⇒ drone",
+which is false precisely on the long-range sweep where RGB sees the drone in
+only 36.7% of frames and thermal carries it. Use
+`scripts/gen_terrain_world.py --thermal` then `scripts/drive_scene.py` with
+new seeds (NOT 13, 42, or 0 — those are eval), and **read
+`scripts/drive_scene.py`'s docstring first**; the sim-time clock trap
+documented there has already cost this project real time.
 
 **What is installed and live right now:** the m1-epoch-24 detector
 (`camera/weights/drone_bird_v1.pt`, md5 prefix `e794dc0a2855`) and the **v1**
 motion classifier (`camera/motion_classifier.json`). The user decided to leave
-the newer classifiers uninstalled. `motion_classifier_v2.json` (fused data,
-old features), `motion_classifier_v3.json` (new features, split includes the
-`backlit_birds` mistake) and `motion_classifier_v3clean.json` (clean split, no
-zoom clips) are all committed and selectable via `fuse_eval --classifier`.
+the newer classifiers uninstalled.
+
+**Which classifier file to use.** All are selectable with
+`fuse_eval --classifier <path>`:
+- `motion_classifier.json` — **v1, live.** Keep for the long-range sweep.
+- `motion_classifier_v5.json` — **best new model, use this one.** Clean split,
+  zoom domain, size-gated shape features.
+- `motion_classifier_v2/v3/v3clean/v4.json` — superseded iterations, kept only
+  for the audit trail. v2 and v3 were trained with `backlit_birds` in the
+  training set, which is an eval clip; their numbers are contaminated.
 
 **Best measured numbers, corrected metric, as of this handoff:**
 
 | Scenario | Coverage | Alarms/min | Config |
 |---|---|---|---|
-| Real footage — easy | 0.976–1.000 | 0 | `track_eval` |
-| Real footage — medium (the 262 FP/min case) | **0.960** | **178** | `track_eval` + clutter map |
-| Real footage — medium, alarm-first | 0.908 | 107 | + travel gate 150 px |
-| Real footage — hard | 0.702–0.736 | 16–22 | |
-| Sim: long-range sweep | 88.7% | 12.3 | v1, or-fusion |
-| Sim: terrain + birds | **84.5%** | **75** | **v3**, rgb-only, thr 0.3 |
-| Sim: low-flight vs canopy | 68.8% | 765 (v1) / **187 (v3)** | or-fusion |
+| Real — easy | 0.976–1.000 | 0 | `track_eval` |
+| Real — medium (the 262 FP/min case) | **0.960** | **178** | `track_eval` + clutter map |
+| Real — medium, alarm-first | 0.908 | 107 | + travel gate 150 px |
+| Real — hard | 0.702–0.736 | 16–22 | |
+| Sim: long-range sweep | **88.7%** | 12.3 | **v1**, or-fusion, thr 0.5 |
+| Sim: terrain + birds | **84.5%** | **66** | **v5**, rgb-only, thr 0.5 |
+| Sim: canopy (max coverage) | 61.0% | 168 | v5, or-fusion, thr 0.3 |
+| Sim: canopy (alarm-matched vs v1) | 49.5% | **69** | v5, and-confirm, thr 0.3 |
+| Sim: canopy (v1 for reference) | 68.8% | 765 | v1, or-fusion, thr 0.5 |
 
-**No sim scenario meets the 90% target yet.** The nearest miss is the
-long-range sweep. Canopy is the hard one.
+**No sim scenario meets the 90% target.** Nearest miss: the long-range sweep
+at 88.7%. Canopy is far off and is the real problem.
 
-**The three things this session established that change how to attack it:**
+**Classifier AUC (drone vs bird track-windows, held-out):**
+
+| Clip | v1 live | v5 |
+|---|---|---|
+| canopy | **0.419** (below chance) | **0.930** |
+| terrain+birds | 0.585 | **0.983** |
+| eval_birds (sky) | 0.987 | 0.987 |
+| backlit_birds | 0.875 | 0.869 |
+
+**The four things this session established that change how to attack it:**
 
 1. **Detection is not the bottleneck.** Some sensor sees the canopy drone in
-   96% of frames and the tracker holds 93%. Stop retraining the detector.
-2. **The live motion classifier is anti-correlated on canopy** (AUC 0.419,
-   below chance) because its features invert between domains. The v3 feature
-   set fixes this (0.925) and is the main asset produced this session.
+   96% of frames and the tracker holds 93%. **Stop retraining the detector** —
+   that is where the previous two campaigns spent their effort.
+2. **The live motion classifier is anti-correlated on canopy** (AUC 0.419)
+   because its features *invert* between domains: `hover_fraction`, its
+   largest weight, scores 0.961 on sky and 0.355 on canopy. The v5 feature set
+   fixes this and is the main asset produced this session.
 3. **Every fused number recorded before this session was inflated** by a
-   per-track-frame counting bug, now fixed. Do not compare against old
-   figures.
+   per-track-frame counting bug, now fixed. Do not compare against old figures.
+4. **The remaining canopy gap is a bird-vs-drone problem, not a detection
+   one**, and thermal does not solve it — the sim's birds are warm, which is
+   physically correct, so `and-confirm` still raises 1692 bird alarms on v1.
+   With v5 the canopy alarm rate is already 4.5x better; the missing coverage
+   is the open question.
 
 ## Where the project stands
 
@@ -448,19 +477,29 @@ thermal stream (`terrain_ir_*`) is in the evaluation set.
 
 **Open next steps, in order:**
 
-0. **Retrain v3 on the clean, complete training set**: `baseline`,
-   `birds_only`, `train_terrain_canopy`, `train_terrain_mission`,
-   `train_zoom_a`, `train_zoom_b` — and NOT `backlit_birds` (see the split
-   warning above). Then re-run the full fused matrix. A clean-split model
-   without the zoom clips is already at `camera/motion_classifier_v3clean.json`
-   for comparison.
-1. **Capture a thermal training clip** so `ir_frac` becomes learnable
-   (`scripts/gen_terrain_world.py --thermal`, then `scripts/drive_scene.py`;
-   read that file's docstring first — the sim-time clock trap is documented
-   there). Until then the classifier cannot use the sensor that carries the
-   long-range case.
-2. ~~Build the v3 track classifier~~ — DONE, see above. Original spec kept
-   for reference: from the domain-stable features only:
+0. ~~Retrain on the clean, complete training set~~ — **DONE**, that is
+   `motion_classifier_v5.json` (clean split + zoom clips + size-gated shape
+   features). It did NOT fix the long-range sweep; see step 1 for why.
+1. **Capture a thermal TRAINING clip** so `ir_frac` becomes learnable — the
+   top open task, detailed at the top of this file. This is the only step
+   here that requires the simulator (WSL2 + Gazebo) rather than pure analysis.
+2. **Canopy coverage is the remaining blocker for the 90% target.** With v5
+   the alarm rate is 4.5x better than v1, but coverage is 49-61% depending on
+   policy against a tracker ceiling of 93%. Ideas not yet tried, roughly in
+   order of expected value:
+   - Let the classifier see the aux channels properly (needs step 1).
+   - `--young-tracks pass` is worth ~2-4 points and already exists; measure it
+     with v5 rather than v1 (all the young-track numbers on file are v1).
+   - A track-SEQUENCE model rather than one verdict per window — the current
+     design classifies each window independently and throws away the fact
+     that a track is the same object over time.
+   - Richer negatives: the training clips have 6-8 birds; the eval clips have
+     the same. More varied bird behaviour would test whether v5's 0.93 canopy
+     AUC is real or seed-specific. **Only two terrain training seeds exist
+     (6 and 5), which is thin — treat v5's numbers as provisional until a
+     third seed confirms them.**
+3. ~~Build the v3 track classifier~~ — DONE. Original spec kept for
+   reference: from the domain-stable features only:
    `drone_vote`, `straightness`, `turn_rate`, `width_mean`, `speed_cv`, plus
    `ir_frac`/`mv_frac` sensor support. Deliberately EXCLUDE `y_norm`,
    `support_rate`, `vertical_ratio`, and treat `hover_fraction` and

@@ -734,6 +734,47 @@ constant-velocity tracks the sweep consists of. Adding `train_zoom_a/b`
 (130–250 m, same range regime) addresses the first half; a thermal *training*
 capture does not exist and must be made before `ir_frac` can ever be learned.
 
+### Final classifier (v5) and the limit that stopped it
+
+v5 = the v3 feature set with two corrections: the `train_zoom_a/b` clips added
+(130–250 m, the sweep's range regime), and the size-shape features **zeroed
+below 8 px median width**. That gate matters because at 2–4 px a one-pixel box
+jitter is a 25–50% coefficient of variation — `width_cv` was measuring
+quantisation noise rather than wingbeat and penalising every tiny target
+regardless of class. 8 px is the same threshold the `bird-mute` policy already
+uses to decide when appearance evidence is trustworthy.
+
+| AUC | v1 (live) | v5 |
+|---|---|---|
+| terrain_ir_canopy | **0.419** | **0.930** |
+| terrain_ir_birds | 0.585 | **0.983** |
+| eval_birds (sky) | 0.987 | 0.987 |
+| backlit_birds | 0.875 | 0.869 |
+
+End-to-end, v5 is a Pareto win on terrain+birds — **84.5% coverage at 66
+alarms/min against v1's 79.2% at 112** — and on canopy it holds v1's coverage
+at 39% fewer alarms (`and-confirm` 49.5% @ 69/min vs v1 `vote-gated` 49.2% @
+114/min), or reaches 61.0% at 168/min where v1 needed 765/min for 68.8%.
+
+**It does not fix the long-range sweep, and this is a data limit, not a
+modelling one.** v1 passes 97.7% of the sweep's drone track-windows; v5 passes
+73.7%. Cause: every training clip is RGB-rich, so the model learned "RGB sees
+it ⇒ drone" — `drone_evidence` is v5's largest weight (+1.629) — and the
+sweep's target is carried by *thermal*, with RGB seeing it in only 36.7% of
+frames. `ir_frac` still learns exactly **+0.000**, because no training clip
+has a thermal stream at all.
+
+**The fix requires a thermal training capture**; every clip that has one
+(`terrain_ir_*`) is in the evaluation set. Until that exists, the honest
+configuration is v5 for the terrain and bird scenarios and v1 for the
+long-range thermal-carried sweep — or the `and-confirm` policy, which gates on
+IR persistence directly and so never asks the classifier about a sensor regime
+it was never shown.
+
+A caveat on all of the above: only **two** terrain training seeds exist (6 and
+5). v5's 0.93 canopy AUC should be treated as provisional until a third seed
+confirms it is not seed-specific.
+
 ## The travel gate is already well tuned
 
 Checked because the attribution table showed it costing 4.5 points. Dropping
