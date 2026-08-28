@@ -96,7 +96,7 @@ def _load_dets(path: Path) -> dict:
 
 
 def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
-              rgb_mode: str = "full"):
+              rgb_mode: str = "full", rgb_tag: str | None = None):
     """Cached streams for one clip.
 
     rgb_mode picks which detector pass feeds the RGB stream:
@@ -109,12 +109,21 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
     """
     labels = {r["frame"]: r for r in
               (json.loads(l) for l in open(clip / "labels.jsonl"))}
-    full_path = clip / "detections_full.jsonl"
-    sahi_path = clip / "detections_sahi.jsonl"
+    # rgb_tag reads a TAGGED detector pass (evaluate.py run --tag X), so a
+    # candidate model can be evaluated end-to-end without overwriting the
+    # deployed model's untagged cache - the landmine this repo already hit.
+    sfx = f"_{rgb_tag}" if rgb_tag else ""
+    full_path = clip / f"detections_full{sfx}.jsonl"
+    sahi_path = clip / f"detections_sahi{sfx}.jsonl"
+    if not full_path.exists():
+        raise SystemExit(f"{full_path} missing - run: python camera/evaluate.py"
+                         f" run --clip {clip} --mode full"
+                         + (f" --tag {rgb_tag}" if rgb_tag else ""))
     if rgb_mode in ("sahi", "both") and not sahi_path.exists():
         raise SystemExit(
             f"{sahi_path} missing - run: "
-            f"python camera/evaluate.py run --clip {clip} --mode sahi")
+            f"python camera/evaluate.py run --clip {clip} --mode sahi"
+            + (f" --tag {rgb_tag}" if rgb_tag else ""))
     if rgb_mode == "full":
         rgb = _load_dets(full_path)
     elif rgb_mode == "sahi":
@@ -163,6 +172,9 @@ def main():
     ap.add_argument("--rgb-mode", default="full",
                     choices=["full", "sahi", "both"],
                     help="which cached RGB detector pass feeds the fusion")
+    ap.add_argument("--rgb-tag", default=None,
+                    help="read detections_<mode>_<tag>.jsonl instead of the "
+                         "untagged cache (candidate-model evaluation)")
     ap.add_argument("--coast-alarms", default="all",
                     choices=["all", "judged", "none"],
                     help="may a track declare on a frame where it was NOT "
@@ -239,7 +251,8 @@ def main():
                     return True
             return False
 
-        rows = load_clip(clip, args.rgb_conf, args.ir_conf, args.rgb_mode)
+        rows = load_clip(clip, args.rgb_conf, args.ir_conf, args.rgb_mode,
+                         args.rgb_tag)
         for f, gt, rgb_dets, ir_dets in rows:
             rd, id_ = select(rgb_dets, ir_dets)
             dets, sources = fuse_measurements(rd, id_)
