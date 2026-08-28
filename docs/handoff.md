@@ -95,6 +95,17 @@ alarm-first row (0.908 @ 107)**; hard 0.609 @ 10.8 (m1: 0.702 @ 16 — m3's
 recall trade bites on the smallest real targets; the checkpoint re-pick
 below should watch this too).
 
+**Improvement loop result #1 — canopy balanced row RECOVERED by gate
+re-tune (no retraining):** the m3 coverage loss on the IR-confirmed rows was
+a calibration artifact, not lost capability — m3's drone tracks carry lower
+`ir_frac` ratios (changed track composition), so the old `--ir-persist 0.3`
+cut them. At **`--ir-persist 0.15`** the installed system's balanced canopy
+row is **81.3% @ 72.8/min — beating m1+v6r's 81.0% @ 77.4**. Cross-checked:
+sweep and-confirm unchanged at 89.75% (alarms 1.8→2.1/min, harmless);
+terrain+birds unaffected (its headline row doesn't use and-confirm). Use
+ir-persist 0.15 with the installed pair on canopy. m1's ONLY remaining edge
+anywhere is now the sweep's 3 frames (90.5% vs 89.75%).
+
 **The improvement loop the user asked for (continue it):**
 1. Re-pick the m3 checkpoint with SKY NAMING in the selection metric —
    `sweep_m3_naming.py` now scores `baseline` (sky drone naming) and
