@@ -34,7 +34,14 @@ data/finetune_terrain/
 data/finetune_zoom/
 data/finetune_real/
 data/finetune_hardneg/
+data/finetune_birdfix/
+data/finetune_sahi2x/
 data/external/
 weights/
 data/finetune/dataset_mixed*.yaml
 data/finetune/train_mixed*.txt
+runs/experiments/
+runs/m3_*.log
+runs/m3_kwargs.json
+data/finetune/labels/*.cache
+data/finetune/images/*.cache

@@ -29,6 +29,12 @@ from PIL import Image
 
 TILE = 640
 MIN_BOX_PX = 2.5          # tinier than this is label noise, skip
+# --tile 320 --upscale 2 builds tiles that mimic SAHI's inference scale:
+# detect_sliced cuts 320 px slices and infers them at image_size 640, so the
+# model sees everything at 2x. Measured (2026-08-28): at that scale the
+# deployed model names canopy birds 'bird' only 79.5% of the time against
+# 93.2% at native scale - the model never trained on upscaled imagery.
+# Normalised YOLO labels are scale-invariant, so only the image is resized.
 MAX_BOX_PX = 500          # a bird flying right past the lens; not useful
 CLS = {"drone": 0, "bird": 1}
 
@@ -46,37 +52,37 @@ def objects_in_frame(rec) -> list[tuple[int, list[float]]]:
     return out
 
 
-def tile_origin_for(bbox, img_w, img_h, rng):
-    """Top-left of a TILE-sized crop containing bbox, with random jitter."""
+def tile_origin_for(bbox, img_w, img_h, rng, tile=TILE):
+    """Top-left of a tile-sized crop containing bbox, with random jitter."""
     cx = (bbox[0] + bbox[2]) / 2
     cy = (bbox[1] + bbox[3]) / 2
     # object lands uniformly within the central 80% of the tile
-    jx = rng.uniform(0.1, 0.9) * TILE
-    jy = rng.uniform(0.1, 0.9) * TILE
-    x0 = int(min(max(cx - jx, 0), img_w - TILE))
-    y0 = int(min(max(cy - jy, 0), img_h - TILE))
+    jx = rng.uniform(0.1, 0.9) * tile
+    jy = rng.uniform(0.1, 0.9) * tile
+    x0 = int(min(max(cx - jx, 0), img_w - tile))
+    y0 = int(min(max(cy - jy, 0), img_h - tile))
     return x0, y0
 
 
-def labels_for_tile(objs, x0, y0):
+def labels_for_tile(objs, x0, y0, tile=TILE):
     """YOLO label lines for every object visible inside the tile."""
     lines = []
     for cls, (bx1, by1, bx2, by2) in objs:
         ix1, iy1 = max(bx1, x0), max(by1, y0)
-        ix2, iy2 = min(bx2, x0 + TILE), min(by2, y0 + TILE)
+        ix2, iy2 = min(bx2, x0 + tile), min(by2, y0 + tile)
         if ix2 - ix1 < 2.0 or iy2 - iy1 < 1.0:
             continue
-        cx = ((ix1 + ix2) / 2 - x0) / TILE
-        cy = ((iy1 + iy2) / 2 - y0) / TILE
-        w = (ix2 - ix1) / TILE
-        h = (iy2 - iy1) / TILE
+        cx = ((ix1 + ix2) / 2 - x0) / tile
+        cy = ((iy1 + iy2) / 2 - y0) / tile
+        w = (ix2 - ix1) / tile
+        h = (iy2 - iy1) / tile
         lines.append(f"{cls} {cx:.6f} {cy:.6f} {w:.6f} {h:.6f}")
     return lines
 
 
-def tile_is_empty(objs, x0, y0) -> bool:
+def tile_is_empty(objs, x0, y0, tile=TILE) -> bool:
     for _, (bx1, by1, bx2, by2) in objs:
-        if bx2 > x0 and bx1 < x0 + TILE and by2 > y0 and by1 < y0 + TILE:
+        if bx2 > x0 and bx1 < x0 + tile and by2 > y0 and by1 < y0 + tile:
             return False
     return True
 
@@ -92,7 +98,8 @@ def collect_anchors(clips):
     return anchors
 
 
-def build_split(clips, out_dir, split, caps, bg_per_frames, rng):
+def build_split(clips, out_dir, split, caps, bg_per_frames, rng,
+                tile=TILE, upscale=1):
     img_dir = out_dir / "images" / split
     lbl_dir = out_dir / "labels" / split
     img_dir.mkdir(parents=True, exist_ok=True)
@@ -122,12 +129,16 @@ def build_split(clips, out_dir, split, caps, bg_per_frames, rng):
     for clip, rec, cls, bbox in chosen:
         img = load_frame(clip, rec)
         objs = objects_in_frame(rec)
-        x0, y0 = tile_origin_for(bbox, img.width, img.height, rng)
-        lines = labels_for_tile(objs, x0, y0)
+        x0, y0 = tile_origin_for(bbox, img.width, img.height, rng, tile)
+        lines = labels_for_tile(objs, x0, y0, tile)
         if not lines:
             continue
         name = f"{split}_{n:06d}"
-        img.crop((x0, y0, x0 + TILE, y0 + TILE)).save(img_dir / f"{name}.png")
+        crop = img.crop((x0, y0, x0 + tile, y0 + tile))
+        if upscale != 1:
+            crop = crop.resize((tile * upscale, tile * upscale),
+                               Image.BILINEAR)
+        crop.save(img_dir / f"{name}.png")
         (lbl_dir / f"{name}.txt").write_text("\n".join(lines) + "\n")
         counts["drone_tiles" if cls == 0 else "bird_tiles"] += 1
         counts["drone_boxes"] += sum(1 for l in lines if l.startswith("0 "))
@@ -137,12 +148,15 @@ def build_split(clips, out_dir, split, caps, bg_per_frames, rng):
         # occasional background tile from the same frame
         if n % bg_per_frames == 0:
             for _ in range(12):
-                bx0 = rng.randint(0, img.width - TILE)
-                by0 = rng.randint(0, img.height - TILE)
-                if tile_is_empty(objs, bx0, by0):
+                bx0 = rng.randint(0, img.width - tile)
+                by0 = rng.randint(0, img.height - tile)
+                if tile_is_empty(objs, bx0, by0, tile):
                     bname = f"{split}_bg_{n:06d}"
-                    img.crop((bx0, by0, bx0 + TILE, by0 + TILE)).save(
-                        img_dir / f"{bname}.png")
+                    bcrop = img.crop((bx0, by0, bx0 + tile, by0 + tile))
+                    if upscale != 1:
+                        bcrop = bcrop.resize((tile * upscale, tile * upscale),
+                                             Image.BILINEAR)
+                    bcrop.save(img_dir / f"{bname}.png")
                     (lbl_dir / f"{bname}.txt").write_text("")
                     counts["bg_tiles"] += 1
                     break
@@ -157,6 +171,10 @@ def main():
     ap.add_argument("--train-per-class", type=int, default=1100)
     ap.add_argument("--val-per-class", type=int, default=220)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--tile", type=int, default=TILE)
+    ap.add_argument("--upscale", type=int, default=1,
+                    help="resize each tile by this factor after cropping "
+                         "(2 with --tile 320 mimics the SAHI pass's scale)")
     args = ap.parse_args()
 
     overlap = set(map(str, args.train)) & set(map(str, args.val))
@@ -169,10 +187,12 @@ def main():
     caps_v = {0: args.val_per_class, 1: args.val_per_class}
 
     print("building train split...")
-    tc = build_split([Path(c) for c in args.train], out, "train", caps_t, 5, rng)
+    tc = build_split([Path(c) for c in args.train], out, "train", caps_t, 5,
+                     rng, args.tile, args.upscale)
     print(f"  {tc}")
     print("building val split...")
-    vc = build_split([Path(c) for c in args.val], out, "val", caps_v, 5, rng)
+    vc = build_split([Path(c) for c in args.val], out, "val", caps_v, 5,
+                     rng, args.tile, args.upscale)
     print(f"  {vc}")
 
     yaml = out / "dataset.yaml"
