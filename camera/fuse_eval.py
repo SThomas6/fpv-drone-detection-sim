@@ -163,6 +163,17 @@ def main():
     ap.add_argument("--rgb-mode", default="full",
                     choices=["full", "sahi", "both"],
                     help="which cached RGB detector pass feeds the fusion")
+    ap.add_argument("--coast-alarms", default="all",
+                    choices=["all", "judged", "none"],
+                    help="may a track declare on a frame where it was NOT "
+                         "detected (coasting)? 'all' = legacy behaviour; "
+                         "'judged' = only tracks the classifier has actually "
+                         "passed (young tracks must be seen to declare) - "
+                         "measured on canopy this is FREE, 235->170 alarms/min "
+                         "at identical coverage, because the drone's coverage "
+                         "almost never depends on young coasting frames while "
+                         "57%% of alarm frames were coasting; 'none' = every "
+                         "declaration needs a detection this frame")
     ap.add_argument("--young-tracks", default="drop",
                     choices=["drop", "pass"],
                     help="what to do with a track too short for the motion "
@@ -261,6 +272,7 @@ def main():
                           if len(xs) >= 2 else 0.0)
                 obs.append({
                     "frame": f,
+                    "coasting": tr.misses > 0,
                     "is_drone": is_drone, "on_bird": on_bird,
                     "clutter": not is_drone and not on_bird,
                     "p": clf.probability(feats) if feats is not None else None,
@@ -303,6 +315,10 @@ def main():
         keep = [o for o in obs
                 if (o["p"] >= args.motion_thr if o["p"] is not None
                     else undecided)
+                and (args.coast_alarms == "all"
+                     or not o.get("coasting")
+                     or (args.coast_alarms == "judged"
+                         and o["p"] is not None))
                 and o["travel_px"] >= args.min_travel
                 and (not need_ir or o["ir_frac"] >= args.ir_persist)
                 and (not need_vote or o["vote"] >= 0.5)
@@ -330,6 +346,11 @@ def main():
     # bird-mute: suppress only tracks the detector actively calls bird —
     # aux-held tracks (no RGB opinion) stay alive; the asymmetric gate
     report("bird-mute", results["fused"], bird_mute=True)
+    # thermal confirmation AND appearance mute together - measured as the
+    # canopy frontier: the bird alarms are real birds the detector can name,
+    # the clutter alarms are IR-co-located, so the two gates cut different
+    # populations and stack almost losslessly
+    report("and+mute", results["fused"], need_ir=True, bird_mute=True)
 
 
 if __name__ == "__main__":
