@@ -86,6 +86,15 @@ the line with the best improvement potential:
 - Any older section below saying "v1 is still installed" or quoting the m1
   hash as deployed is HISTORY as of this section.
 
+**Post-install verification (all with the INSTALLED pair, no flags):**
+tests 8/9 (same data gap); terrain+birds 85.9% @ 13.2 and sweep 89.75%
+reproduce exactly from untagged caches. Real footage re-measured under m3
+(track_eval headline config): easy 0.968 @ 0; **medium 0.932 @ 61 FP/min —
+the campaign's original 262 FP/min problem, and this point dominates m1's
+alarm-first row (0.908 @ 107)**; hard 0.609 @ 10.8 (m1: 0.702 @ 16 — m3's
+recall trade bites on the smallest real targets; the checkpoint re-pick
+below should watch this too).
+
 **The improvement loop the user asked for (continue it):**
 1. Re-pick the m3 checkpoint with SKY NAMING in the selection metric —
    `sweep_m3_naming.py` now scores `baseline` (sky drone naming) and
