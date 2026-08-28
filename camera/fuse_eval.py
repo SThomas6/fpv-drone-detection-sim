@@ -163,6 +163,15 @@ def main():
     ap.add_argument("--rgb-mode", default="full",
                     choices=["full", "sahi", "both"],
                     help="which cached RGB detector pass feeds the fusion")
+    ap.add_argument("--young-tracks", default="drop",
+                    choices=["drop", "pass"],
+                    help="what to do with a track too short for the motion "
+                         "classifier to have an opinion (<8 samples). 'drop' "
+                         "is the original alarm-discipline choice; 'pass' "
+                         "declares it, which is what a coverage target wants")
+    ap.add_argument("--classifier", default=None,
+                    help="motion-classifier JSON to use (default: the "
+                         "installed camera/motion_classifier.json)")
     ap.add_argument("--clutter", action="store_true",
                     help="suppress measurements at established static-clutter "
                          "locations (camera/clutter_map.py) before tracking")
@@ -177,7 +186,8 @@ def main():
     args = ap.parse_args()
     clip = Path(args.clip)
 
-    clf = MotionClassifier.load()
+    clf = (MotionClassifier.load(args.classifier) if args.classifier
+           else MotionClassifier.load())
     if clf.w is None:
         raise SystemExit("no trained motion classifier")
 
@@ -250,6 +260,7 @@ def main():
                 travel = (math.hypot(max(xs) - min(xs), max(ys) - min(ys))
                           if len(xs) >= 2 else 0.0)
                 obs.append({
+                    "frame": f,
                     "is_drone": is_drone, "on_bird": on_bird,
                     "clutter": not is_drone and not on_bird,
                     "p": clf.probability(feats) if feats is not None else None,
@@ -288,14 +299,22 @@ def main():
           f"{'on birds':>9} {'clutter':>8}")
 
     def report(name, obs, need_ir=False, need_vote=False, bird_mute=False):
+        undecided = args.young_tracks == "pass"
         keep = [o for o in obs
-                if o["p"] is not None and o["p"] >= args.motion_thr
+                if (o["p"] >= args.motion_thr if o["p"] is not None
+                    else undecided)
                 and o["travel_px"] >= args.min_travel
                 and (not need_ir or o["ir_frac"] >= args.ir_persist)
                 and (not need_vote or o["vote"] >= 0.5)
                 and (not bird_mute or o["bird_vote"] is None
                      or o["bird_vote"] < 0.5 or o["med_w"] < 8.0)]
-        cover = sum(1 for o in keep if o["is_drone"])
+        # Coverage is per FRAME, not per track-frame. Two tracks sitting on
+        # the same drone in one frame is one frame covered, not two — counting
+        # observations here inflated every fused coverage number this project
+        # recorded before 2026-08-28 (canopy or-fusion read 79.3%; it is
+        # 68.8%). Alarms stay per track-frame, which is the convention
+        # camera/evaluate.py already uses for FP/min.
+        cover = len({o["frame"] for o in keep if o["is_drone"]})
         birds = sum(1 for o in keep if o["on_bird"])
         clutter = sum(1 for o in keep if o["clutter"])
         alarms = birds + clutter

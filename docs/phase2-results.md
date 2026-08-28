@@ -492,15 +492,192 @@ zoom-lens + thermal fused, real footage held near 90%, and specifically fix
 above. Campaign is **in progress**; this section will be finalized when it
 concludes. Live status, full reasoning, and the exact next steps are kept in
 ["THE CAMPAIGN" section of handoff.md](handoff.md) rather than duplicated
-here — that file is the one a fresh session reads first. Headline so far:
+here — that file is the one a fresh session reads first.
 
-- Fused long-range (30-250 m) coverage: **96.8%**, target already met.
-- Fused terrain+birds and canopy coverage: ~88%, close to target; false-alarm
-  rate on those two is now the binding constraint, not missed detections.
-- SAHI (2x tiled inference) measured as a real, corrected win on canopy
-  (0.458 → 0.750 recall) — not yet wired into the fused pipeline.
-- A hard-negative-mining retrain attempt traded recall for lower FP rather
-  than improving both — appearance-only retraining looks ceilinged here,
-  same pattern as the original bird-flip problem. The credible next fix is
-  track-level static-object suppression (the foliage/building false alarms
-  don't move; a real target does), not further retraining.
+## Correction: every fused coverage number before this was inflated
+
+**Read this before comparing against any earlier fused figure in this file or
+in handoff.md.** `camera/fuse_eval.py` counted drone coverage per
+TRACK-FRAME, not per frame: when two tracks sat on the same drone in one
+frame — routine once IR and motion candidates join the same target — that one
+covered frame was counted twice, against a denominator of frames. Fixed
+2026-08-28; coverage is now `len({frames with a surviving track on the
+drone})`. Alarms stay per track-frame, matching the FP/min convention
+`camera/evaluate.py` already uses.
+
+| Clip (or-fusion, default gates) | As previously recorded | Corrected |
+|---|---|---|
+| Low-flight vs canopy | 79.3% | **68.8%** |
+| Terrain + birds | ~88% | **79.6%** |
+| Long-range sweep (30–250 m) | 96.8% | **88.7%** |
+
+So **no sim scenario currently meets the 90% target** — the long-range case
+that looked met is not. This is the fifth measurement error this project has
+shipped and caught (after a mislabelled dataset, an aliased evaluation, a
+silently-dropped training set, and a stale cached eval file), and it follows
+the same rule: when a result looks surprisingly good, suspect the metric.
+
+## Where fused coverage is actually lost — it is not detection
+
+Stage-by-stage attribution on the drone-visible frames of each clip, RGB
+`full` + IR + motion, default gates:
+
+| Stage | Canopy | Terrain+birds | Long-range sweep |
+|---|---|---|---|
+| RGB stream sees the drone | 0.740 | 0.934 | 0.367 |
+| IR stream sees it | 0.645 | 0.447 | 0.703 |
+| Motion stream sees it | 0.832 | 0.913 | 0.515 |
+| **ANY stream sees it** (detection ceiling) | **0.960** | **0.967** | **0.755** |
+| Confirmed track on it | 0.927 | 0.923 | 0.970 |
+| …survives the travel gate | 0.923 | 0.876 | 0.925 |
+| …survives the **motion classifier** | **0.688** | **0.796** | **0.887** |
+| …survives the class-vote gate | 0.415 | 0.792 | 0.887 |
+
+Two things fall out of this table:
+
+1. **Detection is not the bottleneck.** Some sensor sees the canopy drone in
+   96% of frames and the tracker holds it in 93%. On the sweep the tracker
+   even exceeds the per-frame detection ceiling (0.970 vs 0.755) by coasting
+   through frames no stream sees — which is the tracker doing its job.
+2. **The motion classifier is the single largest loss**: −23.5 points on
+   canopy, −8 on terrain+birds. It is a logistic regression trained on
+   clear-sky RGB-only tracks (`camera/classify.py`), but at inference it
+   judges fused tracks over terrain, which are fragmented by occlusion and
+   fed by three channels with different sampling. That is a train/serve
+   mismatch, and it — not the detector — is what stands between this system
+   and 90%.
+
+## SAHI as a fusion stream: wired, measured, not the win expected
+
+`camera/fuse_eval.py --rgb-mode full|sahi|both`; `both` is the deduplicated
+union of the two passes. Standalone, tiled inference doubles canopy recall
+(0.458 → 0.750). Inside the fused pipeline that gain largely **does not
+survive**, because the motion channel already sees the canopy drone in 83% of
+frames — SAHI's extra RGB detections are mostly redundant with recall fusion
+had already recovered, while the extra clutter is new.
+
+| Clip | `full` | `sahi` | `both` |
+|---|---|---|---|
+| Canopy, or-fusion coverage | 68.8% @ 765 alarms/min | 57.7% @ 612 | 80.5% @ 868 |
+| Canopy, vote-gated | 41.5% @ 114 | 55.0% @ 118 | 59.3% @ 257 |
+| Terrain+birds, vote-gated | 79.2% @ 112 | 71.2% @ 111 | 83.9% @ 148 |
+| Sweep, or-fusion | 88.7% @ 12.3 | 89.0% @ 1.8 | 92.5% @ 6.6 |
+
+Verdict: keep it, use it selectively. It is a clear win on canopy at a fixed
+alarm rate (41.5% → 55.0% at ~115 alarms/min) and on the sweep, a regression
+on terrain+birds, and it costs 9x the compute (5.6 FPS vs 45 FPS). It is an
+accuracy mode for hard backgrounds, not a default.
+
+## Static-object suppression on real footage: a genuine Pareto win
+
+The 262 FP/min problem. The handoff's proposed fix was the per-TRACK travel
+gate `fuse_eval` already uses. Measured, **that does not work here** — the
+clutter tracks travel FURTHER than the drone (984 px vs 754 px median). Two
+distinct causes, both now fixed:
+
+**The association gate was frame-sized on large boxes.** `CentroidTracker`
+gates on `30 + 4 × box width`, correct for the 2–13 px sim targets it was
+built for and absurd on a 175 px blur blob: a 730 px radius, a third of the
+frame, so unrelated clutter detections chained into one wandering track with
+large apparent travel. Now capped (`max_size_gate_px`, default 250 px). The
+default is a measured no-op for the sim — the widest cached sim detection is
+61 px, and canopy fusion output is byte-identical before and after.
+
+**The evidence lives at the location, not the track.** Of the 218 false
+positives on the real medium sequence, 83% fall in just 22 fixed image spots
+— out-of-focus foreground tree branches and blurred building towers — and the
+drone passes within 60 px of only 2 of them. But the tracker keeps dying and
+respawning on those blobs, so no individual track ever accumulates the "this
+never went anywhere" evidence. `camera/clutter_map.py` accumulates it per
+LOCATION instead, strictly causally (frame *t* decides on frames < *t* only,
+so it would run live and the numbers are not a peek at the future).
+
+A place is muted only when it **keeps firing** (≥ N frames in the window)
+**and never spreads** (those detections span ≤ M px). Both conditions are
+load-bearing: persistence alone mutes the drone. An earlier version drifted
+each anchor toward new observations, so anchors *followed* the moving target
+and suppressed it — recall collapsed to 0.46. Regression check 8/8 in
+`tests/test_phase2.py` pins that behaviour.
+
+Real "medium" sequence (`real_rgb_20190925_111757_1_5_masked`), plain RGB,
+conf 0.10, alarming only on frames with an actual detection:
+
+| Configuration | Recall | FP/min |
+|---|---|---|
+| Detector alone (the recorded baseline) | 0.956 | 262 |
+| + tracker | 0.960 | 240 |
+| **+ static-clutter map** | **0.960** | **178** |
+| + track travel gate ≥ 150 px | 0.908 | 107 |
+| + track travel gate ≥ 250 px | 0.892 | 89 |
+
+The third row is the result that matters: a **32% cut in false alarms at no
+recall cost** — a Pareto improvement, unlike the m2 hard-negative retrain,
+which only slid along the same curve. Cost on the other two real sequences is
+small, real, and in the expected direction (they have almost no clutter to
+suppress, so the map can only lose): easy 0.980 → 0.976, hard 0.719 → 0.702,
+both with no FP benefit.
+
+## The motion classifier is anti-correlated on canopy
+
+Following the attribution table, the classifier was retrained on FUSED tracks
+(`scripts/train_motion_classifier.py`) — same pipeline that consumes it, from
+cached detections, no GPU. Training clips `baseline`, `birds_only`,
+`backlit_birds`, `train_terrain_canopy` (seed 6), `train_terrain_mission`
+(seed 5); the terrain matrix and `eval_birds` were held out.
+
+The diagnosis is worse than "the classifier is weak on terrain". Ranking
+drone track-windows against bird track-windows on held-out clips:
+
+| Clip | AUC, installed classifier | AUC, retrained on fused tracks |
+|---|---|---|
+| Low-flight vs canopy | **0.419** | 0.594 |
+| Terrain + birds | 0.585 | 0.775 |
+| `eval_birds` (clear sky) | 0.987 | 0.975 |
+
+**0.419 is below chance.** On canopy the installed classifier is not merely
+uninformative, it is *anti*-correlated: it prefers bird tracks to drone
+tracks. That is why the canopy drone loses 23.5 points there, and it explains
+the whole "canopy is hard" story better than the detector ever did. It was
+trained on clear-sky RGB-only tracks, where it is excellent (0.987) — the
+failure is entirely one of domain.
+
+Retraining fixes the sign but not the strength: 0.594 is still barely better
+than a coin flip. Occluded, fragmented canopy tracks and bird tracks genuinely
+look alike in these six motion features.
+
+**The retrain is a different operating point, not a clean win, so it is NOT
+installed.** It lives at `camera/motion_classifier_v2.json` and is selectable
+with `camera/fuse_eval.py --classifier`:
+
+| Scenario | Installed (v1) | Retrained (v2) |
+|---|---|---|
+| Long-range sweep, and-confirm | 88.5% @ 4.5 alarms/min | **90.25% @ 4.5** |
+| Terrain+birds, vote-gated @0.3 | 79.8% @ 119 | **83.8% @ 138** |
+| Canopy, or-fusion @0.5 | **68.8% @ 765** | 52.8% @ 432 |
+| `eval_birds` clear sky, vote-gated | 86.1% @ **32.8** | 88.9% @ 67.8 |
+
+v2 is what finally takes a sim scenario over 90% (the long-range sweep, at
+4.5 alarms/min), and it is better on terrain+birds — but it doubles the alarm
+rate on the clear-sky case, which is this project's cleanest existing result.
+Installing it is a deployment trade-off for the user to make, not a silent
+default swap.
+
+## The travel gate is already well tuned
+
+Checked because the attribution table showed it costing 4.5 points. Dropping
+`--min-travel` from 8 px to 0 buys almost nothing and costs enormously:
+long-range sweep clutter alarms 98 → 1277 per minute for identical coverage
+(362/400 either way); terrain+birds 504/573 instead of 483/573 for 4x the
+alarms. 4 px and 8 px are indistinguishable. **Leave it at 8.**
+
+## Defocus as a discriminator: measured, clip-dependent, not adopted
+
+Looking at the actual false-positive crops explains them: they are foreground
+foliage a few metres from a long lens, so severely defocused, while any
+airborne target is at infinity focus. A scale-free sharpness statistic
+(mean |Laplacian| ÷ local contrast) separates them well on the medium
+sequence — at a 0.06 threshold it keeps 91.7% of true detections and only
+38.5% of false ones. But on the hard sequence the cue **inverts** (false
+positives are sharper than the drone, medians 0.132 vs 0.094), so a fixed
+global threshold is not safe. Recorded as a real but per-sequence-calibrated
+signal, deliberately not deployed.
