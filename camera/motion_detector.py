@@ -47,21 +47,48 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None):
         dets = []
         if len(window) >= BG_WINDOW // 2 + 1:
             bg = np.median(np.stack(window), axis=0)
-            mask = np.abs(grey - bg) > thresh
-            for blob in _blobs(mask):
-                if not (MIN_AREA <= len(blob) <= MAX_AREA):
-                    continue
-                arr = np.array(blob)
-                cy, cx = arr[:, 0].mean(), arr[:, 1].mean()
-                h = np.ptp(arr[:, 0]) + 1
-                w = np.ptp(arr[:, 1]) + 1
-                strength = float(np.abs(grey - bg)[arr[:, 0], arr[:, 1]].max())
-                dets.append({
-                    "xyxy": [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2],
-                    "conf": round(min(1.0, strength / 80.0), 4),
-                    "cls": "mover",
-                    "area_px": len(blob),
-                })
+            diff = np.abs(grey - bg)
+            mask = diff > thresh
+            # cv2 connected components when available: the pure-python
+            # flood fill is fine on 720p sim frames and takes tens of
+            # minutes per 1080p real clip. Identical semantics.
+            try:
+                import cv2
+                n, lab, stats, cent = cv2.connectedComponentsWithStats(
+                    mask.astype(np.uint8), connectivity=8)
+                for i in range(1, n):
+                    area = int(stats[i, cv2.CC_STAT_AREA])
+                    if not (MIN_AREA <= area <= MAX_AREA):
+                        continue
+                    x = int(stats[i, cv2.CC_STAT_LEFT])
+                    y = int(stats[i, cv2.CC_STAT_TOP])
+                    w = int(stats[i, cv2.CC_STAT_WIDTH])
+                    h = int(stats[i, cv2.CC_STAT_HEIGHT])
+                    cx, cy = float(cent[i][0]), float(cent[i][1])
+                    strength = float(diff[y:y + h, x:x + w].max())
+                    dets.append({
+                        "xyxy": [cx - w / 2, cy - h / 2,
+                                 cx + w / 2, cy + h / 2],
+                        "conf": round(min(1.0, strength / 80.0), 4),
+                        "cls": "mover",
+                        "area_px": area,
+                    })
+            except ImportError:
+                for blob in _blobs(mask):
+                    if not (MIN_AREA <= len(blob) <= MAX_AREA):
+                        continue
+                    arr = np.array(blob)
+                    cy, cx = arr[:, 0].mean(), arr[:, 1].mean()
+                    h = np.ptp(arr[:, 0]) + 1
+                    w = np.ptp(arr[:, 1]) + 1
+                    strength = float(diff[arr[:, 0], arr[:, 1]].max())
+                    dets.append({
+                        "xyxy": [cx - w / 2, cy - h / 2,
+                                 cx + w / 2, cy + h / 2],
+                        "conf": round(min(1.0, strength / 80.0), 4),
+                        "cls": "mover",
+                        "area_px": len(blob),
+                    })
         window.append(grey)
         yield dets
 
