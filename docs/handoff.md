@@ -69,6 +69,52 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
+## STATE OF PLAY — read this first (2026-08-28, end of evening session)
+
+Everything below elaborates. If you read only one section, read this one.
+
+**The single most important thing to do next:** retrain the v3 classifier on
+the clean, complete training set (`baseline`, `birds_only`,
+`train_terrain_canopy`, `train_terrain_mission`, `train_zoom_a`,
+`train_zoom_b` — **not** `backlit_birds`), then re-run the fused matrix. The
+zoom clips' cached detections were generated at the very end of the session;
+if `data/clips/train_zoom_b/detections_motion.jsonl` is missing, regenerate it
+with `camera/motion_detector.py run --clip data/clips/train_zoom_b` (~7 min).
+
+**What is installed and live right now:** the m1-epoch-24 detector
+(`camera/weights/drone_bird_v1.pt`, md5 prefix `e794dc0a2855`) and the **v1**
+motion classifier (`camera/motion_classifier.json`). The user decided to leave
+the newer classifiers uninstalled. `motion_classifier_v2.json` (fused data,
+old features), `motion_classifier_v3.json` (new features, split includes the
+`backlit_birds` mistake) and `motion_classifier_v3clean.json` (clean split, no
+zoom clips) are all committed and selectable via `fuse_eval --classifier`.
+
+**Best measured numbers, corrected metric, as of this handoff:**
+
+| Scenario | Coverage | Alarms/min | Config |
+|---|---|---|---|
+| Real footage — easy | 0.976–1.000 | 0 | `track_eval` |
+| Real footage — medium (the 262 FP/min case) | **0.960** | **178** | `track_eval` + clutter map |
+| Real footage — medium, alarm-first | 0.908 | 107 | + travel gate 150 px |
+| Real footage — hard | 0.702–0.736 | 16–22 | |
+| Sim: long-range sweep | 88.7% | 12.3 | v1, or-fusion |
+| Sim: terrain + birds | **84.5%** | **75** | **v3**, rgb-only, thr 0.3 |
+| Sim: low-flight vs canopy | 68.8% | 765 (v1) / **187 (v3)** | or-fusion |
+
+**No sim scenario meets the 90% target yet.** The nearest miss is the
+long-range sweep. Canopy is the hard one.
+
+**The three things this session established that change how to attack it:**
+
+1. **Detection is not the bottleneck.** Some sensor sees the canopy drone in
+   96% of frames and the tracker holds 93%. Stop retraining the detector.
+2. **The live motion classifier is anti-correlated on canopy** (AUC 0.419,
+   below chance) because its features invert between domains. The v3 feature
+   set fixes this (0.925) and is the main asset produced this session.
+3. **Every fused number recorded before this session was inflated** by a
+   per-track-frame counting bug, now fixed. Do not compare against old
+   figures.
+
 ## Where the project stands
 
 - **Phase 1 (simulator)**: done.
