@@ -69,6 +69,47 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
+## m3 "bird-namer" detector retrain — IN FLIGHT (2026-08-28, late night)
+
+**Motivation, measured:** the canopy balanced config's remaining alarms are
+blocked from bird-mute by NAMING, not by the trust gate — 37/min of bird
+alarms have median bird_vote 0.04 (the same birds systematically called
+'drone'), only 1/min is blocked by the med_w<8 gate. Naming rates on eval
+clips: canopy full-frame 93.2% of bird-hitting detections say 'bird', but
+the **SAHI pass says only 79.5%** (it infers 320 px slices at 2x and the
+model never trained on upscaled imagery); sky birds are worst at 17.5% but
+sky is not the campaign gap. Bonus: bird-mute mutes anything the detector
+CALLS bird, so clutter naming helps too.
+
+**Design:** m3 = continued fine-tune FROM the deployed m1 weights on
+`data/finetune/dataset_mixed_v3.yaml` = the entire m1 four-domain mix
+(8668 tiles, unchanged — forgetting guard) + 1322 native tiles from
+`train_ir_canopy` (new terrain, new birds) + 2133 **SAHI-scale tiles**
+(`--tile 320 --upscale 2`, from train_terrain_canopy/mission +
+train_ir_canopy). `train_ir_sweep` is deliberately absent from the new
+tiles: it is the checkpoint-SELECTION clip (training-pool, never eval).
+
+**Run state:** `runs/experiments/m3_birdnamer/`, 20 epochs, per-epoch
+checkpoints (`save_period=1`), batch 8 / workers 0 / lr0 5e-4, CPU affinity
+2 cores + BelowNormal (the user is gaming on this box — keep it that way
+until they say otherwise). ~2.5 h wall. Log: `runs/m3_birdnamer.log`.
+
+**When it finishes (the plan, so any agent can execute it):**
+1. Pick a checkpoint: score epochs {4,8,12,16,20} on `train_ir_sweep`
+   (drone recall + bird naming, both classes matter) with a guard check on
+   one `realtrain_*` clip (real-domain recall must not sag). Use
+   `scripts/sweep_checkpoints.py` conventions — centre-distance, never mAP.
+2. Tagged inference on eval clips (`--tag m3` — NEVER untagged, the
+   overwrite landmine): terrain_ir_canopy full+sahi, terrain_ir_birds full,
+   terrain_ir_sweep full, eval_birds full.
+3. Add `--rgb-tag` to fuse_eval (reads `detections_full_<tag>.jsonl` /
+   `detections_sahi_<tag>.jsonl`) and re-run the canopy frontier configs
+   with v6. Naming-rate table before/after.
+4. Class votes feed the v6 classifier's `drone_evidence`/`bird_evidence` —
+   if m3 shifts vote distributions much, retrain the classifier (v7) on m3
+   detections over the training clips, then re-run the matrix.
+5. Deploy decision stays with the user (m1 is still installed).
+
 ## AFTER v6 — where the campaign stands (2026-08-28, night; CURRENT)
 
 **This is the current state. Read this and the CODEX VERDICT below it; the
