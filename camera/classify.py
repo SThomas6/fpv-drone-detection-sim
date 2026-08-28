@@ -216,9 +216,44 @@ def features_v3_from_history(history) -> np.ndarray | None:
     ], dtype=float)
 
 
+# ---------------------------------------------------------------- feature set v4
+#
+# v3 with ONE change: the class-vote evidence features count only detections
+# whose width is >= 8 px. Below that the detector's class votes are the
+# measured flip band (the bird-mute policy already refuses to trust them, and
+# the same rule zeroes v3's shape features). v3 ignored this for the vote
+# features, and it costs exactly where targets are small: the sky drone at
+# 40-78 m is 7-16 px, so roughly half its votes fall in the untrustworthy
+# band - under the m3 detector those contaminate bird_evidence on the DRONE'S
+# own track and the classifier rejects it (sky attribution: tracker holds
+# 97.2%, classifier passes 70.6%). Denominator stays ALL samples, so an
+# aux-only or all-tiny track contributes 0 to both, pushing neither way.
+# Measured immediately: the SYMMETRIC gate (zero both evidences below 8 px)
+# makes sky WORSE (drone kept 0.773 -> 0.571) - the sky drone's votes are
+# 3:1 CORRECT even at 7 px, so zeroing them removes its own defence. The
+# asymmetry below mirrors the bird-mute policy exactly: a small target's
+# 'bird' vote is the measured flip mode and is distrusted; its 'drone' vote
+# stays evidence at any size (false drone votes on birds are rare under m3:
+# 4.8% on sky).
+FEATURE_NAMES_V4 = list(FEATURE_NAMES_V3)
+
+
+def features_v4_from_history(history) -> np.ndarray | None:
+    feats = features_v3_from_history(history)
+    if feats is None:
+        return None
+    n = len(history)
+    trusted_bird = sum(1 for h in history
+                       if len(h) > 5 and h[5] == "bird" and h[3] >= 8.0)
+    feats = feats.copy()
+    feats[1] = trusted_bird / n
+    return feats
+
+
 FEATURE_SETS = {
     "v1": (FEATURE_NAMES, features_from_history),
     "v3": (FEATURE_NAMES_V3, features_v3_from_history),
+    "v4": (FEATURE_NAMES_V4, features_v4_from_history),
 }
 
 

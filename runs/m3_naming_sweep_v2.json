@@ -1,0 +1,470 @@
+[
+  {
+    "run": "baseline",
+    "ckpt": "camera\\weights\\drone_bird_v1.pt",
+    "full": {
+      "recall": 0.31666666666666665,
+      "drone_named": 0.9945652173913043,
+      "bird_named": 0.9111630625365283,
+      "n_drone_dets": 184,
+      "n_bird_dets": 1711
+    },
+    "sahi": {
+      "recall": 0.49666666666666665,
+      "drone_named": 0.9965156794425087,
+      "bird_named": 0.8724137931034482,
+      "n_drone_dets": 287,
+      "n_bird_dets": 2320
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9655172413793104,
+      "drone_named": 0.9824561403508771,
+      "bird_named": null,
+      "n_drone_dets": 171,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9951028403525954,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1021
+    }
+  },
+  {
+    "run": "m3_birdnamer",
+    "ckpt": "runs\\experiments\\m3_birdnamer\\weights\\epoch0.pt",
+    "full": {
+      "recall": 0.345,
+      "drone_named": 1.0,
+      "bird_named": 0.7790940766550523,
+      "n_drone_dets": 201,
+      "n_bird_dets": 1435
+    },
+    "sahi": {
+      "recall": 0.43,
+      "drone_named": 0.996,
+      "bird_named": 0.718200620475698,
+      "n_drone_dets": 250,
+      "n_bird_dets": 1934
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9827586206896551,
+      "drone_named": 0.8771929824561403,
+      "bird_named": null,
+      "n_drone_dets": 171,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9762949956101844,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1139
+    }
+  },
+  {
+    "run": "m3_birdnamer",
+    "ckpt": "runs\\experiments\\m3_birdnamer\\weights\\epoch2.pt",
+    "full": {
+      "recall": 0.325,
+      "drone_named": 1.0,
+      "bird_named": 0.7215859030837004,
+      "n_drone_dets": 189,
+      "n_bird_dets": 1135
+    },
+    "sahi": {
+      "recall": 0.42833333333333334,
+      "drone_named": 0.9880478087649402,
+      "bird_named": 0.797947055645597,
+      "n_drone_dets": 251,
+      "n_bird_dets": 1851
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9540229885057471,
+      "drone_named": 0.8855421686746988,
+      "bird_named": null,
+      "n_drone_dets": 166,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9821260583254939,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1063
+    }
+  },
+  {
+    "run": "m3_birdnamer",
+    "ckpt": "runs\\experiments\\m3_birdnamer\\weights\\epoch4.pt",
+    "full": {
+      "recall": 0.35,
+      "drone_named": 0.9901960784313726,
+      "bird_named": 0.8303735456215554,
+      "n_drone_dets": 204,
+      "n_bird_dets": 1633
+    },
+    "sahi": {
+      "recall": 0.4683333333333333,
+      "drone_named": 0.9926470588235294,
+      "bird_named": 0.8237179487179487,
+      "n_drone_dets": 272,
+      "n_bird_dets": 2184
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9827586206896551,
+      "drone_named": 0.861271676300578,
+      "bird_named": null,
+      "n_drone_dets": 173,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9846022241231822,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1169
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch0.pt",
+    "full": {
+      "recall": 0.33666666666666667,
+      "drone_named": 0.9949494949494949,
+      "bird_named": 0.8548185231539425,
+      "n_drone_dets": 198,
+      "n_bird_dets": 1598
+    },
+    "sahi": {
+      "recall": 0.4166666666666667,
+      "drone_named": 0.9917355371900827,
+      "bird_named": 0.8563941299790356,
+      "n_drone_dets": 242,
+      "n_bird_dets": 1908
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9942528735632183,
+      "drone_named": 0.8342541436464088,
+      "bird_named": null,
+      "n_drone_dets": 181,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9824868651488616,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1142
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch2.pt",
+    "full": {
+      "recall": 0.355,
+      "drone_named": 1.0,
+      "bird_named": 0.6433394720687539,
+      "n_drone_dets": 206,
+      "n_bird_dets": 1629
+    },
+    "sahi": {
+      "recall": 0.4216666666666667,
+      "drone_named": 1.0,
+      "bird_named": 0.5602094240837696,
+      "n_drone_dets": 246,
+      "n_bird_dets": 2101
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9942528735632183,
+      "drone_named": 0.9657142857142857,
+      "bird_named": null,
+      "n_drone_dets": 175,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9334698055271239,
+      "n_drone_dets": 0,
+      "n_bird_dets": 977
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch4.pt",
+    "full": {
+      "recall": 0.315,
+      "drone_named": 0.9894736842105263,
+      "bird_named": 0.8793407886992348,
+      "n_drone_dets": 190,
+      "n_bird_dets": 1699
+    },
+    "sahi": {
+      "recall": 0.48,
+      "drone_named": 0.9893617021276596,
+      "bird_named": 0.8089887640449438,
+      "n_drone_dets": 282,
+      "n_bird_dets": 2225
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9770114942528736,
+      "drone_named": 0.8248587570621468,
+      "bird_named": null,
+      "n_drone_dets": 177,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9870242214532872,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1156
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch6.pt",
+    "full": {
+      "recall": 0.33,
+      "drone_named": 1.0,
+      "bird_named": 0.783974862529458,
+      "n_drone_dets": 192,
+      "n_bird_dets": 1273
+    },
+    "sahi": {
+      "recall": 0.49166666666666664,
+      "drone_named": 0.9930795847750865,
+      "bird_named": 0.7945482079757699,
+      "n_drone_dets": 289,
+      "n_bird_dets": 1981
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9655172413793104,
+      "drone_named": 0.9585798816568047,
+      "bird_named": null,
+      "n_drone_dets": 169,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9814814814814815,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1134
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch8.pt",
+    "full": {
+      "recall": 0.335,
+      "drone_named": 1.0,
+      "bird_named": 0.8635809987819733,
+      "n_drone_dets": 194,
+      "n_bird_dets": 1642
+    },
+    "sahi": {
+      "recall": 0.475,
+      "drone_named": 0.985663082437276,
+      "bird_named": 0.8726608854404382,
+      "n_drone_dets": 279,
+      "n_bird_dets": 2191
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9712643678160919,
+      "drone_named": 0.8628571428571429,
+      "bird_named": null,
+      "n_drone_dets": 175,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9853211009174312,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1090
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch10.pt",
+    "full": {
+      "recall": 0.30833333333333335,
+      "drone_named": 1.0,
+      "bird_named": 0.9072501632919661,
+      "n_drone_dets": 178,
+      "n_bird_dets": 1531
+    },
+    "sahi": {
+      "recall": 0.43166666666666664,
+      "drone_named": 0.9839357429718876,
+      "bird_named": 0.897876643073812,
+      "n_drone_dets": 249,
+      "n_bird_dets": 1978
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9597701149425287,
+      "drone_named": 0.9642857142857143,
+      "bird_named": null,
+      "n_drone_dets": 168,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9905660377358491,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1060
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch12.pt",
+    "full": {
+      "recall": 0.31666666666666665,
+      "drone_named": 0.9945652173913043,
+      "bird_named": 0.9111630625365283,
+      "n_drone_dets": 184,
+      "n_bird_dets": 1711
+    },
+    "sahi": {
+      "recall": 0.49666666666666665,
+      "drone_named": 0.9965156794425087,
+      "bird_named": 0.8724137931034482,
+      "n_drone_dets": 287,
+      "n_bird_dets": 2320
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9655172413793104,
+      "drone_named": 0.9824561403508771,
+      "bird_named": null,
+      "n_drone_dets": 171,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9951028403525954,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1021
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch14.pt",
+    "full": {
+      "recall": 0.325,
+      "drone_named": 1.0,
+      "bird_named": 0.8800695249130939,
+      "n_drone_dets": 189,
+      "n_bird_dets": 1726
+    },
+    "sahi": {
+      "recall": 0.485,
+      "drone_named": 0.9964539007092199,
+      "bird_named": 0.8432432432432433,
+      "n_drone_dets": 282,
+      "n_bird_dets": 2220
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    },
+    "sky_drone": {
+      "recall": 0.9827586206896551,
+      "drone_named": 0.9883720930232558,
+      "bird_named": null,
+      "n_drone_dets": 172,
+      "n_bird_dets": 0
+    },
+    "sky_bird": {
+      "recall": null,
+      "drone_named": null,
+      "bird_named": 0.9859022556390977,
+      "n_drone_dets": 0,
+      "n_bird_dets": 1064
+    }
+  }
+]
