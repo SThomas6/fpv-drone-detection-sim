@@ -31,6 +31,8 @@ import sys
 from collections import defaultdict, deque
 from pathlib import Path
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from camera.classify import (MotionClassifier, drone_vote_fraction,  # noqa: E402
@@ -47,32 +49,43 @@ def _centre_dist(a: Detection, b: Detection) -> float:
     return math.hypot(ax - bx, ay - by)
 
 
-def fuse_measurements(rgb, ir):
-    """Merge co-located RGB+IR detections into single measurements.
+def fuse_measurements(rgb, aux):
+    """Merge co-located detections from RGB and auxiliary channels (IR hot
+    spots, motion candidates) into single measurements.
 
-    Returns (detections, sources) where sources[i] is {'rgb'}, {'ir'} or both.
-    The RGB box/class wins when both sensors see the target (finer pixel
-    scale); the IR sensor's narrower FOV means 'no IR' outside its cone is
-    expected, not evidence of absence.
+    Returns (detections, sources); sources[i] ⊆ {'rgb', 'ir', 'mv'}. The RGB
+    box/class wins when several channels see the target (finest pixel scale);
+    a narrow-FOV channel's silence outside its cone is expected, not evidence
+    of absence.
     """
+    def tag(d):
+        return "ir" if d.cls_name == "hotspot" else "mv"
     dets, sources = [], []
-    used_ir = set()
+    used = set()
     for d in rgb:
         src = {"rgb"}
-        for j, h in enumerate(ir):
-            if j in used_ir:
+        for j, h in enumerate(aux):
+            if j in used:
                 continue
             tol = max(MERGE_TOL_PX, 2.0 * max(d.width, h.width))
             if _centre_dist(d, h) <= tol:
-                used_ir.add(j)
-                src.add("ir")
-                break
+                used.add(j)
+                src.add(tag(h))
         dets.append(d)
         sources.append(src)
-    for j, h in enumerate(ir):
-        if j not in used_ir:
-            dets.append(h)
-            sources.append({"ir"})
+    for j, h in enumerate(aux):
+        if j not in used:
+            # a motion candidate co-located with an unused IR hotspot merges too
+            merged = False
+            for k, (d0, s0) in enumerate(zip(dets, sources)):
+                if "rgb" not in s0 and _centre_dist(d0, h) <= max(
+                        MERGE_TOL_PX, 2.0 * max(d0.width, h.width)):
+                    s0.add(tag(h))
+                    merged = True
+                    break
+            if not merged:
+                dets.append(h)
+                sources.append({tag(h)})
     return dets, sources
 
 
@@ -86,15 +99,23 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float):
     if ir_path.exists():
         ir = {r["frame"]: r["detections"] for r in
               (json.loads(l) for l in open(ir_path))}
+    mv_path = clip / "detections_motion.jsonl"
+    mv = {}
+    if mv_path.exists():
+        mv = {r["frame"]: r["detections"] for r in
+              (json.loads(l) for l in open(mv_path))}
+    print(f"streams: rgb{' + ir' if ir else ''}{' + motion' if mv else ''}")
     frames = sorted(rgb.keys())
     out = []
     for f in frames:
         r_dets = [Detection(*d["xyxy"], confidence=d["conf"],
                             cls_name=d.get("cls", "drone"))
                   for d in rgb[f] if d["conf"] >= rgb_conf]
-        i_dets = [Detection(*d["xyxy"], confidence=d["conf"], cls_name="hotspot")
-                  for d in ir.get(f, []) if d["conf"] >= ir_conf]
-        out.append((f, labels[f], merge_close(r_dets), i_dets))
+        aux = [Detection(*d["xyxy"], confidence=d["conf"], cls_name="hotspot")
+               for d in ir.get(f, []) if d["conf"] >= ir_conf]
+        aux += [Detection(*d["xyxy"], confidence=d["conf"], cls_name="mover")
+                for d in mv.get(f, []) if d["conf"] >= 0.10]
+        out.append((f, labels[f], merge_close(r_dets), aux))
     return out
 
 
@@ -122,7 +143,8 @@ def main():
     }
     results = {}
     for mode, select in modes.items():
-        tracker = CentroidTracker()
+        tracker = CentroidTracker(class_consistent=True,
+                                  suppress_spawn_near_coasting=True)
         ir_seen = defaultdict(lambda: deque(maxlen=90))
         obs = []
         rows = load_clip(clip, args.rgb_conf, args.ir_conf)
@@ -153,7 +175,21 @@ def main():
                     "clutter": not is_drone and not on_bird,
                     "p": clf.probability(feats) if feats is not None else None,
                     "vote": drone_vote_fraction(
-                        [h for h in tr.history if len(h) < 6 or h[5] != "hotspot"]),
+                        [h for h in tr.history
+                         if len(h) < 6 or h[5] not in ("hotspot", "mover")]),
+                    # bird-mute evidence: share of RGB entries the detector
+                    # called bird; aux-only tracks have no opinion (None).
+                    # med_w gates trust: below ~8 px the class votes are known
+                    # to flip on real drones (the measured bird-flip band), so
+                    # appearance opinions only count on big-enough targets.
+                    "bird_vote": (lambda rgbh: (sum(1 for h in rgbh
+                                                    if len(h) > 5 and h[5] == "bird")
+                                                / len(rgbh)) if rgbh else None)(
+                        [h for h in tr.history
+                         if len(h) < 6 or h[5] not in ("hotspot", "mover")]),
+                    "med_w": (lambda ws: float(np.median(ws)) if ws else 0.0)(
+                        [h[3] for h in tr.history
+                         if len(h) < 6 or h[5] not in ("hotspot", "mover")]),
                     "ir_frac": (sum(seen) / len(seen)) if seen else 0.0,
                     "travel_px": travel,
                 })
@@ -170,11 +206,14 @@ def main():
     print(f"{'policy':>12} {'drone cover':>12} {'alarms/min':>11} "
           f"{'on birds':>9} {'clutter':>8}")
 
-    def report(name, obs, need_ir=False):
+    def report(name, obs, need_ir=False, need_vote=False, bird_mute=False):
         keep = [o for o in obs
                 if o["p"] is not None and o["p"] >= args.motion_thr
                 and o["travel_px"] >= args.min_travel
-                and (not need_ir or o["ir_frac"] >= args.ir_persist)]
+                and (not need_ir or o["ir_frac"] >= args.ir_persist)
+                and (not need_vote or o["vote"] >= 0.5)
+                and (not bird_mute or o["bird_vote"] is None
+                     or o["bird_vote"] < 0.5 or o["med_w"] < 8.0)]
         cover = sum(1 for o in keep if o["is_drone"])
         birds = sum(1 for o in keep if o["on_bird"])
         clutter = sum(1 for o in keep if o["clutter"])
@@ -185,6 +224,12 @@ def main():
     report("rgb-only", results["rgb-only"])
     report("or-fusion", results["fused"])
     report("and-confirm", results["fused"], need_ir=True)
+    # full gate: motion + travel + RGB class votes agree it is a drone —
+    # the vote gate is what collapsed sky-bird alarms to 0.2/min
+    report("vote-gated", results["fused"], need_vote=True)
+    # bird-mute: suppress only tracks the detector actively calls bird —
+    # aux-held tracks (no RGB opinion) stay alive; the asymmetric gate
+    report("bird-mute", results["fused"], bird_mute=True)
 
 
 if __name__ == "__main__":

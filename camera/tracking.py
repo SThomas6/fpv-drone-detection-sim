@@ -73,14 +73,39 @@ class CentroidTracker:
     """
 
     def __init__(self, max_age: int = 15, min_hits: int = 2,
-                 base_gate_px: float = 30.0, accel_sigma: float = 250.0):
+                 base_gate_px: float = 30.0, accel_sigma: float = 250.0,
+                 class_consistent: bool = False,
+                 suppress_spawn_near_coasting: bool = False):
         self.max_age = max_age
         self.min_hits = min_hits
         self.base_gate_px = base_gate_px
         self.accel_sigma = accel_sigma
+        # Multi-stream fusion discipline (off by default — single-detector
+        # behaviour is unchanged):
+        # class_consistent: a large (>=8 px) detection whose class contradicts
+        #   the track's established majority class may not join that track —
+        #   this is what stops a nearby bird's boxes from poisoning the drone
+        #   track's vote history. Below 8 px classes flip on real drones
+        #   (measured), so small detections are exempt.
+        # suppress_spawn_near_coasting: an unmatched detection inside a
+        #   coasting track's gate does not spawn a duplicate track; the
+        #   coasting track will re-acquire it instead.
+        self.class_consistent = class_consistent
+        self.suppress_spawn_near_coasting = suppress_spawn_near_coasting
         self._tracks: list[TrackState] = []
         self._next_id = 1
         self._last_t: Optional[float] = None
+
+    @staticmethod
+    def _majority_rgb_class(tr: "TrackState"):
+        counts: dict[str, int] = {}
+        for h in tr.history:
+            if len(h) > 5 and h[5] not in ("hotspot", "mover"):
+                counts[h[5]] = counts.get(h[5], 0) + 1
+        if not counts or sum(counts.values()) < 4:
+            return None
+        top = max(counts, key=counts.get)
+        return top if counts[top] > sum(counts.values()) / 2 else None
 
     # ---------------- Kalman internals ----------------
 
@@ -124,8 +149,14 @@ class CentroidTracker:
         for tr in sorted(self._tracks, key=lambda t: (-t.hits, t.misses)):
             best, best_d = None, None
             px, py = tr.mean[0], tr.mean[1]
+            tr_cls = (self._majority_rgb_class(tr)
+                      if self.class_consistent else None)
             for i in unmatched:
                 d = detections[i]
+                if (tr_cls is not None and d.width >= 8.0
+                        and getattr(d, "cls_name", "drone")
+                        not in (tr_cls, "hotspot", "mover")):
+                    continue
                 cx, cy = d.centre
                 dist = float(np.hypot(cx - px, cy - py))
                 gate = self._gate_for(tr, d, dt)
@@ -165,6 +196,16 @@ class CentroidTracker:
                 tr.coasting = True
 
         for i in unmatched:
+            if self.suppress_spawn_near_coasting:
+                d = detections[i]
+                cx, cy = d.centre
+                near_coasting = any(
+                    tr.misses > 0 and float(np.hypot(
+                        cx - tr.mean[0], cy - tr.mean[1]))
+                    <= self._gate_for(tr, d, dt)
+                    for tr in self._tracks if id(tr) not in matched_tracks)
+                if near_coasting:
+                    continue
             self._spawn(detections[i], timestamp)
 
         self._tracks = [t for t in self._tracks if t.misses <= self.max_age]

@@ -99,11 +99,13 @@ def main():
                     help="directory containing Anti-UAV sequence folders")
     ap.add_argument("--modality", default="RGB", choices=["RGB", "IR"])
     ap.add_argument("--limit", type=int, default=12)
+    ap.add_argument("--skip", type=int, default=0,
+                    help="skip the first N sequences (already imported)")
     ap.add_argument("--fps", type=float, default=5.0)
     ap.add_argument("--out-prefix", default="data/clips/real_rgb_")
     args = ap.parse_args()
 
-    seqs = sorted(p for p in Path(args.root).iterdir() if p.is_dir())
+    seqs = sorted(p for p in Path(args.root).iterdir() if p.is_dir())[args.skip:]
     done = 0
     for seq in seqs:
         if done >= args.limit:
