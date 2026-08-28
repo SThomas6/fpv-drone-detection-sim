@@ -805,6 +805,53 @@ next mechanism, not more classifier training.
 The full per-scenario table and threshold-calibration caveat live in
 handoff.md ("AFTER v6").
 
+### Canopy alarms: the coasting-declaration policy (added later the same night)
+
+With v6 in place the canopy question became "who are the 237 alarms/min at
+the 84% operating point?" Attributing every surviving alarm track-frame
+answered it:
+
+- **57% came from tracks NOT detected on that frame** — coasting bird and
+  clutter tracks kept declaring for up to 15 frames (7.5 s) after their last
+  detection.
+- The drone's own coverage almost never used those mechanisms: of 504 covered
+  frames, only **7** were held solely by young (unjudged) tracks and **20**
+  solely by coasting track-frames.
+- The alarm split was 89 bird + 146 clutter per minute; bird alarms were 94%
+  RGB-fed (real birds), clutter alarms were RGB terrain false-positives with
+  incidental thermal co-location.
+
+Coverage and alarms were living on *different mechanisms*, so policy can
+separate them — no retraining involved. `fuse_eval.py --coast-alarms`:
+
+- `judged`: a track the classifier has passed may declare while coasting; an
+  unjudged (young) track must be currently detected. **Free on canopy:**
+  identical 84.0% coverage, 235 → 170 alarms/min.
+- `none`: every declaration needs a detection this frame. Costs the 20
+  coasting-held drone frames (−3.3 pts) and halves alarms again.
+
+Stacked with the new `and+mute` policy row (thermal confirmation AND
+appearance bird-mute — they cut *different* alarm populations, so they stack
+almost losslessly) and the static clutter map, the canopy frontier becomes,
+all from ONE config (v6, SAHI union, young-tracks pass, coast=none, clutter
+map; policy row varies):
+
+| Policy row | Coverage | Alarms/min |
+|---|---|---|
+| or-fusion | **86.5%** | 177 |
+| vote-gated | 85.2% | 142 |
+| and-confirm | 80.3% | 86 |
+| and+mute | **80.2%** | **74.6** |
+
+For scale: v1's canopy was 68.8% @ 765/min, and the old "alarm-first" config
+bought 71/min only by dropping to 49.8% coverage. The same alarm budget now
+carries **+30 points of coverage**. Two footnotes, both measured: full-frame
+RGB collapses to 44–49% under this config (the SAHI union feeds the young
+fragments that thermal confirmation converts into coverage — canopy is the
+one scenario where SAHI pays for itself), and the "sequence-level track
+re-acquisition" idea from the earlier analysis is deprioritised because the
+young-fragment-coverage hypothesis it rested on measured false.
+
 ## The travel gate is already well tuned
 
 Checked because the attribution table showed it costing 4.5 points. Dropping
