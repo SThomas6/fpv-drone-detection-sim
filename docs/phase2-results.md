@@ -332,3 +332,90 @@ seventh needs `data/clips/no_drone`, which was not migrated to this PC).
 - Everything here is synthetic: simulated birds, clean skies. The mechanism
   (track-level fusion beats per-frame appearance at tiny sizes) is the
   transferable result; the specific numbers are not.
+
+---
+
+# Terrain backgrounds and EO/IR fusion (added 2026-08-28)
+
+The clean-sky caveat above is now measured. A procedural field/forest world
+(`scripts/gen_terrain_world.py`: heightmap meadow, forested hillside, rock
+mountain band; PX4-free scripted capture via `scripts/drive_scene.py`, with
+occlusion-aware labels) plus a station thermal camera produced 4,900 new
+labelled frames across nine clips.
+
+## What terrain does to the RGB system
+
+| Held-out clip | recall @op | FP/min | note |
+|---|---|---|---|
+| terrain_baseline (mission, mixed bg) | 0.923 | 8.8 | modest degradation |
+| terrain_birds (mission + 8 birds) | 0.911 | 197.6 | birds still the FP source |
+| terrain_canopy (low legs, terrain bg) | **0.125** | 319.6 | recall collapse |
+| terrain_sweep (30-250 m vs mountains) | 0.315 | 0.3 | blind past ~60 m |
+| terrain_only (no targets) | — | **0.0** | static terrain never false-fires |
+
+Two mechanisms, both diagnosed: the drone at ≤6 px against textured
+rock/canopy is **contrast-limited** (a human squints at it too — verified on
+zoomed crops), and fragmented bird tracks against terrain get straightened by
+the tracker's coasting, which **breaks the motion filter's bird rejection**
+(bird alarms pass at ~300/min vs ~9/min over sky).
+
+A terrain-positive retrain (2,202 new tiles, drone-tile protection, pinned
+recipe, per-epoch checkpoint sweep on a separate selection clip) was the
+obvious fix and it **failed**: identical recall on every terrain clip, 2-4x
+the false alarms, small regressions on sky clips. The weights were not
+adopted; `drone_bird_v1.pt` is unchanged. Conclusion: canopy/mountain
+blindness is information-limited for this RGB camera, not training-limited.
+
+## The thermal camera, honestly
+
+Gazebo Harmonic's thermal sensor (Boson-class 640x512, 24° HFOV, 16-bit
+Kelvin) with **honest temperatures**: birds are warm (292 K torso — they glow
+in real LWIR too), the drone is mostly ambient airframe with 315 K motor
+bells and a 305 K battery stack, and a quarter of the bushes are sun-warmed
+distractors. A degradation shim (NETD noise + optics blur) runs before any
+detection. The detector is deliberately classical (`camera/ir_detector.py`:
+threshold + connected components + peak-contrast gate) — raw sim thermal is a
+temperature-ID map any learned model would trivially memorise.
+
+Result: on the canopy profile where RGB sees the drone in 12.5% of frames,
+the thermal channel sees it in **100%** — terrain is ambient, motors are not.
+And as predicted by the literature (US Army Research Lab), thermal does NOT
+separate birds from drones; it is a clutter/night/range channel, and the
+motion classifier keeps the bird-discrimination job.
+
+## Track-level EO/IR fusion (`camera/fuse_eval.py`)
+
+One shared tracker consumes both sensors' detections (co-located measurements
+merge; per-track IR persistence recorded); alarms additionally require net
+track travel ≥8 px, which kills stationary warm-clutter tracks outright.
+
+| Held-out clip | policy | drone coverage | alarms/min |
+|---|---|---|---|
+| terrain_ir_sweep (long range) | RGB-only | 88/400 (22%) | 3.9 |
+| | **fused** | **358/400 (89.5%)** | **1.5** |
+| terrain_ir_birds | RGB-only | 492/573 (86%) | 375 |
+| | AND-confirm | 298/573 (52%) | 99 |
+| terrain_ir_canopy | RGB-only | 86/600 (14%) | 584 |
+| | AND-confirm | 153/600 (26%) | 288 |
+
+The long-range result is the headline: fusion quadruples coverage while
+halving alarms. The bird clips remain poor in every policy — cross-modal
+confirmation cuts bird alarms 76%, but the underlying per-frame bird problem
+is unchanged by thermal (by design of the honest benchmark).
+
+## Honest caveats
+
+- **The IR range gain is not yet attributed.** The thermal camera's 24° optics
+  put ~36% more pixels on target than the 60° RGB at any range; a narrow-FOV
+  RGB ablation (queued in TODO) is required before claiming the gain comes
+  from thermal physics rather than lens choice. Real systems resolve the
+  FOV-vs-coverage tension with slew-to-cue, not one wide staring camera.
+- Sim thermal has no emissivity/atmosphere/AGC physics; per-visual uniform
+  temperatures only. It is evidence about geometry, persistence, and fusion
+  logic — never about thermal appearance models.
+- The trees do not sway and the thermal scene is static-warm; the ≥8 px
+  travel gate's clean kill of clutter is an upper bound on real performance.
+- Bird-track fragmentation breaking the motion filter over terrain is now the
+  biggest open problem in the system; track gap-filling and a track-sequence
+  classifier (Drone-vs-Bird literature's winning increments) are the queued
+  levers, followed by real-footage validation on Anti-UAV (paired RGB+IR).

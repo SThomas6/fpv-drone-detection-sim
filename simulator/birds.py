@@ -45,10 +45,22 @@ SPECIES = [
 ]
 
 
-def bird_sdf(name: str, span: float, body: float, grey: float) -> str:
-    """A bird as a body capsule plus two swept wing plates."""
+def bird_sdf(name: str, span: float, body: float, grey: float,
+             thermal_k: float | None = None) -> str:
+    """A bird as a body capsule plus two swept wing plates.
+
+    thermal_k: torso surface temperature for thermal-camera worlds. Birds are
+    warm-blooded and DO glow in real LWIR — but plumage insulates, so the
+    feathered surface sits only a few K above ambient (wings stay ambient).
+    Assigning honest bird heat is what keeps the thermal benchmark from being
+    a self-fulfilling 'only the drone is warm' rig.
+    """
     c = f"{grey} {grey * 0.9} {grey * 0.8} 1"
     half = span / 2.0
+    thermal = ("" if thermal_k is None else f"""
+        <plugin filename="gz-sim-thermal-system" name="gz::sim::systems::Thermal">
+          <temperature>{thermal_k:.1f}</temperature>
+        </plugin>""")
     return f"""<?xml version="1.0" ?>
 <sdf version="1.9">
   <model name="{name}">
@@ -62,7 +74,7 @@ def bird_sdf(name: str, span: float, body: float, grey: float) -> str:
       </inertial>
       <visual name="torso">
         <geometry><box><size>{body} {body * 0.28} {body * 0.28}</size></box></geometry>
-        <material><ambient>{c}</ambient><diffuse>{c}</diffuse></material>
+        <material><ambient>{c}</ambient><diffuse>{c}</diffuse></material>{thermal}
       </visual>
       <visual name="wing_l">
         <pose>{-body * 0.05} {half / 2} 0 0 0 0.25</pose>

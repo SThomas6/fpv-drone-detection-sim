@@ -28,3 +28,6 @@ build/
 
 # macOS
 .DS_Store
+
+# terrain retrain tiles (null-result experiment; rebuild via camera/build_finetune_dataset.py from terrain training clips)
+data/finetune_terrain/

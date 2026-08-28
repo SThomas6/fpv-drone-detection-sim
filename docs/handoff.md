@@ -118,6 +118,20 @@ python tests/test_phase2.py
   this project already shipped one mislabelled dataset and one aliased
   evaluation. Both post-mortems are in detection-notes.md.
 
+## Terrain + EO/IR fusion campaign (added later on 2026-08-28)
+
+Same-day follow-up on user direction: a procedural field/forest world and a
+station thermal camera now exist (`scripts/gen_terrain_world.py`, PX4-free
+capture via `scripts/drive_scene.py` + WSL2 gz-harmonic — see the scripts'
+docstrings for the traps: stats-topic clock, batched set_pose_vector,
+occlusion-aware labels). Measured: RGB collapses against terrain backgrounds
+(contrast-limited — a terrain retrain failed and was not adopted); the
+thermal channel sees the drone 100% of frames there; track-level EO/IR fusion
+(`camera/fuse_eval.py`) quadruples long-range coverage at half the alarms.
+Full numbers and caveats: "Terrain backgrounds and EO/IR fusion" in
+[phase2-results.md](phase2-results.md). Next milestone (user-approved):
+real-footage validation on the Anti-UAV paired RGB+IR dataset (TODO.md).
+
 ## After the fine-tune (updated 2026-08-28)
 
 Done: weights + docs + pipeline changes committed. The user approved moving to

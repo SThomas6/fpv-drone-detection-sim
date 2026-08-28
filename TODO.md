@@ -64,6 +64,24 @@
       Full account: "The two-class fine-tune" in docs/phase2-results.md
 - [ ] Capture ONE fresh never-evaluated clip and quote final numbers on it
       (eval_birds was used for checkpoint/threshold selection = dev set)
+- [x] Terrain backgrounds + EO/IR fusion (2026-08-28, same-day campaign):
+      field/forest world + thermal camera + track-level fusion. Headline:
+      fusion quadruples long-range coverage at half the alarms; RGB canopy
+      blindness is information-limited (retrain failed, weights unchanged).
+      Full account: "Terrain backgrounds and EO/IR fusion" in
+      docs/phase2-results.md
+- [ ] NEXT MILESTONE (user-approved 2026-08-28): real-data validation — download
+      the Anti-UAV dataset (github.com/ZhaoJ9014/Anti-UAV, MIT; 300+ sequences
+      with PAIRED RGB + thermal video) and run the full fused pipeline
+      (detector + tracker + motion filter + EO/IR fusion) against real footage;
+      quantify the sim-to-real gap and mix real frames into training if large.
+      Also consider Anti-UAV410 (thermal, 438K boxes) and the Drone-vs-Bird
+      challenge data (registration needed) for training hardening.
+- [ ] Narrow-FOV RGB ablation (mandatory before attributing the IR range gain
+      to thermal physics rather than the 24° optics)
+- [ ] Track gap-filling interpolation + track-sequence classifier (the
+      Drone-vs-Bird winners' increments) — the lever for the newly-diagnosed
+      bird-track fragmentation problem over terrain
 - [ ] Consider retraining camera/motion_classifier.json with the two-class
       detector + all-class tracking (current weights were fitted on old-model
       tracks; they transfer but were not refitted)

@@ -14,13 +14,52 @@
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
-      <!-- central stack -->
+      <!-- central stack. Thermal: battery/ESC run ~32 C in sustained flight;
+           the airframe itself stays near ambient (carbon, low emissivity).
+           Thermal plugins have no effect on RGB rendering or on worlds whose
+           camera has no thermal sensor. -->
       <visual name="frame">
         <geometry><box><size>0.12 0.12 0.05</size></box></geometry>
         <material>
           <ambient>0.08 0.08 0.08 1</ambient>
           <diffuse>0.08 0.08 0.08 1</diffuse>
         </material>
+        <plugin filename="gz-sim-thermal-system" name="gz::sim::systems::Thermal">
+          <temperature>305.0</temperature>
+        </plugin>
+      </visual>
+      <!-- motor bells: the real hotspots (~42 C in no-load hover) -->
+      <visual name="motor_fr">
+        <pose>0.105 -0.105 0.012 0 0 0</pose>
+        <geometry><cylinder><radius>0.014</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.12 0.12 0.12 1</ambient><diffuse>0.12 0.12 0.12 1</diffuse></material>
+        <plugin filename="gz-sim-thermal-system" name="gz::sim::systems::Thermal">
+          <temperature>315.0</temperature>
+        </plugin>
+      </visual>
+      <visual name="motor_fl">
+        <pose>0.105 0.105 0.012 0 0 0</pose>
+        <geometry><cylinder><radius>0.014</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.12 0.12 0.12 1</ambient><diffuse>0.12 0.12 0.12 1</diffuse></material>
+        <plugin filename="gz-sim-thermal-system" name="gz::sim::systems::Thermal">
+          <temperature>315.0</temperature>
+        </plugin>
+      </visual>
+      <visual name="motor_br">
+        <pose>-0.105 -0.105 0.012 0 0 0</pose>
+        <geometry><cylinder><radius>0.014</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.12 0.12 0.12 1</ambient><diffuse>0.12 0.12 0.12 1</diffuse></material>
+        <plugin filename="gz-sim-thermal-system" name="gz::sim::systems::Thermal">
+          <temperature>315.0</temperature>
+        </plugin>
+      </visual>
+      <visual name="motor_bl">
+        <pose>-0.105 0.105 0.012 0 0 0</pose>
+        <geometry><cylinder><radius>0.014</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.12 0.12 0.12 1</ambient><diffuse>0.12 0.12 0.12 1</diffuse></material>
+        <plugin filename="gz-sim-thermal-system" name="gz::sim::systems::Thermal">
+          <temperature>315.0</temperature>
+        </plugin>
       </visual>
       <!-- arms (X frame) -->
       <visual name="arm_fr">

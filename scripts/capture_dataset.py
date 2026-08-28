@@ -35,10 +35,8 @@ from gz.msgs10.image_pb2 import Image  # noqa: E402
 from gz.msgs10.pose_v_pb2 import Pose_V  # noqa: E402
 from gz.transport13 import Node  # noqa: E402
 
-WORLD = "detection_world"
 CAM_TOPIC = "/detection_station/camera/image"
 INFO_TOPIC = "/detection_station/camera/camera_info"
-POSE_TOPIC = f"/world/{WORLD}/dynamic_pose/info"
 
 _latest = {}
 _lock = threading.Lock()
@@ -81,17 +79,43 @@ def main():
                     help="seconds between saved frames")
     ap.add_argument("--out", default="data/clips/baseline")
     ap.add_argument("--note", default="", help="free-text note stored in meta.json")
+    ap.add_argument("--world", default="detection_world")
+    ap.add_argument("--no-target", action="store_true",
+                    help="record a target-free clip (background/FP mining); "
+                         "all frames are labelled visible=False")
+    ap.add_argument("--thermal", action="store_true",
+                    help="also record the station thermal camera "
+                         "(L16 Kelvin/0.01 frames into frames_ir/)")
+    ap.add_argument("--verify-below-v", type=float, default=460.0,
+                    help="only self-check labels above this pixel row; on "
+                         "terrain worlds pass ~250 so the dark-object check "
+                         "runs only against clear sky")
     args = ap.parse_args()
+
+    # Terrain worlds carry an occlusion manifest; a drone behind a tree or a
+    # ridge must not be labelled visible.
+    occ = None
+    if "terrain" in args.world:
+        from simulator.occlusion import OcclusionChecker
+        occ = OcclusionChecker.if_available()
+        print(f"occlusion checking: {'ON' if occ else 'manifest missing!'}",
+              flush=True)
 
     node = Node()
     node.subscribe(Image, CAM_TOPIC, img_cb)
-    node.subscribe(Pose_V, POSE_TOPIC, pose_cb)
+    node.subscribe(Pose_V, f"/world/{args.world}/dynamic_pose/info", pose_cb)
     node.subscribe(CameraInfo, INFO_TOPIC, info_cb)
+    if args.thermal:
+        def ir_cb(msg: Image):
+            with _lock:
+                _latest["ir"] = np.frombuffer(msg.data, dtype=np.uint16).reshape(
+                    msg.height, msg.width).copy()
+        node.subscribe(Image, "/detection_station/thermal/image", ir_cb)
 
     deadline = time.time() + 20
     while time.time() < deadline:
         with _lock:
-            if "img" in _latest and "pos" in _latest:
+            if "img" in _latest and ("pos" in _latest or args.no_target):
                 break
         time.sleep(0.2)
     else:
@@ -128,8 +152,10 @@ def main():
                 birds = dict(_latest.get("birds", {}))
                 img_age = time.time() - _latest.get("img_t", 0)
                 seq = _latest.get("img_seq", 0)
-            if frame is None or pos is None:
+            if frame is None or (pos is None and not args.no_target):
                 continue
+            if args.no_target:
+                pos, quat = None, None
             # A frozen camera stream silently pairs old pixels with fresh poses
             # and produces a dataset whose labels are all wrong.
             if seq == last_seq or img_age > 2.0:
@@ -139,14 +165,25 @@ def main():
 
             name = f"{i:06d}.png"
             PILImage.fromarray(frame).save(out / "frames" / name)
-            gt = ground_truth_bbox(pos, quat)
+            if args.thermal:
+                with _lock:
+                    ir = _latest.get("ir")
+                if ir is not None:
+                    (out / "frames_ir").mkdir(exist_ok=True)
+                    PILImage.fromarray(ir, mode="I;16").save(
+                        out / "frames_ir" / name)
+            gt = ground_truth_bbox(pos, quat) if pos is not None else None
             rec = {
                 "frame": name,
                 "t": round(time.time() - t0, 3),
-                "pos": [round(v, 3) for v in pos],
-                "quat": [round(v, 4) for v in quat],
+                "pos": [round(v, 3) for v in pos] if pos is not None else None,
+                "quat": [round(v, 4) for v in quat] if quat is not None else None,
             }
-            if gt and gt["visible"]:
+            hidden = occ is not None and gt and gt["visible"] and occ.occluded(pos)
+            if hidden:
+                rec.update({"bbox": None, "visible": False, "occluded": True,
+                            "range_m": round(gt["range_m"], 1)})
+            elif gt and gt["visible"]:
                 rec.update({
                     "bbox": [round(v, 1) for v in gt["xyxy"]],
                     "centre": [round(v, 1) for v in gt["centre"]],
@@ -161,7 +198,7 @@ def main():
                 # so its true pixel position can be found without a model. If
                 # that disagrees with the projected label, the data is bad.
                 cx_gt, cy_gt = gt["centre"]
-                if cy_gt < 460 and 20 < cx_gt < W - 20:
+                if cy_gt < args.verify_below_v and 20 < cx_gt < W - 20:
                     lum = frame[:500].astype(np.int32).sum(axis=2)
                     med = float(np.median(lum))
                     # Search a window around the expected position rather than
@@ -187,7 +224,7 @@ def main():
             bird_recs = []
             for bname, (bpos, bquat) in birds.items():
                 bgt = ground_truth_bbox(bpos, bquat, bird_half_extents(bname))
-                if bgt and bgt["visible"]:
+                if bgt and bgt["visible"] and (occ is None or not occ.occluded(bpos)):
                     bird_recs.append({
                         "name": bname,
                         "bbox": [round(v, 1) for v in bgt["xyxy"]],
@@ -205,10 +242,13 @@ def main():
     ok_frac = (sum(1 for e in verify_err if e <= 15.0) / len(verify_err)
                if verify_err else None)
     meta = {
-        "world": WORLD, "width": W, "height": H, "fx": round(FX, 2),
+        "world": args.world, "width": W, "height": H, "fx": round(FX, 2),
         "interval_s": args.interval, "frames": kept,
         "visible_frames": visible_n, "buckets": buckets, "note": args.note,
         "stale_frames_skipped": stale_skipped,
+        "thermal": ({"width": 640, "height": 512, "hfov": 0.4189,
+                     "fx": round(320 / np.tan(0.4189 / 2), 1),
+                     "kelvin_per_count": 0.01} if args.thermal else None),
         "label_verification": {
             "checked": verify_checked, "with_dark_object": len(verify_err),
             "median_px_err": round(float(np.median(verify_err)), 2) if verify_err else None,
