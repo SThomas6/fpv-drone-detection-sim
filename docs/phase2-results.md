@@ -852,6 +852,23 @@ one scenario where SAHI pays for itself), and the "sequence-level track
 re-acquisition" idea from the earlier analysis is deprioritised because the
 young-fragment-coverage hypothesis it rested on measured false.
 
+**The discipline generalizes.** Applying `--coast-alarms none` to the other
+scenarios (same classifier, same thresholds, no other change):
+
+| Scenario | coast=all (previous headline) | coast=none |
+|---|---|---|
+| Terrain + birds (v6, rgb-only, thr 0.5) | 84.5% @ 63–70/min | **83.9% @ 24.4/min** |
+| Sky / eval_birds (v6, thr 0.9) | 86.9% @ 16.8/min | **86.9% @ 5.0/min, zero clutter** |
+| Long-range sweep | 90.25% @ 4.5/min | **do not use** — see below |
+
+The sweep is the deliberate exception: its coverage genuinely lives in
+coasting frames (the tracker holds 97% of frames against a 75.5% per-frame
+detection ceiling — coasting through detection gaps IS the mechanism there),
+and its alarm rate is already 4.5/min. One policy knob, two legitimate
+settings, chosen by what the scene does to detection continuity. Also
+re-confirmed: the SAHI union stays canopy-only — on terrain+birds it adds
+alarms and no coverage (the drone is RGB-visible in 93% of frames).
+
 ## The travel gate is already well tuned
 
 Checked because the attribution table showed it costing 4.5 points. Dropping
