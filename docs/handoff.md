@@ -98,9 +98,27 @@ evaluate with** (`--classifier camera/motion_classifier_v6.json`).
 | **Long-range sweep** | v6, or-fusion, thr 0.3, plain full RGB | **90.5%** | 29.4 | **MET** |
 | **Long-range sweep** (conservative) | v6, and-confirm, thr 0.3 | **90.25%** | **4.5** | **MET** |
 | Terrain + birds | v6, rgb-only, thr 0.5 | 84.5% | 63–70 | short 5.5 pts |
-| Canopy (coverage-first) | v6, and-confirm, thr 0.5, `--rgb-mode both --young-tracks pass` | 84.0% | 237 | short; alarms high |
-| Canopy (alarm-first) | v6, and-confirm, thr 0.3 | 49.8% | 71 | far short |
+| **Canopy (coverage-first)** | v6, thr 0.5, `--rgb-mode both --young-tracks pass --coast-alarms none --clutter`, row `or-fusion` | **86.5%** | **177** | short 3.5 pts; was 68.8% @ 765 (v1) |
+| Canopy (middle) | same config, row `vote-gated` | 85.2% | 142 | |
+| **Canopy (balanced)** | same config, row `and+mute` | **80.2%** | **75** | alarm-matched frontier moved +30 pts coverage vs old 49.8% @ 71 |
 | Sky (eval_birds) | v6, rgb-only, thr 0.9 | 86.9% | **16.8** | better than v1's 86.1% @ 32.8 on both axes |
+
+**Canopy alarm mechanics (2026-08-28, latest — how 237 became 75):** at the
+84% operating point, 57% of alarm track-frames came from tracks NOT detected
+on that frame (coasting bird/clutter tracks declaring up to 15 frames after
+last sight), while the drone's coverage depended on coasting/young frames
+almost not at all (20 and 7 frames of 504). New `--coast-alarms
+all|judged|none` policy separates them: `judged` (young tracks must be
+currently detected to declare) is FREE — identical coverage, 235→170/min.
+`none` (every declaration needs a detection this frame) costs 3.3 pts for
+another halving. Stack the `and+mute` policy row (thermal confirmation AND
+appearance bird-mute — they cut different alarm populations: bird alarms are
+94% RGB-fed real birds, clutter alarms are IR-co-located terrain FPs) and the
+static clutter map for the 80.2% @ 75/min headline. Full-frame RGB collapses
+to 44–49% in this config — the SAHI union is what feeds the young fragments
+that thermal confirmation converts into coverage, so on canopy (only) SAHI
+genuinely pays for itself. Default `--coast-alarms all` preserves every
+historical number.
 
 **Threshold caveat — be careful quoting one number:** v6's probability
 calibration differs by scene. The sweep wants thr 0.3 (no birds → low thr is
@@ -111,14 +129,20 @@ camera and what scene it watches), but say so when reporting.
 
 **What remains, in order of value:**
 
-1. **Canopy is the only scenario far from target and it is now purely a
-   bird-vs-drone frontier**: 84.0% @ 237/min (young-pass, SAHI union,
-   and-confirm) vs 49.8% @ 71/min disciplined. The young-track relaxation is
-   what buys the coverage — canopy tracks fragment under occlusion, so much
-   of the drone's coverage lives in <8-sample tracks the classifier never
-   judges. A **sequence-level re-acquisition** (linking a dying track to its
-   successor so history carries over, instead of judging each fragment from
-   scratch) is the principled fix and has not been tried.
+1. **Canopy: coverage 80–84% at 75–172 alarms/min after the coast-alarms
+   work** (see the mechanics note above; the "young fragments hold the
+   coverage" hypothesis was MEASURED FALSE — only 7 of 504 covered frames
+   were young-held, so sequence-level re-acquisition would add little
+   coverage and is deprioritised). The remaining ~75/min at the balanced
+   point are detected-now, classifier-passed, warm, travelling tracks the
+   detector does not name bird — i.e. genuinely drone-like bird/clutter
+   fragments. Remaining ideas, honestly ranked: (a) the last 96 uncovered
+   frames sit mostly behind the and-confirm IR gate and detection gaps —
+   check whether `or-fusion` + coast=none + clutter + mute beats and-confirm
+   on the frontier; (b) richer appearance pressure only helps if the detector
+   learns to NAME more birds (bird-mute then bites harder) — that is a
+   detector-training idea with the usual caveats; (c) accept ~80%@75 as this
+   sensor suite's canopy plateau and say so.
 2. **backlit_birds AUC regression** (0.875 → 0.739): the thermal clips'
    1758 new bird windows shifted weights away from what separates backlit sky
    birds. Worth one experiment: class-weighting or a small backlit training
