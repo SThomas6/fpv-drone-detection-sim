@@ -41,6 +41,12 @@ from camera.evaluate import hits_object, is_hit  # noqa: E402
 
 SELECT_CLIP = "data/clips/train_ir_sweep"
 GUARD_CLIP = "data/clips/realtrain_rgb_20190925_133630_1_1"
+# Sky naming clips — TRAINING-POOL sky captures, never eval_birds. Added
+# after the first m3 pick (epoch12) turned out to trade sky drone naming
+# without the sweep ever measuring it: baseline has the drone against sky
+# (drone naming), birds_only has only birds (bird naming).
+SKY_DRONE_CLIP = "data/clips/baseline"
+SKY_BIRD_CLIP = "data/clips/birds_only"
 CONF = 0.10
 
 
@@ -91,6 +97,8 @@ def main():
     ap.add_argument("--guard-clip", default=GUARD_CLIP)
     ap.add_argument("--guard-limit", type=int, default=120,
                     help="frames of the guard clip to score (speed)")
+    ap.add_argument("--sky-limit", type=int, default=200,
+                    help="frames of each sky naming clip to score")
     ap.add_argument("--baseline", default="camera/weights/drone_bird_v1.pt",
                     help="deployed weights scored first as the reference row; "
                          "'' skips")
@@ -114,7 +122,8 @@ def main():
     guard = Path(args.guard_clip)
     rows = []
     print(f"{'checkpoint':>28} | {'recall':>7} {'droneNm':>8} {'birdNm':>7} | "
-          f"{'sahiRec':>8} {'sahiBird':>9} | {'guardRec':>9}")
+          f"{'sahiRec':>8} {'sahiBird':>9} | {'guardRec':>9} | "
+          f"{'skyDrone':>8} {'skyBird':>8}")
     for run_name, ck in ckpts:
         det = DroneDetector(weights=str(ck), conf=0.03)
         det.warmup()
@@ -122,13 +131,19 @@ def main():
         sahi = score_clip(det, sel, sahi=True)
         g = score_clip(det, guard, sahi=False, limit=args.guard_limit) \
             if guard.exists() else {"recall": None}
+        skyd = score_clip(det, Path(SKY_DRONE_CLIP), sahi=False,
+                          limit=args.sky_limit)
+        skyb = score_clip(det, Path(SKY_BIRD_CLIP), sahi=False,
+                          limit=args.sky_limit)
         label = f"{run_name}/{ck.stem}"
         print(f"{label:>28} | {fmt(full['recall']):>7} "
               f"{fmt(full['drone_named']):>8} {fmt(full['bird_named']):>7} | "
               f"{fmt(sahi['recall']):>8} {fmt(sahi['bird_named']):>9} | "
-              f"{fmt(g['recall']):>9}", flush=True)
+              f"{fmt(g['recall']):>9} | {fmt(skyd['drone_named']):>8} "
+              f"{fmt(skyb['bird_named']):>8}", flush=True)
         rows.append({"run": run_name, "ckpt": str(ck), "full": full,
-                     "sahi": sahi, "guard": g})
+                     "sahi": sahi, "guard": g,
+                     "sky_drone": skyd, "sky_bird": skyb})
 
     Path(args.out).write_text(json.dumps(rows, indent=2))
     print(f"\nwrote {args.out}")
