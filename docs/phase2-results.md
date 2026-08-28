@@ -484,6 +484,31 @@ for a model that functions on real video.
 
 ---
 
+# CAMPAIGN CONCLUDED FOR COVERAGE: every sim scenario ≥90% (2026-08-29)
+
+Final scoreboard with the installed pair (m3 detector + v7 classifier),
+per-scenario configs, all caches regenerated post-install:
+
+| Scenario | Coverage | Alarms/min |
+|---|---|---|
+| Long-range sweep (30–250 m) | **94.25%** | 12.9 |
+| Terrain + birds | **92.3%** | 49.6 (89.5% @ 13.2 low-alarm) |
+| Low-flight vs canopy | **90.2%** | 179 (81.7% @ 74 balanced) |
+| Sky + birds | **93.1%** | 114.5 (82.5% @ 16.2 balanced) |
+| Real — easy | 96.8% | 0 |
+| Real — medium (the 262 FP/min case) | 93.2% | **57.6** |
+| Real — hard | 63.0% | 13 |
+
+The coverage target the user set is met on all four sim scenarios; canopy
+and sky's coverage-first points carry alarm prices that remain the open
+frontier, and the real hard clip is the one sub-90 number left — probed to
+its detector ceiling (66.8% at conf floor 0.03; the misses are 91 px median,
+i.e. motion blur on fast passes, not small targets — a training matter, not
+a gate). The full genealogy of how each point was reached — six measurement
+errors caught, three detector generations, nine classifier variants, and a
+policy layer whose every gate turned out to be scene-dependent — is in the
+sections below and in handoff.md.
+
 # Pushing every scenario to 90% fused detection (started 2026-08-28, evening)
 
 User-set target: ≥90% detection in every SIM scenario with standard-lens +
