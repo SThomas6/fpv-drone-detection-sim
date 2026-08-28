@@ -134,7 +134,17 @@ AUX_CLASSES = ("hotspot", "mover")
 #                  the drone in these captures", a scene prior, not physics.
 #   conf_mean, conf_cv — detector confidence, flips sign on sky.
 FEATURE_NAMES_V3 = [
-    "drone_vote",        # share of RGB frames the detector called 'drone'
+    # Class votes as EVIDENCE, not as a ratio. A ratio has to invent a value
+    # for a track the detector never saw in RGB at all — and a neutral 0.5
+    # there is not neutral in a linear model, it is a constant push. Measured:
+    # with a 0.5 ratio the long-range sweep, where thermal carries the target
+    # and RGB sees it in only 36.7% of frames, fell from 88.7% to 73.8%
+    # coverage. Splitting the vote into two shares OF ALL SAMPLES makes an
+    # aux-only track contribute exactly 0 to both, so it pushes neither way —
+    # which is this project's standing convention that absence of an RGB
+    # opinion is not evidence against (cf. `bird_vote is None` in bird-mute).
+    "drone_evidence",    # RGB frames called 'drone'  / all samples
+    "bird_evidence",     # RGB frames called 'bird'   / all samples
     "straightness",      # net displacement / path length, whole window
     "straight_short",    # same over the last 8 samples
     "turn_rate",         # mean |heading change| per second
@@ -176,13 +186,13 @@ def features_v3_from_history(history) -> np.ndarray | None:
     p_short = float(np.hypot(np.diff(x[-k:]), np.diff(y[-k:])).sum())
     n_short = float(math.hypot(x[-1] - x[-k], y[-1] - y[-k]))
 
-    rgb_hist = [c for c in cls if c not in AUX_CLASSES]
     mean_w = float(w.mean()) or 1.0
     span = float(t[-1] - t[0])
+    n = len(cls)
 
     return np.array([
-        (sum(1 for c in rgb_hist if c == "drone") / len(rgb_hist))
-        if rgb_hist else 0.5,
+        sum(1 for c in cls if c == "drone") / n,
+        sum(1 for c in cls if c == "bird") / n,
         net / path if path > 1e-6 else 1.0,
         n_short / p_short if p_short > 1e-6 else 1.0,
         min(float(np.mean(np.abs(dh)) / np.mean(dt)) if len(dh) else 0.0, 50.0),

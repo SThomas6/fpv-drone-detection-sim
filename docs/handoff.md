@@ -54,11 +54,20 @@ continue the fusion campaign toward the 90% target."
 ```
 
 **Train/eval split — do not violate.** Training clips: `baseline`,
-`birds_only`, `backlit_birds`, `train_terrain_canopy` (seed 6),
-`train_terrain_mission` (seed 5), `train_zoom_a/b`. Evaluation clips, never
-to be trained on: `eval_birds`, `terrain_ir_canopy` (seed 13),
-`terrain_ir_birds` (seed 42), `terrain_ir_sweep`, `terrain_canopy`,
-`terrain_birds`, `terrain_zoomsweep`, and all `real_rgb_*` sequences.
+`birds_only`, `train_terrain_canopy` (seed 6), `train_terrain_mission`
+(seed 5), `train_zoom_a` (seed 9), `train_zoom_b` (seed 10). Evaluation
+clips, never to be trained on: `eval_birds`, **`backlit_birds`**,
+`terrain_ir_canopy` (seed 13), `terrain_ir_birds` (seed 42),
+`terrain_ir_sweep`, `terrain_canopy`, `terrain_birds`, `terrain_zoomsweep`,
+`terrain_baseline`, and all `real_rgb_*` sequences.
+
+**`backlit_birds` is EVAL, not training.** Its own `meta.json` note says
+`HELD-OUT EVAL: crossings + 10 birds seed ...`, and the clip name gives no
+hint of it. The v2 and first-v3 classifiers in this session were trained with
+it included — a real train/eval violation, caught and corrected the same
+evening. **Check `meta.json`'s `note` field before adding any clip to a
+training set**; the `train_` prefix is a convention, not a guarantee, and the
+absence of one is not proof a clip is fair game.
 
 ## Where the project stands
 
@@ -356,24 +365,55 @@ even though the 2 Hz sampling cannot resolve the frequency itself),
 765 → 187 alarms/min; terrain+birds `rgb-only` at thr 0.3 reaches 84.5%
 coverage at 75 alarms/min, beating v1's 79.2% at 112 — better on both axes.
 
-**KNOWN DEFECT in v3, fix it first:** the long-range sweep regressed (v1
-or-fusion 88.7% → v3 73.8%). Cause identified: `drone_vote` is v3's largest
-weight, and for a track with NO RGB detections at all — which is most of the
-sweep, where RGB sees the drone in only 36.7% of frames and thermal carries
-it — the feature returns a neutral 0.5 and drags the score down. That
-contradicts this project's standing convention that *absence of an RGB
-opinion is not evidence against* (see `bird_vote is None` handling in the
-`bird-mute` policy). **Fix: replace the single `drone_vote` ratio with two
-evidence-weighted features**, `drone_evidence` = (RGB frames called drone) /
-(all samples) and `bird_evidence` likewise, so an aux-only track contributes
-0 to both and the linear model pushes neither way. Then retrain and re-run
-the matrix.
+**KNOWN DEFECT in v3: the long-range sweep regressed** (v1 or-fusion 88.7% →
+v3 ~70-74%). Two causes found; the first is fixed, the second is NOT and is
+the top open task.
+
+*Cause 1 (FIXED).* `drone_vote` was a ratio, and a track with no RGB
+detections at all — most of the sweep, where RGB sees the drone in only 36.7%
+of frames and thermal carries it — got a neutral 0.5, which in a linear model
+is a constant push, not neutrality. Replaced by two evidence shares,
+`drone_evidence` and `bird_evidence`, both computed over ALL samples, so an
+aux-only track contributes exactly 0 to each. Matches this project's standing
+convention that absence of an RGB opinion is not evidence against
+(cf. `bird_vote is None` in `bird-mute`). This change alone did NOT recover
+the sweep.
+
+*Cause 2 (OPEN — do this next).* **The training set contains no long-range
+and no thermal clip.** Training was `baseline` (40-78 m), `birds_only`,
+`train_terrain_canopy`, `train_terrain_mission` — all short-range, all
+RGB+motion only. Two consequences, both visible in the learned weights:
+- `ir_frac` gets weight **+0.000**. It cannot be learned: no training clip
+  has a thermal stream, so the feature is constant 0 and standardises away.
+  The classifier is structurally unable to use thermal support as evidence,
+  which is precisely what carries the long-range case.
+- `dwell_fraction` (+1.58) and `width_cv` (−0.84) are fitted to *fragmented
+  terrain* tracks. A smooth, slow, constant-velocity long-range track has low
+  dwell and, at 2-3 px, high width jitter — so both features vote *bird* on
+  exactly the target the sweep is made of.
+
+**Fix:** add the long-range/small-target domain to training. `train_zoom_a`
+(seed 9) and `train_zoom_b` (seed 10) are the dedicated training captures for
+it; their detections are being generated as this was written
+(`camera/evaluate.py run --mode full` then `camera/motion_detector.py run`,
+~15 min per clip for the motion pass). For `ir_frac` to ever be usable, a
+**thermal training clip must be captured** — none exists; every clip with a
+thermal stream (`terrain_ir_*`) is in the evaluation set.
 
 **Open next steps, in order:**
 
-0. **Fix the v3 aux-only-track defect above and retrain** (`v3` → `v3.1`).
-   Everything else is downstream of this.
-1. ~~Build the v3 track classifier~~ — DONE, see above. Original spec kept
+0. **Retrain v3 on the clean, complete training set**: `baseline`,
+   `birds_only`, `train_terrain_canopy`, `train_terrain_mission`,
+   `train_zoom_a`, `train_zoom_b` — and NOT `backlit_birds` (see the split
+   warning above). Then re-run the full fused matrix. A clean-split model
+   without the zoom clips is already at `camera/motion_classifier_v3clean.json`
+   for comparison.
+1. **Capture a thermal training clip** so `ir_frac` becomes learnable
+   (`scripts/gen_terrain_world.py --thermal`, then `scripts/drive_scene.py`;
+   read that file's docstring first — the sim-time clock trap is documented
+   there). Until then the classifier cannot use the sensor that carries the
+   long-range case.
+2. ~~Build the v3 track classifier~~ — DONE, see above. Original spec kept
    for reference: from the domain-stable features only:
    `drone_vote`, `straightness`, `turn_rate`, `width_mean`, `speed_cv`, plus
    `ir_frac`/`mv_frac` sensor support. Deliberately EXCLUDE `y_norm`,
