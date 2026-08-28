@@ -31,3 +31,10 @@ build/
 
 # terrain retrain tiles (null-result experiment; rebuild via camera/build_finetune_dataset.py from terrain training clips)
 data/finetune_terrain/
+data/finetune_zoom/
+data/finetune_real/
+data/finetune_hardneg/
+data/external/
+weights/
+data/finetune/dataset_mixed*.yaml
+data/finetune/train_mixed*.txt

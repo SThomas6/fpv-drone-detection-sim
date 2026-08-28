@@ -471,8 +471,36 @@ for a model that functions on real video.
 - 12 real test sequences from one dataset, one country, mostly urban/sky
   backgrounds; real-world bird pressure remains unmeasured (Anti-UAV has no
   bird labels — the bird class is still sim-taught).
-- Real sequences carry a burned-in tracking-turret reticle/OSD; the model
-  trained on tiles containing it, which flatters FP counts on this dataset.
+- Real sequences carry a burned-in tracking-turret reticle/OSD. **UPDATE
+  (2026-08-28, later): tested directly and disproven** — masking the
+  overlay (`scripts/osd_mask.py`) and re-evaluating changed the false-alarm
+  rate on the real "medium" sequence by less than 1% (262 → 262 FP/min).
+  The false alarms are real foliage/building blur, not a shortcut on the
+  overlay. Confidence in the real-footage numbers above increases
+  accordingly.
 - Thermal fusion is not yet validated on real data: Anti-UAV's IR is 8-bit
   processed video from a separate, unregistered camera — the sim fusion
   design needs a contrast-based port before it can be tested there.
+
+---
+
+# Pushing every scenario to 90% fused detection (started 2026-08-28, evening)
+
+User-set target: ≥90% detection in every SIM scenario with standard-lens +
+zoom-lens + thermal fused, real footage held near 90%, and specifically fix
+(a) 262 FP/min on the real "medium" sequence and (b) the 46% canopy recall
+above. Campaign is **in progress**; this section will be finalized when it
+concludes. Live status, full reasoning, and the exact next steps are kept in
+["THE CAMPAIGN" section of handoff.md](handoff.md) rather than duplicated
+here — that file is the one a fresh session reads first. Headline so far:
+
+- Fused long-range (30-250 m) coverage: **96.8%**, target already met.
+- Fused terrain+birds and canopy coverage: ~88%, close to target; false-alarm
+  rate on those two is now the binding constraint, not missed detections.
+- SAHI (2x tiled inference) measured as a real, corrected win on canopy
+  (0.458 → 0.750 recall) — not yet wired into the fused pipeline.
+- A hard-negative-mining retrain attempt traded recall for lower FP rather
+  than improving both — appearance-only retraining looks ceilinged here,
+  same pattern as the original bird-flip problem. The credible next fix is
+  track-level static-object suppression (the foliage/building false alarms
+  don't move; a real target does), not further retraining.

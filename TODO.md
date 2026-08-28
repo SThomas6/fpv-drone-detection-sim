@@ -79,6 +79,22 @@
       bug (ultralytics drops non-"./" txt entries as corrupt) that had
       invalidated the earlier "terrain retrain failed" conclusion. Full
       account: "Real footage" section of docs/phase2-results.md
+- [ ] **ACTIVE CAMPAIGN (2026-08-28, user target: ≥90% fused detection in
+      every sim scenario, real footage ~90%, kill the real-medium 262 FP/min,
+      fix the 46% canopy case)** — see "THE CAMPAIGN" section of
+      docs/handoff.md for the full scoreboard and reasoning. Status: fused
+      long-range already exceeds target (96.8%); terrain+birds and canopy
+      are close on coverage (~88%) but blocked on false-alarm rate. Next
+      concrete steps, in order: (1) wire the already-proven SAHI tiled
+      inference into camera/fuse_eval.py as a stream (canopy full-frame
+      0.458 → SAHI 0.750 recall, not yet in the fused pipeline); (2) add a
+      travel/static-object suppression gate to the plain-RGB real-footage
+      path (the principled fix for the 262 FP/min — those are static
+      foliage/building blur, confirmed via scripts/osd_mask.py's shortcut
+      audit, NOT the burned-in overlay); (3) only if still short, retry
+      hard-negative retraining with the negatives weighted 1x, not 3x (the
+      3x attempt, "m2", was a recall/FP TRADE not a win — see handoff.md
+      item 4 for why appearance-only retraining likely has a ceiling here).
 - [ ] Real thermal/fusion validation: port the IR detector to contrast-based
       detection for Anti-UAV's 8-bit unregistered IR videos, then test the
       fusion layer on real paired sequences
