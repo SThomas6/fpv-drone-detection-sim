@@ -775,6 +775,36 @@ A caveat on all of the above: only **two** terrain training seeds exist (6 and
 5). v5's 0.93 canopy AUC should be treated as provisional until a third seed
 confirms it is not seed-specific.
 
+### v6: the thermal training clips close the loop (added same night)
+
+A Codex session captured the missing thermal TRAINING domain —
+`train_ir_sweep` (seed 17, 8 birds) and `train_ir_canopy` (seed 19, 8 birds),
+600 frames each in an isolated generated world so the eval world's assets
+stayed untouched. v6 = the v5 recipe retrained with those two clips included
+(5199 samples, 1221 drone / 3978 bird).
+
+The predicted mechanism happened exactly: `ir_frac` learns +0.138 (was
+structurally +0.000 — the feature was constant in training), `drone_evidence`
+drops from +1.629 to +1.333 as the "RGB sees it ⇒ drone" shortcut washes out,
+and the long-range sweep — the scenario v5 broke — recovers completely
+(drone track-windows passed @thr 0.3: v1 0.992, v5 0.797, **v6 1.000**),
+while canopy and terrain+birds AUCs tick up to their best values yet (0.939,
+0.989). Cost: backlit_birds AUC 0.875 → 0.739, the one regression, from
+1758 new bird windows re-balancing the weights.
+
+End-to-end, **the long-range sweep is the first scenario to genuinely meet
+the 90% target**: 90.5% coverage at 29.4 alarms/min (or-fusion, thr 0.3,
+plain full-frame RGB — no SAHI, no young-track relaxation), or 90.25% at
+4.5 alarms/min under and-confirm. Canopy's coverage frontier moves from
+68.8% @ 765 alarms/min (v1) to 84.0% @ 237 (v6, and-confirm, SAHI union,
+young-tracks passed) but still does not reach 90% at a sane alarm rate; the
+missing coverage lives in sub-8-sample track fragments the classifier never
+gets to judge, which points at sequence-level track re-acquisition as the
+next mechanism, not more classifier training.
+
+The full per-scenario table and threshold-calibration caveat live in
+handoff.md ("AFTER v6").
+
 ## The travel gate is already well tuned
 
 Checked because the attribution table showed it costing 4.5 points. Dropping

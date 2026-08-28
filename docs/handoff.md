@@ -69,6 +69,66 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
+## AFTER v6 — where the campaign stands (2026-08-28, night; CURRENT)
+
+**This is the current state. Read this and the CODEX VERDICT below it; the
+sections after those are history and reasoning.**
+
+`camera/motion_classifier_v6.json` = the v5 recipe retrained with the two new
+thermal training clips (`train_ir_sweep`, `train_ir_canopy`) in the training
+set. With the thermal domain finally represented, `ir_frac` learns a real
+weight (+0.138, was structurally +0.000) and the "RGB sees it ⇒ drone"
+shortcut washes out. **v1 is still the installed default; v6 is the model to
+evaluate with** (`--classifier camera/motion_classifier_v6.json`).
+
+**Classifier quality (AUC, drone vs bird track-windows, held out):**
+
+| Clip | v1 live | v5 | **v6** |
+|---|---|---|---|
+| terrain_ir_canopy | 0.419 | 0.930 | **0.939** |
+| terrain_ir_birds | 0.585 | 0.983 | **0.989** |
+| eval_birds (sky) | 0.987 | 0.987 | 0.987 |
+| backlit_birds | 0.875 | 0.869 | **0.739 ← v6's one regression** |
+| sweep drone-windows passed @thr 0.3 | 0.992 | 0.797 | **1.000** |
+
+**Campaign scoreboard with v6 (honest configs, alarms always attached):**
+
+| Scenario | Config | Coverage | Alarms/min | 90% target |
+|---|---|---|---|---|
+| **Long-range sweep** | v6, or-fusion, thr 0.3, plain full RGB | **90.5%** | 29.4 | **MET** |
+| **Long-range sweep** (conservative) | v6, and-confirm, thr 0.3 | **90.25%** | **4.5** | **MET** |
+| Terrain + birds | v6, rgb-only, thr 0.5 | 84.5% | 63–70 | short 5.5 pts |
+| Canopy (coverage-first) | v6, and-confirm, thr 0.5, `--rgb-mode both --young-tracks pass` | 84.0% | 237 | short; alarms high |
+| Canopy (alarm-first) | v6, and-confirm, thr 0.3 | 49.8% | 71 | far short |
+| Sky (eval_birds) | v6, rgb-only, thr 0.9 | 86.9% | **16.8** | better than v1's 86.1% @ 32.8 on both axes |
+
+**Threshold caveat — be careful quoting one number:** v6's probability
+calibration differs by scene. The sweep wants thr 0.3 (no birds → low thr is
+nearly free), sky wants thr 0.9, terrain 0.5–0.8. Ranking (AUC) is fine
+everywhere; it is the logistic calibration that shifted. A per-deployment
+threshold is defensible (an installation knows whether it has a thermal
+camera and what scene it watches), but say so when reporting.
+
+**What remains, in order of value:**
+
+1. **Canopy is the only scenario far from target and it is now purely a
+   bird-vs-drone frontier**: 84.0% @ 237/min (young-pass, SAHI union,
+   and-confirm) vs 49.8% @ 71/min disciplined. The young-track relaxation is
+   what buys the coverage — canopy tracks fragment under occlusion, so much
+   of the drone's coverage lives in <8-sample tracks the classifier never
+   judges. A **sequence-level re-acquisition** (linking a dying track to its
+   successor so history carries over, instead of judging each fragment from
+   scratch) is the principled fix and has not been tried.
+2. **backlit_birds AUC regression** (0.875 → 0.739): the thermal clips'
+   1758 new bird windows shifted weights away from what separates backlit sky
+   birds. Worth one experiment: class-weighting or a small backlit training
+   capture. Do not trade the terrain/thermal wins away for it.
+3. **Install decision** for v6 (user's call, as before): it beats v1
+   everywhere except backlit_birds, including on v1's home turf (sky:
+   86.9% @ 16.8 vs 86.1% @ 32.8, using thr 0.9).
+4. Real-footage path is unchanged by all of this (v-classifiers don't run
+   there): still 0.960 recall @ 178 FP/min via the clutter map.
+
 ## CODEX SESSION VERDICT (2026-08-28, night — audited by the next session)
 
 Between the last Claude session and this note, a Codex session continued the
@@ -115,6 +175,12 @@ and the retrain that was the whole point of the captures.
 ## STATE OF PLAY — read this first (2026-08-28, end of evening session)
 
 Everything below elaborates. If you read only one section, read this one.
+
+> **SUPERSEDED (same night): the thermal training clips now EXIST** — the
+> Codex session captured them (see CODEX SESSION VERDICT above) and the v6
+> classifier below is trained on them. The text of this section is kept for
+> the reasoning; its top task is done. The current top task list is in
+> "AFTER v6 — where the campaign stands" further down.
 
 **The single most important thing to do next: capture a THERMAL TRAINING
 CLIP.** It is the one blocker that new analysis cannot remove. Every clip
