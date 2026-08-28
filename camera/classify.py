@@ -100,19 +100,146 @@ def drone_vote_fraction(history) -> float:
     return sum(1 for v in votes if v == "drone") / len(votes)
 
 
+AUX_CLASSES = ("hotspot", "mover")
+
+# ---------------------------------------------------------------- feature set v3
+#
+# Why a second feature set exists. Measured per-feature AUC for separating
+# drone from bird track-windows (scripts/probe_track_features.py) showed the
+# v1 set is not merely weak off-sky, it INVERTS. Its two largest weights are
+# hover_fraction (+0.819) and straightness (+0.663); hover_fraction scores
+# 0.961 on clear sky and 0.355 on canopy — the best feature in the domain it
+# was fitted on, backwards in the domain it is applied to. That single fact
+# explains the installed classifier's below-chance AUC 0.419 on canopy.
+#
+# The cause is the width normalisation: hover_fraction and speed_in_widths
+# divide speed by apparent target width, and over terrain the birds are the
+# BIGGER targets (width_mean AUC 0.188), so slow-looking birds masquerade as
+# hovering drones. v3 therefore normalises by the track's OWN median step
+# instead of by target size, which carries no cross-domain scale assumption.
+#
+# v3 admits only features whose AUC sits on the SAME side of 0.5 on all three
+# held-out clips, plus the detector's own class votes — which measured as the
+# strongest and most stable signal available (0.820 canopy, 0.978
+# terrain+birds) and were previously used only as a hard gate, never given to
+# the model to weigh.
+#
+# Deliberately EXCLUDED, with reasons, so nobody re-adds them by accident:
+#   y_norm         AUC 0.915 on canopy and worthless elsewhere (0.54-0.57) —
+#                  it is the drone's image height, i.e. memorised mission
+#                  geometry. The most tempting feature here and the most wrong.
+#   hover_fraction, speed_in_widths, vertical_ratio, support_rate — each
+#                  strong in one domain and inverted or flat in another.
+#   width_mean     strong (0.188/0.244) but it encodes "birds are nearer than
+#                  the drone in these captures", a scene prior, not physics.
+#   conf_mean, conf_cv — detector confidence, flips sign on sky.
+FEATURE_NAMES_V3 = [
+    "drone_vote",        # share of RGB frames the detector called 'drone'
+    "straightness",      # net displacement / path length, whole window
+    "straight_short",    # same over the last 8 samples
+    "turn_rate",         # mean |heading change| per second
+    "speed_cv",          # speed variability
+    "step_cv",           # step-length variability, width-free
+    "dwell_fraction",    # steps below a quarter of this track's OWN median
+    "width_cv",          # projected-size variability (birds flap: AUC < 0.5 everywhere)
+    "width_trend",       # |slope of width| / mean width — a closing target
+    "ir_frac",           # share of the track's samples the thermal channel fed
+    "mv_frac",           # share the motion channel fed
+]
+
+
+def features_v3_from_history(history) -> np.ndarray | None:
+    """Domain-stable track features. See FEATURE_NAMES_V3 for the rationale."""
+    if history is None or len(history) < MIN_HISTORY:
+        return None
+    arr = np.asarray([(t, x, y, w, c) for (t, x, y, w, c, *_r) in history],
+                     dtype=float)
+    cls = [h[5] if len(h) > 5 else "drone" for h in history]
+    t, x, y, w = arr[:, 0], arr[:, 1], arr[:, 2], arr[:, 3]
+    dt = np.diff(t)
+    good = dt > 1e-6
+    if good.sum() < MIN_HISTORY - 4:
+        return None
+    dx, dy, dt = np.diff(x)[good], np.diff(y)[good], dt[good]
+
+    step = np.hypot(dx, dy)
+    path = float(step.sum())
+    net = float(math.hypot(x[-1] - x[0], y[-1] - y[0]))
+    speed = step / dt
+    med_step = float(np.median(step)) or 1e-6
+
+    heading = np.arctan2(dy, dx)
+    dh = np.diff(heading)
+    dh = (dh + np.pi) % (2 * np.pi) - np.pi
+
+    k = min(8, len(x))
+    p_short = float(np.hypot(np.diff(x[-k:]), np.diff(y[-k:])).sum())
+    n_short = float(math.hypot(x[-1] - x[-k], y[-1] - y[-k]))
+
+    rgb_hist = [c for c in cls if c not in AUX_CLASSES]
+    mean_w = float(w.mean()) or 1.0
+    span = float(t[-1] - t[0])
+
+    return np.array([
+        (sum(1 for c in rgb_hist if c == "drone") / len(rgb_hist))
+        if rgb_hist else 0.5,
+        net / path if path > 1e-6 else 1.0,
+        n_short / p_short if p_short > 1e-6 else 1.0,
+        min(float(np.mean(np.abs(dh)) / np.mean(dt)) if len(dh) else 0.0, 50.0),
+        min(float(speed.std() / (speed.mean() + 1e-6)), 10.0),
+        min(float(step.std() / (step.mean() + 1e-6)), 10.0),
+        float(np.mean(step < 0.25 * med_step)),
+        float(w.std() / (w.mean() + 1e-6)),
+        min(float(abs(np.polyfit(t, w, 1)[0]) / mean_w) if span > 1e-6 else 0.0,
+            10.0),
+        sum(1 for c in cls if c == "hotspot") / len(cls),
+        sum(1 for c in cls if c == "mover") / len(cls),
+    ], dtype=float)
+
+
+FEATURE_SETS = {
+    "v1": (FEATURE_NAMES, features_from_history),
+    "v3": (FEATURE_NAMES_V3, features_v3_from_history),
+}
+
+
 class MotionClassifier:
     """Logistic regression on motion features. P(drone) given a track.
 
-    Deliberately tiny and interpretable: six features, one weight each, fitted
-    with plain gradient descent. No scipy or sklearn dependency, and the learned
+    Deliberately tiny and interpretable: one weight per feature, fitted with
+    plain gradient descent. No scipy or sklearn dependency, and the learned
     weights can be read and sanity-checked by a human.
+
+    `feature_set` selects which extractor the model expects ('v1' — the
+    original six sky-fitted motion features, or 'v3' — the domain-stable set
+    above). It is stored in the JSON, so a saved model always knows how to
+    featurise a track and old files without the key keep working as v1.
     """
 
-    def __init__(self, weights=None, bias=0.0, mean=None, std=None):
+    def __init__(self, weights=None, bias=0.0, mean=None, std=None,
+                 feature_set: str = "v1"):
         self.w = None if weights is None else np.asarray(weights, dtype=float)
         self.b = float(bias)
         self.mean = None if mean is None else np.asarray(mean, dtype=float)
         self.std = None if std is None else np.asarray(std, dtype=float)
+        self.feature_set = feature_set
+
+    @property
+    def extractor(self):
+        return FEATURE_SETS[self.feature_set][1]
+
+    @property
+    def feature_names(self):
+        return FEATURE_SETS[self.feature_set][0]
+
+    def features(self, history):
+        """Featurise a track history with THIS model's extractor.
+
+        Always go through this rather than calling an extractor directly:
+        it is what stops a v1 model being fed v3 vectors and silently
+        producing nonsense.
+        """
+        return self.extractor(history)
 
     # -------- training --------
 
@@ -146,7 +273,7 @@ class MotionClassifier:
 
     def classify_track(self, history, threshold: float = 0.5):
         """Returns (label, p_drone). label is 'drone', 'bird' or 'unknown'."""
-        f = features_from_history(history)
+        f = self.features(history)
         if f is None:
             return "unknown", 0.5
         p = self.probability(f)
@@ -156,7 +283,8 @@ class MotionClassifier:
 
     def save(self, path=MODEL_PATH):
         Path(path).write_text(json.dumps({
-            "features": FEATURE_NAMES, "weights": self.w.tolist(),
+            "feature_set": self.feature_set,
+            "features": self.feature_names, "weights": self.w.tolist(),
             "bias": self.b, "mean": self.mean.tolist(), "std": self.std.tolist(),
         }, indent=2))
 
@@ -166,7 +294,10 @@ class MotionClassifier:
         if not p.exists():
             return cls()
         d = json.loads(p.read_text())
-        return cls(d["weights"], d["bias"], d["mean"], d["std"])
+        # Files written before the v3 feature set existed have no key and are
+        # v1 by definition.
+        return cls(d["weights"], d["bias"], d["mean"], d["std"],
+                   d.get("feature_set", "v1"))
 
 
 # ---------------------------------------------------------------- data

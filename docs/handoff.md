@@ -330,9 +330,51 @@ sky-selected features cannot work on terrain; it inverts.
    canopy number and a worthless system. Same caution applies to
    `support_rate` and `vertical_ratio` (sky-only).
 
+### v3 classifier — BUILT, and it works (2026-08-28, late)
+
+`camera/classify.py` now carries two feature sets. `MotionClassifier` records
+which one it uses in its JSON (`feature_set`, defaulting to `v1` for old
+files) and exposes `clf.features(history)`; `fuse_eval.py` goes through that,
+so a model can never be fed the wrong vector. Train with
+`scripts/train_motion_classifier.py --feature-set v3`.
+
+**AUC, drone vs bird track-windows, held-out clips:**
+
+| Clip | v1 (installed) | v2 (fused, v1 feats) | **v3 (domain-stable)** |
+|---|---|---|---|
+| terrain_ir_canopy | 0.419 | 0.594 | **0.922** |
+| terrain_ir_birds | 0.585 | 0.775 | **0.978** |
+| eval_birds (sky) | 0.987 | 0.975 | 0.958 |
+
+Canopy goes from below-chance to strong. Learned weights are readable and
+sensible: `drone_vote +2.119`, `dwell_fraction +1.607`, `width_cv -0.989`
+(birds flap, so size varies — the wingbeat signature surviving as variance
+even though the 2 Hz sampling cannot resolve the frequency itself),
+`mv_frac +0.705`, `turn_rate +0.632`, `straightness +0.600`.
+
+**End-to-end effect is a large cut in false alarms**, e.g. canopy or-fusion
+765 → 187 alarms/min; terrain+birds `rgb-only` at thr 0.3 reaches 84.5%
+coverage at 75 alarms/min, beating v1's 79.2% at 112 — better on both axes.
+
+**KNOWN DEFECT in v3, fix it first:** the long-range sweep regressed (v1
+or-fusion 88.7% → v3 73.8%). Cause identified: `drone_vote` is v3's largest
+weight, and for a track with NO RGB detections at all — which is most of the
+sweep, where RGB sees the drone in only 36.7% of frames and thermal carries
+it — the feature returns a neutral 0.5 and drags the score down. That
+contradicts this project's standing convention that *absence of an RGB
+opinion is not evidence against* (see `bird_vote is None` handling in the
+`bird-mute` policy). **Fix: replace the single `drone_vote` ratio with two
+evidence-weighted features**, `drone_evidence` = (RGB frames called drone) /
+(all samples) and `bird_evidence` likewise, so an aux-only track contributes
+0 to both and the linear model pushes neither way. Then retrain and re-run
+the matrix.
+
 **Open next steps, in order:**
 
-1. **Build the v3 track classifier** from the domain-stable features only:
+0. **Fix the v3 aux-only-track defect above and retrain** (`v3` → `v3.1`).
+   Everything else is downstream of this.
+1. ~~Build the v3 track classifier~~ — DONE, see above. Original spec kept
+   for reference: from the domain-stable features only:
    `drone_vote`, `straightness`, `turn_rate`, `width_mean`, `speed_cv`, plus
    `ir_frac`/`mv_frac` sensor support. Deliberately EXCLUDE `y_norm`,
    `support_rate`, `vertical_ratio`, and treat `hover_fraction` and

@@ -250,7 +250,7 @@ def main():
                 is_drone = bool(gt["visible"] and is_hit(tr.box, gt))
                 on_bird = any(hits_object(tr.box, b)
                               for b in (gt.get("birds") or []))
-                feats = features_from_history(tr.history)
+                feats = clf.features(tr.history)
                 seen = ir_seen[tr.track_id]
                 # Net travel over the track's history: a sun-warmed bush or a
                 # bright rock never moves; even a hovering drone wanders a few

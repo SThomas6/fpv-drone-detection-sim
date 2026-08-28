@@ -38,15 +38,15 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from camera.classify import (MIN_HISTORY, MotionClassifier,  # noqa: E402
-                             features_from_history)
+from camera.classify import (FEATURE_SETS, MIN_HISTORY,  # noqa: E402
+                             MotionClassifier)
 from camera.evaluate import hits_object, is_hit  # noqa: E402
 from camera.fuse_eval import fuse_measurements, load_clip  # noqa: E402
 from camera.tracking import CentroidTracker  # noqa: E402
 
 
 def samples_from_clip(clip: Path, rgb_conf: float, ir_conf: float,
-                      stride: int):
+                      stride: int, feature_set: str = "v1"):
     """(features, label) for every track-window in one clip.
 
     label 1 = the track is on the drone, 0 = on a bird. Clutter tracks are
@@ -68,16 +68,16 @@ def samples_from_clip(clip: Path, rgb_conf: float, ir_conf: float,
             on_bird = any(hits_object(tr.box, b) for b in (gt.get("birds") or []))
             if on_drone == on_bird:          # neither, or ambiguous overlap
                 continue
-            feats = features_from_history(tr.history)
+            feats = FEATURE_SETS[feature_set][1](tr.history)
             if feats is not None:
                 out.append((feats, 1.0 if on_drone else 0.0))
     return out
 
 
-def collect(clips, rgb_conf, ir_conf, stride):
+def collect(clips, rgb_conf, ir_conf, stride, feature_set="v1"):
     X, y, per_clip = [], [], {}
     for c in clips:
-        s = samples_from_clip(Path(c), rgb_conf, ir_conf, stride)
+        s = samples_from_clip(Path(c), rgb_conf, ir_conf, stride, feature_set)
         n_d = sum(1 for _, lab in s if lab > 0.5)
         per_clip[Path(c).name] = (n_d, len(s) - n_d)
         print(f"  {Path(c).name:28s} {n_d:>5} drone  {len(s) - n_d:>5} bird",
@@ -111,21 +111,25 @@ def main():
     ap.add_argument("--stride", type=int, default=3,
                     help="sample every Nth frame; consecutive track-windows "
                          "are near-duplicates and just inflate the set")
+    ap.add_argument("--feature-set", default="v1", choices=list(FEATURE_SETS),
+                    help="v1 = the original six sky-fitted motion features; "
+                         "v3 = the domain-stable set (see camera/classify.py)")
     ap.add_argument("--out", default="camera/motion_classifier_v2.json")
     args = ap.parse_args()
 
     print("building training set from fused tracks...")
-    X, y, _ = collect(args.clips, args.rgb_conf, args.ir_conf, args.stride)
+    X, y, _ = collect(args.clips, args.rgb_conf, args.ir_conf, args.stride,
+                      args.feature_set)
     if len(X) < 20:
         raise SystemExit("not enough track samples to train")
     print(f"\n{len(X)} samples: {int(y.sum())} drone, {int(len(y) - y.sum())} bird")
 
-    clf = MotionClassifier().fit(X, y)
+    clf = MotionClassifier(feature_set=args.feature_set).fit(X, y)
     old = MotionClassifier.load()
 
     print("\nlearned weights (positive pushes toward 'drone'):")
-    from camera.classify import FEATURE_NAMES
-    for name, wv in sorted(zip(FEATURE_NAMES, clf.w), key=lambda kv: -abs(kv[1])):
+    for name, wv in sorted(zip(clf.feature_names, clf.w),
+                           key=lambda kv: -abs(kv[1])):
         print(f"  {name:>16}: {wv:+.3f}")
 
     tr = score(clf, X, y)
@@ -135,10 +139,14 @@ def main():
     if args.holdout:
         print("\nheld-out clips (never trained on) — new vs current model:")
         for c in args.holdout:
-            Xh, yh, _ = collect([c], args.rgb_conf, args.ir_conf, args.stride)
+            Xh, yh, _ = collect([c], args.rgb_conf, args.ir_conf,
+                                args.stride, args.feature_set)
+            Xo, yo, _ = ((Xh, yh, None) if args.feature_set == old.feature_set
+                         else collect([c], args.rgb_conf, args.ir_conf,
+                                      args.stride, old.feature_set))
             if not len(Xh):
                 continue
-            n, o = score(clf, Xh, yh), score(old, Xh, yh)
+            n, o = score(clf, Xh, yh), score(old, Xo, yo)
             def fmt(s, k):
                 return "  n/a " if s is None or s[k] is None else f"{s[k]:.3f}"
             print(f"  {Path(c).name:28s} drone kept {fmt(o,'drone_kept')} -> "
