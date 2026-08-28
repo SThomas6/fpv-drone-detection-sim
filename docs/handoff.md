@@ -69,7 +69,59 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
-## m3 "bird-namer" detector retrain — IN FLIGHT (2026-08-28, late night)
+## m3 RESULTS + the SIXTH measurement error (2026-08-28, latest — CURRENT)
+
+**This supersedes every sky (eval_birds/backlit_birds) number below it.**
+
+While validating m3, a live-inference probe contradicted the cached naming
+table and exposed the untagged-cache landmine AGAIN (error #6): the
+`eval_birds`, `backlit_birds`, `baseline` and `birds_only` untagged caches
+all predated the 13:13 deployed-model install. Every sky number this session
+was computed on a phantom model, and the stale caches fed sky tracks into
+the v5/v6 classifier training sets. All four caches regenerated; `v6r` =
+v6's recipe retrained clean (better than v6 on canopy). **Rule, again, now
+with teeth: `ls -la --time-style` the untagged cache against
+`camera/weights/drone_bird_v1.pt`'s mtime BEFORE using it. Every time.**
+
+**The real installed system (m1 + v1 classifier) scores 56.5% @ 18.8/min on
+sky** — not the 86.1% @ 32.8 recorded earlier. The real m1 names the sky
+drone 'drone' only 59.1% of frames.
+
+**m3 detector** (`runs/experiments/m3_birdnamer_b/weights/epoch12.pt`,
+selection table `runs/m3_naming_sweep.json`): canopy SAHI bird naming
+0.795→0.896, SAHI drone recall 0.440→0.497, sky drone naming 0.591→0.745
+(an IMPROVEMENT — "m3 broke sky" was the stale-cache artifact), zero
+real-footage forgetting. **v7** = v3-feature classifier retrained on m3's
+votes (`--rgb-tag m3`).
+
+**FINAL two-system scoreboard (fresh caches everywhere):**
+
+| Scenario | m1 + v6r | m3 + v7 | winner |
+|---|---|---|---|
+| Canopy or-fusion (coverage-first) | 87.3% @ 182 | 86.8% @ 165 | ~tie |
+| Canopy and+mute (balanced) | **81.0% @ 77** | 66.0% @ 46 | m1+v6r |
+| Terrain + birds | 83.9% @ 25.4 | **85.9% @ 13.2** | m3+v7 |
+| Long-range sweep | **90.5% @ 29.4 — MET** | 89.75% @ 18.0 (misses by 3 frames) | m1+v6r |
+| Sky | 62.9% @ 16.0 | **69.4% @ 21.5** | m3+v7 |
+
+Neither dominates. m1+v6r holds the campaign's one met target (sweep) and
+the best balanced canopy point; m3+v7 wins terrain+birds and sky outright.
+The m3 canopy and-confirm/and+mute coverage loss (81→66) traces to m3's
+lower canopy RGB recall changing track composition under the IR-persistence
+gate — mechanism not fully attributed, see next steps.
+
+**Next steps for whoever continues:**
+1. A middle checkpoint may dominate both: `B/epoch6` probes sky drone naming
+   0.775 (vs epoch12's 0.734) at sahiBird 0.795. Selection never scored sky
+   naming — add `birds_only` (bird naming) + `baseline` (drone naming) to
+   `sweep_m3_naming.py`'s metrics (they are training-pool sky clips; NEVER
+   use eval_birds for selection) and re-pick.
+2. The sweep's 3-frame miss under m3 and the canopy and-confirm loss both
+   look like m3-recall side effects; a shorter retrain (fewer epochs, or
+   half-weight on the new bird tiles) is the obvious knob.
+3. Deploy decision is the USER'S: m1+v6r vs m3+v7 vs stay on m1+v1.
+
+## m3 "bird-namer" detector retrain — original design notes (2026-08-28, late night)
 
 **Motivation, measured:** the canopy balanced config's remaining alarms are
 blocked from bird-mute by NAMING, not by the trust gate — 37/min of bird
