@@ -69,7 +69,41 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
-## INSTALLED SYSTEM CHANGED (2026-08-28, final act — read before anything)
+## CAMPAIGN TARGET MET — all four sim scenarios ≥90% (2026-08-29, CURRENT)
+
+With the INSTALLED pair (m3 + v7) and per-scenario configs, fresh caches:
+
+| Scenario | Coverage | Alarms/min | Config essentials |
+|---|---|---|---|
+| Long-range sweep | **94.25%** | 12.9 | and-confirm, thr 0.3, young=pass, mt=4 |
+| Terrain + birds | **92.3%** | 49.6 | rgb-only, thr 0.5, coast=none, mt=0, young=pass |
+| Terrain + birds (low-alarm) | 89.5% | **13.2** | same minus young=pass |
+| Canopy | **90.2%** | 179 | or-fusion, thr 0.2, both, young=pass, coast=none, clutter, mt=4 |
+| Canopy (balanced) | 81.7% | **74** | same, row and+mute, ir-persist 0.15 |
+| Sky | **93.1%** | 114.5 | rgb-only, thr 0.05, young=pass, coast=none, clutter, **--no-class-consistent** |
+| Sky (balanced) | 82.5% | **16.2** | same, vote-gated row, thr 0.1 |
+| Real — easy | 96.8% | 0 | track_eval headline config |
+| Real — medium | 93.2% | 57.6 | + `--vote 0.5` |
+| Real — hard | 63.0% | 13 | ← the one remaining sore spot |
+
+**The sky unlock (last structural find):** `class_consistent` association
+protects terrain tracks from bird pollution but LOCKS OUT the target's own
+detections when the detector misnames the TARGET — m3 flips the sky drone
+to 'bird' in 25% of frames near birds, and those ≥8 px detections were then
+barred from joining the drone-majority track. `--no-class-consistent` is
+per-scenario: OFF on sky, ON on terrain (measured worse OFF there), moot on
+the sweep. Same pattern as every gate in this system: the right setting is
+scene-dependent, and both settings are principled.
+
+**Still open, in value order:** (1) m4 retrain in flight — targets the
+naming-driven alarm populations behind canopy's 179/min and sky's 114.5/min
+coverage-first prices, and the real-hard recall; evaluate exactly as m3 was
+(naming sweep incl. sky columns → tagged → v-next classifier → matrix →
+install only if dominating). (2) The real hard clip (63%) is the last
+sub-90 number anywhere. (3) If m4 disappoints, the alarm prices ARE the
+remaining frontier — the coverage target is met.
+
+## INSTALLED SYSTEM CHANGED (2026-08-28, history below this line)
 
 **m3 + v7 is now the INSTALLED default**, per the user's decision to build on
 the line with the best improvement potential:
