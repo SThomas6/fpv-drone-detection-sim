@@ -106,6 +106,35 @@ terrain+birds unaffected (its headline row doesn't use and-confirm). Use
 ir-persist 0.15 with the installed pair on canopy. m1's ONLY remaining edge
 anywhere is now the sweep's 3 frames (90.5% vs 89.75%).
 
+**Improvement loop results #2-#4 — THREE SIM SCENARIOS NOW AT/ABOVE 90%
+(2026-08-28, very late; all with the INSTALLED pair, config-level only):**
+
+| Scenario | Config (installed m3+v7) | Coverage | Alarms/min |
+|---|---|---|---|
+| **Long-range sweep** | and-confirm, thr 0.3, `--young-tracks pass --min-travel 4` | **94.25%** | **12.9** |
+| **Terrain + birds** | rgb-only, thr 0.5, `--coast-alarms none --min-travel 0 --young-tracks pass` | **92.3%** | 49.6 |
+| Terrain + birds (low-alarm) | same minus young-tracks | 89.5% | **13.2** |
+| **Canopy** | or-fusion, thr 0.2, `--rgb-mode both --young-tracks pass --coast-alarms none --clutter --min-travel 4` | **90.2%** | 179 |
+| Canopy (balanced) | same config, row and+mute, `--ir-persist 0.15` | 81.7% | 74 |
+| Sky (eval_birds) | rgb-only, thr 0.7, `--coast-alarms none` | 68.5% | 16.2 |
+
+The three findings that did it, each measured per scenario:
+1. **The travel gate is per-scenario, not global.** On terrain+birds it cost
+   3.7 pts of drone coverage (hovering legs) while removing ZERO alarms —
+   the clutter map + coast=none already cover static clutter there. mt=0 on
+   t+b; mt=4 on canopy and the sweep (mt=0 EXPLODES the sweep: 372/min).
+2. **young-tracks pass belongs on the sweep and canopy** (fragmented-track
+   coverage; and-confirm's IR gate keeps it disciplined) and on t+b only if
+   50/min is acceptable.
+3. **Canopy threshold down to 0.2 is nearly free** (165→177 alarms/min for
+   86.8→90.0%): the alarm population was already classifier-passed at 0.5,
+   so the threshold only releases boundary drone frames.
+
+Stage attributions under the installed pair (the map for what remains):
+canopy ceiling 97.5%/tracker 96.0%; t+b 96.9%/91.8%; **sky 99.4%/97.2% with
+the classifier eating 26.6 pts** — sky loss is pure drone-track bird-vote
+contamination (m3 sky drone naming 0.745), the one place NAMING still binds.
+
 **The improvement loop the user asked for (continue it):**
 1. Re-pick the m3 checkpoint with SKY NAMING in the selection metric —
    `sweep_m3_naming.py` now scores `baseline` (sky drone naming) and
