@@ -13,6 +13,7 @@ Checks:
   5. duplicate boxes on one tiny target are merged
   6. the Kalman tracker recovers a known constant velocity
   7. tracking holds one ID over a sequence
+  8. the static-clutter map mutes a fixed blob but never a moving target
 
 Exit code = number of failed checks.
 """
@@ -30,6 +31,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from camera.clutter_map import StaticClutterSuppressor  # noqa: E402
 from camera.detector import Detection, DroneDetector, merge_close  # noqa: E402
 from camera.evaluate import is_hit  # noqa: E402
 from camera.tracking import CentroidTracker  # noqa: E402
@@ -61,7 +63,7 @@ def main() -> None:
 
     print("=== Phase 2 regression test ===")
 
-    print("[1/7] model loads")
+    print("[1/8] model loads")
     det = DroneDetector()
     ok_names = det.names in ({0: "drone"}, {0: "drone", 1: "bird"})
     report("expected class map", ok_names, str(det.names))
@@ -70,7 +72,7 @@ def main() -> None:
     recs = [r for r in labels_of(baseline) if r["visible"]]
     sample = recs[::max(1, len(recs) // 12)][:12]
 
-    print("[2/7] device parity (mps vs cpu)")
+    print("[2/8] device parity (mps vs cpu)")
     probe = next((r for r in sample if det.detect(load(baseline, r))), None)
     if probe is None:
         report("parity check", False, "no detections to compare on")
@@ -78,13 +80,13 @@ def main() -> None:
         problems = det.check_device_parity(load(baseline, probe))
         report("mps matches cpu", not problems, "; ".join(problems) or "identical")
 
-    print("[3/7] detection on frames with a drone")
+    print("[3/8] detection on frames with a drone")
     hits = sum(1 for r in sample
                if any(is_hit(d.xyxy, r) for d in det.detect(load(baseline, r))))
     report("recall on sampled frames", hits >= len(sample) * 0.9,
            f"{hits}/{len(sample)}")
 
-    print("[4/7] no false positives on empty sky")
+    print("[4/8] no false positives on empty sky")
     if empty.exists():
         blanks = labels_of(empty)[::20][:10]
         fps = sum(len(det.detect(load(empty, r))) for r in blanks)
@@ -92,14 +94,14 @@ def main() -> None:
     else:
         report("empty-sky clip present", False, "data/clips/no_drone missing")
 
-    print("[5/7] duplicate merging for tiny targets")
+    print("[5/8] duplicate merging for tiny targets")
     dup = [Detection(100, 100, 106, 106, 0.6), Detection(103, 102, 109, 108, 0.4),
            Detection(400, 300, 406, 306, 0.5)]
     merged = merge_close(dup)
     report("near-duplicate boxes merged", len(merged) == 2,
            f"{len(dup)} -> {len(merged)}")
 
-    print("[6/7] tracker recovers a known velocity")
+    print("[6/8] tracker recovers a known velocity")
     tr = CentroidTracker()
     est = None
     for i in range(25):
@@ -112,7 +114,7 @@ def main() -> None:
     report("constant velocity recovered", ok,
            f"estimated {est[0]:.1f},{est[1]:.1f} px/s vs true 100.0,0.0" if est else "no track")
 
-    print("[7/7] one ID held across a sequence")
+    print("[7/8] one ID held across a sequence")
     seq = labels_of(baseline)[:60]
     tr2 = CentroidTracker()
     ids = set()
@@ -120,6 +122,28 @@ def main() -> None:
         for t in tr2.update(det.detect(load(baseline, r)), timestamp=r["t"]):
             ids.add(t.track_id)
     report("single track ID for a single drone", len(ids) <= 1, f"{len(ids)} IDs")
+
+    print("[8/8] static-clutter map: mutes a fixed blob, spares a mover")
+    # Both run 30 frames at 0.2 s. The blob sits still; the mover crosses at
+    # 18 px/frame, the drone's measured pace on the real footage. An earlier
+    # version of the map drifted its anchors toward each new observation, so
+    # the anchor FOLLOWED the mover and suppressed it - recall collapsed to
+    # 0.46. This pins that behaviour: persistence alone is not enough, the
+    # anchor's spatial extent has to be what decides.
+    fixed = StaticClutterSuppressor()
+    moving = StaticClutterSuppressor()
+    blob_muted = mover_muted = 0
+    for i in range(30):
+        t = i * 0.2
+        _, drop_f = fixed.step([Detection(500, 500, 560, 560, 0.5)], t)
+        x = 100.0 + 18.0 * i
+        _, drop_m = moving.step([Detection(x, 500, x + 60, 560, 0.5)], t)
+        blob_muted += len(drop_f)
+        mover_muted += len(drop_m)
+    report("fixed blob suppressed once established", blob_muted > 15,
+           f"{blob_muted}/30 frames muted")
+    report("moving target never suppressed", mover_muted == 0,
+           f"{mover_muted}/30 frames muted")
 
     fails = RESULTS.count(False)
     print(f"\n=== {len(RESULTS) - fails}/{len(RESULTS)} checks passed ===")

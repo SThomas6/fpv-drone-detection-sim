@@ -75,11 +75,23 @@ class CentroidTracker:
     def __init__(self, max_age: int = 15, min_hits: int = 2,
                  base_gate_px: float = 30.0, accel_sigma: float = 250.0,
                  class_consistent: bool = False,
-                 suppress_spawn_near_coasting: bool = False):
+                 suppress_spawn_near_coasting: bool = False,
+                 max_size_gate_px: float = 250.0):
         self.max_age = max_age
         self.min_hits = min_hits
         self.base_gate_px = base_gate_px
         self.accel_sigma = accel_sigma
+        # The size term of the association gate is 4x the box width, which is
+        # right for the 2-13 px targets this tracker was built for (a drone
+        # that small crosses several of its own widths per frame) and absurd
+        # once boxes get large: a 175 px blur blob on real footage buys a
+        # 730 px radius, wider than a third of the frame, and unrelated
+        # clutter detections chain into one wandering track. Capping the term
+        # keeps association scale-appropriate at both ends. The 250 px default
+        # is a measured no-op for every sim clip in this project (widest
+        # cached detection is 61 px -> a 244 px term); real footage needs it
+        # much tighter, so callers there pass their own value.
+        self.max_size_gate_px = max_size_gate_px
         # Multi-stream fusion discipline (off by default — single-detector
         # behaviour is unchanged):
         # class_consistent: a large (>=8 px) detection whose class contradicts
@@ -219,7 +231,7 @@ class CentroidTracker:
     def _gate_for(self, tr: TrackState, det, dt: float) -> float:
         """Association radius: grows with target size, speed and time coasted."""
         speed = float(np.hypot(tr.mean[2], tr.mean[3]))
-        size_term = 4.0 * max(det.width, 2.0)
+        size_term = min(4.0 * max(det.width, 2.0), self.max_size_gate_px)
         motion_term = speed * dt * 1.5
         coast_term = self.base_gate_px * tr.misses * 0.5
         return self.base_gate_px + size_term + motion_term + coast_term

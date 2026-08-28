@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from camera.classify import (MotionClassifier, drone_vote_fraction,  # noqa: E402
                              features_from_history)
+from camera.clutter_map import StaticClutterSuppressor  # noqa: E402
 from camera.detector import Detection, merge_close  # noqa: E402
 from camera.evaluate import hits_object, is_hit  # noqa: E402
 from camera.tracking import CentroidTracker  # noqa: E402
@@ -89,11 +90,39 @@ def fuse_measurements(rgb, aux):
     return dets, sources
 
 
-def load_clip(clip: Path, rgb_conf: float, ir_conf: float):
+def _load_dets(path: Path) -> dict:
+    return {r["frame"]: r["detections"] for r in
+            (json.loads(l) for l in open(path))}
+
+
+def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
+              rgb_mode: str = "full"):
+    """Cached streams for one clip.
+
+    rgb_mode picks which detector pass feeds the RGB stream:
+      full : detections_full.jsonl  (one native-scale pass, 46 FPS)
+      sahi : detections_sahi.jsonl  (tiled pass, 5 FPS, ~2x recall on
+             sub-canopy targets - measured, see docs/phase2-results.md)
+      both : the union of the two, deduplicated by merge_close. Tiling and
+             full-frame miss different targets, so the union is a genuine
+             detector-level OR, not just the better of the two.
+    """
     labels = {r["frame"]: r for r in
               (json.loads(l) for l in open(clip / "labels.jsonl"))}
-    rgb = {r["frame"]: r["detections"] for r in
-           (json.loads(l) for l in open(clip / "detections_full.jsonl"))}
+    full_path = clip / "detections_full.jsonl"
+    sahi_path = clip / "detections_sahi.jsonl"
+    if rgb_mode in ("sahi", "both") and not sahi_path.exists():
+        raise SystemExit(
+            f"{sahi_path} missing - run: "
+            f"python camera/evaluate.py run --clip {clip} --mode sahi")
+    if rgb_mode == "full":
+        rgb = _load_dets(full_path)
+    elif rgb_mode == "sahi":
+        rgb = _load_dets(sahi_path)
+    else:
+        rgb = _load_dets(full_path)
+        for f, dets in _load_dets(sahi_path).items():
+            rgb[f] = rgb.get(f, []) + dets
     ir_path = clip / "detections_ir.jsonl"
     ir = {}
     if ir_path.exists():
@@ -104,7 +133,8 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float):
     if mv_path.exists():
         mv = {r["frame"]: r["detections"] for r in
               (json.loads(l) for l in open(mv_path))}
-    print(f"streams: rgb{' + ir' if ir else ''}{' + motion' if mv else ''}")
+    print(f"streams: rgb[{rgb_mode}]{' + ir' if ir else ''}"
+          f"{' + motion' if mv else ''}")
     frames = sorted(rgb.keys())
     out = []
     for f in frames:
@@ -130,6 +160,20 @@ def main():
     ap.add_argument("--min-travel", type=float, default=8.0,
                     help="min net track displacement in px before it may "
                          "alarm; static warm clutter never travels")
+    ap.add_argument("--rgb-mode", default="full",
+                    choices=["full", "sahi", "both"],
+                    help="which cached RGB detector pass feeds the fusion")
+    ap.add_argument("--clutter", action="store_true",
+                    help="suppress measurements at established static-clutter "
+                         "locations (camera/clutter_map.py) before tracking")
+    ap.add_argument("--clutter-radius", type=float, default=25.0)
+    ap.add_argument("--clutter-window", type=float, default=15.0,
+                    help="persistence window, seconds")
+    ap.add_argument("--clutter-persist", type=int, default=8)
+    ap.add_argument("--clutter-extent", type=float, default=15.0)
+    ap.add_argument("--exempt-travel", type=float, default=40.0,
+                    help="net track travel that exempts a measurement from "
+                         "clutter suppression")
     args = ap.parse_args()
     clip = Path(args.clip)
 
@@ -147,10 +191,45 @@ def main():
                                   suppress_spawn_near_coasting=True)
         ir_seen = defaultdict(lambda: deque(maxlen=90))
         obs = []
-        rows = load_clip(clip, args.rgb_conf, args.ir_conf)
+        supp = (StaticClutterSuppressor(
+            radius=args.clutter_radius, window_s=args.clutter_window,
+            min_persist=args.clutter_persist,
+            max_extent=args.clutter_extent) if args.clutter else None)
+        n_supp = 0
+
+        def _exempt(d, _tracker=tracker):
+            """Measurements owned by a track that has demonstrably travelled.
+
+            Only currently-detected tracks vouch: a coasting track's Kalman
+            prediction keeps flying at its last velocity and would exempt
+            half the frame.
+            """
+            cx, cy = d.centre
+            for tr in _tracker.active:
+                if tr.misses > 0 or len(tr.history) < 2:
+                    continue
+                xs = [h[1] for h in tr.history]
+                ys = [h[2] for h in tr.history]
+                if math.hypot(max(xs) - min(xs),
+                              max(ys) - min(ys)) < args.exempt_travel:
+                    continue
+                if math.hypot(cx - tr.mean[0],
+                              cy - tr.mean[1]) <= max(25.0, 2.0 * d.width):
+                    return True
+            return False
+
+        rows = load_clip(clip, args.rgb_conf, args.ir_conf, args.rgb_mode)
         for f, gt, rgb_dets, ir_dets in rows:
             rd, id_ = select(rgb_dets, ir_dets)
             dets, sources = fuse_measurements(rd, id_)
+            if supp is not None:
+                keep_set, dropped = supp.step(dets, gt["t"], exempt=_exempt)
+                n_supp += len(dropped)
+                keep_ids = {id(d) for d in keep_set}
+                dets, sources = zip(*[(d, s) for d, s in zip(dets, sources)
+                                      if id(d) in keep_ids]) \
+                    if keep_set else ([], [])
+                dets, sources = list(dets), list(sources)
             tracks = tracker.update(dets, timestamp=gt["t"])
             boxmap = {tuple(round(v, 1) for v in d.xyxy): s
                       for d, s in zip(dets, sources)}
@@ -194,6 +273,8 @@ def main():
                     "travel_px": travel,
                 })
         results[mode] = obs
+        if supp is not None:
+            print(f"[{mode}] clutter map suppressed {n_supp} measurements")
 
     n_frames = sum(1 for _ in open(clip / "labels.jsonl"))
     meta = json.loads((clip / "meta.json").read_text())
@@ -201,7 +282,7 @@ def main():
     vis = sum(1 for l in open(clip / "labels.jsonl")
               if json.loads(l)["visible"])
 
-    print(f"\n=== EO/IR fusion on {clip.name} "
+    print(f"\n=== EO/IR fusion on {clip.name} [rgb={args.rgb_mode}{', clutter' if args.clutter else ''}] "
           f"({n_frames} frames, {vis} drone-visible, {minutes:.1f} min) ===")
     print(f"{'policy':>12} {'drone cover':>12} {'alarms/min':>11} "
           f"{'on birds':>9} {'clutter':>8}")
