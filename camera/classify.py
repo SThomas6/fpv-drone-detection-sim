@@ -86,6 +86,20 @@ def features_from_history(history) -> np.ndarray | None:
                      min(float(np.mean(speed_widths)), 50.0)], dtype=float)
 
 
+def drone_vote_fraction(history) -> float:
+    """Share of a track's detections the detector called 'drone'.
+
+    With a two-class detector a 4 px target flip-flops between classes frame to
+    frame; no single frame is meaningful but the aggregate is. Histories from a
+    single-class detector carry no class entry and count as all-drone, so this
+    is 1.0 there and the vote gate becomes a no-op.
+    """
+    if not history:
+        return 1.0
+    votes = [h[5] if len(h) > 5 else "drone" for h in history]
+    return sum(1 for v in votes if v == "drone") / len(votes)
+
+
 class MotionClassifier:
     """Logistic regression on motion features. P(drone) given a track.
 
@@ -176,8 +190,10 @@ def tracks_from_clip(clip: Path, want: str, conf: float = 0.10):
     out = []
     for rec in labels:
         frame = np.array(Image.open(clip / "frames" / rec["frame"]).convert("RGB"))
-        drone_dets = [d for d in det.detect(frame) if d.cls_name == "drone"]
-        for tr in tracker.update(drone_dets, timestamp=rec["t"]):
+        # Track EVERY class. A two-class detector flip-flops on a tiny target;
+        # dropping the bird-labelled frames here would punch holes in the very
+        # track whose motion is being learned.
+        for tr in tracker.update(det.detect(frame), timestamp=rec["t"]):
             if len(tr.history) < MIN_HISTORY:
                 continue
             is_drone = rec["visible"] and is_hit(tr.box, rec)
@@ -266,16 +282,18 @@ def cmd_eval(args):
     observations = []
     for rec in labels:
         frame = np.array(Image.open(clip / "frames" / rec["frame"]).convert("RGB"))
-        drone_dets = [d for d in det.detect(frame) if d.cls_name == "drone"]
-        for tr in tracker.update(drone_dets, timestamp=rec["t"]):
+        # All classes are tracked (see tracks_from_clip); the per-frame class
+        # becomes an appearance VOTE aggregated over the track below.
+        for tr in tracker.update(det.detect(frame), timestamp=rec["t"]):
             is_drone = bool(rec["visible"] and is_hit(tr.box, rec))
             on_bird = any(hits_object(tr.box, b) for b in (rec.get("birds") or []))
             if not is_drone and not on_bird:
                 continue
+            f = features_from_history(tr.history)
             observations.append({
                 "t": rec["t"], "is_drone": is_drone,
-                "p": clf.probability(features_from_history(tr.history))
-                     if features_from_history(tr.history) is not None else None,
+                "p": clf.probability(f) if f is not None else None,
+                "vote": drone_vote_fraction(tr.history),
             })
 
     interval = json.loads((clip / "meta.json").read_text()).get("interval_s", 0.4)
@@ -287,16 +305,41 @@ def cmd_eval(args):
     print(f"{len(labels)} frames ({minutes:.1f} min). Before classification: "
           f"{raw_drone} drone track-frames, {raw_bird} bird false alarms "
           f"({raw_bird / minutes:.0f}/min)\n")
+    def policy_row(thr, vote_thr):
+        kept = sum(1 for o in observations
+                   if o["is_drone"] and o["p"] is not None and o["p"] >= thr
+                   and o["vote"] >= vote_thr)
+        alarms = sum(1 for o in observations
+                     if not o["is_drone"] and o["p"] is not None and o["p"] >= thr
+                     and o["vote"] >= vote_thr)
+        return kept, alarms
+
     print(f"{'thresh':>7} {'drone kept':>11} {'bird alarms':>12} {'alarms/min':>11} "
           f"{'reduction':>10}")
     for thr in (0.30, 0.50, 0.70, 0.80, 0.90, 0.95):
-        kept = sum(1 for o in observations
-                   if o["is_drone"] and o["p"] is not None and o["p"] >= thr)
-        alarms = sum(1 for o in observations
-                     if not o["is_drone"] and o["p"] is not None and o["p"] >= thr)
+        kept, alarms = policy_row(thr, 0.0)
         red = (1 - alarms / raw_bird) * 100 if raw_bird else 0.0
         print(f"{thr:>7.2f} {kept / max(raw_drone, 1) * 100:>10.1f}% {alarms:>12} "
               f"{alarms / minutes:>11.1f} {red:>9.1f}%")
+
+    # Appearance votes only exist with a two-class detector; on a single-class
+    # model every vote is 1.0 and this table repeats the one above.
+    if any(o["vote"] < 1.0 for o in observations):
+        print(f"\nfused with appearance votes "
+              f"(motion >= thresh AND track drone-vote >= 0.5):")
+        print(f"{'thresh':>7} {'drone kept':>11} {'bird alarms':>12} "
+              f"{'alarms/min':>11} {'reduction':>10}")
+        for thr in (0.30, 0.50, 0.70, 0.80, 0.90, 0.95):
+            kept, alarms = policy_row(thr, 0.5)
+            red = (1 - alarms / raw_bird) * 100 if raw_bird else 0.0
+            print(f"{thr:>7.2f} {kept / max(raw_drone, 1) * 100:>10.1f}% {alarms:>12} "
+                  f"{alarms / minutes:>11.1f} {red:>9.1f}%")
+        v_kept = sum(1 for o in observations if o["is_drone"] and o["vote"] >= 0.5)
+        v_alarms = sum(1 for o in observations
+                       if not o["is_drone"] and o["vote"] >= 0.5)
+        print(f"\n(votes alone, no motion: drone kept "
+              f"{v_kept / max(raw_drone, 1) * 100:.1f}%, "
+              f"{v_alarms / minutes:.1f} alarms/min)")
 
     # time from the drone first appearing to the first confirmed declaration
     thr = args.threshold

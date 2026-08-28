@@ -1,10 +1,11 @@
 {
   "clip": "baseline",
   "mode": "full",
-  "operating_conf": 0.05,
+  "min_range_m": null,
+  "operating_conf": 0.1,
   "recall": 1.0,
-  "precision": 0.9804,
-  "fp_per_min": 2.0,
+  "precision": 1.0,
+  "fp_per_min": 0.0,
   "by_bucket": {
     "<16px": {
       "hit": 250,
@@ -24,54 +25,63 @@
       "recall": 1.0
     }
   },
+  "fp_on_birds": null,
   "sweep": [
     {
       "conf": 0.05,
       "recall": 1.0,
-      "precision": 0.9804,
-      "fp_per_min": 2.0
+      "precision": 0.7764,
+      "fp_per_min": 28.8,
+      "fp_on_birds": 0
     },
     {
       "conf": 0.1,
       "recall": 1.0,
-      "precision": 0.9921,
-      "fp_per_min": 0.8
+      "precision": 1.0,
+      "fp_per_min": 0.0,
+      "fp_on_birds": 0
     },
     {
       "conf": 0.15,
       "recall": 1.0,
-      "precision": 0.996,
-      "fp_per_min": 0.4
+      "precision": 1.0,
+      "fp_per_min": 0.0,
+      "fp_on_birds": 0
     },
     {
       "conf": 0.2,
       "recall": 1.0,
-      "precision": 0.996,
-      "fp_per_min": 0.4
+      "precision": 1.0,
+      "fp_per_min": 0.0,
+      "fp_on_birds": 0
     },
     {
       "conf": 0.25,
       "recall": 1.0,
-      "precision": 0.996,
-      "fp_per_min": 0.4
+      "precision": 1.0,
+      "fp_per_min": 0.0,
+      "fp_on_birds": 0
     },
     {
       "conf": 0.3,
       "recall": 0.996,
-      "precision": 0.996,
-      "fp_per_min": 0.4
+      "precision": 1.0,
+      "fp_per_min": 0.0,
+      "fp_on_birds": 0
     },
     {
       "conf": 0.4,
-      "recall": 0.952,
+      "recall": 0.956,
       "precision": 1.0,
-      "fp_per_min": 0.0
+      "fp_per_min": 0.0,
+      "fp_on_birds": 0
     },
     {
       "conf": 0.5,
-      "recall": 0.812,
+      "recall": 0.844,
       "precision": 1.0,
-      "fp_per_min": 0.0
+      "fp_per_min": 0.0,
+      "fp_on_birds": 0
     }
   ]
 }

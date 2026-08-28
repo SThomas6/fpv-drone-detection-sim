@@ -54,8 +54,19 @@
 - [x] Bird rejection by track MOTION (`camera/classify.py`) instead of a second
       appearance model: removes 84-91% of bird alarms on held-out data, costs
       ~30% of drone track-frames. Improvement, not a fix
-- [ ] NEXT: fine-tune a TWO-CLASS (drone, bird) detector — the principled fix,
-      so appearance scores are comparable by construction
+- [x] Fine-tune a TWO-CLASS (drone, bird) detector (2026-08-28, on the PC).
+      8-run overnight campaign; every recipe axis probed. Verdict: per-frame
+      appearance saturates at 4-6 px (drone↔bird hard class flips), but the
+      two-class model + ALL-CLASS tracking + motion filter drops the system's
+      achievable false-alarm floor ~20x (0-0.5 alarms/min at 68-72% drone
+      track-frame coverage vs old floor 9.5/min at 89%). Weights installed
+      (`camera/weights/drone_bird_v1.pt`), baseline recall 1.000 kept.
+      Full account: "The two-class fine-tune" in docs/phase2-results.md
+- [ ] Capture ONE fresh never-evaluated clip and quote final numbers on it
+      (eval_birds was used for checkpoint/threshold selection = dev set)
+- [ ] Consider retraining camera/motion_classifier.json with the two-class
+      detector + all-class tracking (current weights were fitted on old-model
+      tracks; they transfer but were not refitted)
 - [ ] NOT DONE: multi-target tracking, real-world validation
 
 ## Phase 3 — Acoustic detection (NOT STARTED)
@@ -75,8 +86,11 @@
 ## Known gaps after Phase 2
 - Results are from a uniform, noise-free synthetic sky and are therefore
   optimistic. A 1.7 px target at 220 m would not survive a real camera.
-- Bird/drone discrimination is the biggest known weakness. Motion gating cuts
-  bird alarms by 84-91% but ~31-53/min remain, which is still too many.
+- Bird/drone discrimination is the biggest known weakness. UPDATE 2026-08-28:
+  the two-class detector + all-class tracking + motion now reaches 0-0.5
+  alarms/min at 68-72% drone track-frame coverage (see phase2-results.md);
+  the residual weakness is coverage, not alarms, and it is a measured
+  trade-off rather than an open problem.
 - The motion classifier is fitted to SIMULATED bird flight. The mechanism is
   real; the specific decision boundary is not evidence about real birds.
 - Only ever one drone in frame; multi-target association untested.

@@ -150,9 +150,13 @@ class CentroidTracker:
             tr.last_t = timestamp
             # width and confidence are kept because motion-based classification
             # (camera/classify.py) needs the projected-size oscillation that a
-            # flapping bird produces and a multirotor does not.
+            # flapping bird produces and a multirotor does not. The class name
+            # is kept so a track can be judged by its per-frame appearance
+            # votes: a two-class detector flip-flops on a 4 px target, and only
+            # the aggregate over the track is meaningful.
             tr.history.append((timestamp, float(tr.mean[0]), float(tr.mean[1]),
-                               float(det.width), float(det.confidence)))
+                               float(det.width), float(det.confidence),
+                               getattr(det, "cls_name", "drone")))
             del tr.history[:-90]
 
         for tr in self._tracks:
@@ -186,7 +190,8 @@ class CentroidTracker:
         tr = TrackState(track_id=self._next_id, mean=mean, cov=cov,
                         confidence=det.confidence, box=det.xyxy,
                         last_t=timestamp,
-                        history=[(timestamp, cx, cy, det.width, det.confidence)])
+                        history=[(timestamp, cx, cy, det.width, det.confidence,
+                                  getattr(det, "cls_name", "drone"))])
         self._next_id += 1
         self._tracks.append(tr)
 

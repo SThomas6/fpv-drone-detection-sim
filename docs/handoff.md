@@ -15,11 +15,27 @@ machines; this file plus the other docs carry the full state.
 - **Phases 3–5 (audio, radar, fusion)**: not started. Phase order is strict;
   the user approves each phase before it begins.
 
-## THE IN-FLIGHT TASK (interrupted, resume here)
+## THE IN-FLIGHT TASK — COMPLETED on the PC, 2026-08-28
 
-A **two-class (drone, bird) fine-tune** was running on the Mac and was killed
-at the user's request (overheating) around epoch 2 of 20. Nothing of value was
-lost — retrain from scratch on the PC, it is ~8-10x faster there.
+The two-class fine-tune ran as an 8-experiment overnight campaign on the PC
+(RTX 3060 Ti). Outcome, in one paragraph: per-frame appearance cannot separate
+drone from bird at 4-6 px (the misses are hard drone→bird class flips, and no
+recipe — epochs, label-safe scale jitter, cls-loss weighting, per-class BCE,
+P2 stride-4 head, drone oversampling, low mosaic — moved the frontier), but
+the two-class model pays off at the TRACK level: with all-class tracking
+(camera/tracking.py + classify.py + detect_live.py now track every class and
+record per-frame class votes) plus the motion filter, the system reaches
+**0-0.5 false alarms/min at 68-72% drone track-frame coverage** on the
+held-out clip, versus the old system's floor of 9.5/min at 89% coverage.
+Weights installed at `camera/weights/drone_bird_v1.pt` (DroneDetector picks
+them up automatically); baseline recall stays 1.000. Full account with all
+numbers and caveats: "The two-class fine-tune" section of
+[phase2-results.md](phase2-results.md).
+
+The original task instructions below are kept for reference (the commands
+remain the way to reproduce the evaluation battery).
+
+### Original task notes (historical)
 
 Why this fine-tune: with birds in the air the current single-class detector
 raises ~335 false alarms/min on the mixed clip (~660/min on birds-only
@@ -102,15 +118,22 @@ python tests/test_phase2.py
   this project already shipped one mislabelled dataset and one aliased
   evaluation. Both post-mortems are in detection-notes.md.
 
-## After the fine-tune lands
+## After the fine-tune (updated 2026-08-28)
 
-Next known work, in rough order:
+Done: weights + docs + pipeline changes committed. The user approved moving to
+**Phase 3 (acoustic detection)** once the fine-tune campaign completed — that
+approval was given the night of 2026-08-27→28, conditional on the campaign
+finishing all its steps, which it did.
 
-1. Commit the trained weights + updated docs (weights are ignored by default —
-   `git add -f camera/weights/drone_bird_v1.pt`).
-2. Consider confidence calibration so reported confidence reads as a
-   probability (currently it is a box-quality score peaking ~0.8).
-3. On the PC, optionally switch to full physics-in-Gazebo mode
-   (`make px4_sitl gz_x500`, then `--mode gz`) — first-class on Linux.
-4. Await user approval for Phase 3 (acoustic detection; design sketch in
-   audio/README.md and TODO.md).
+Known follow-ups (not blocking Phase 3, noted in TODO.md):
+
+1. Capture one fresh never-evaluated clip for final quoted numbers
+   (eval_birds served as the selection dev set overnight).
+2. Consider retraining the motion classifier on two-class/all-class tracks.
+3. Confidence calibration so reported confidence reads as a probability.
+4. On the PC, optionally switch to full physics-in-Gazebo mode
+   (`make px4_sitl gz_x500`, then `--mode gz`) — needs the WSL2 sim install
+   (see pc-setup.md); the fine-tune/eval work needed none of it.
+5. Note: `runs/detect/...` in git still holds the Mac's stale interrupted
+   training artifacts (restored, not touched) — worth `git rm`-ing in a
+   housekeeping commit if the user agrees.

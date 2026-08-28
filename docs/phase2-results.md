@@ -230,3 +230,105 @@ signal, not as a performance claim.
 The next real step is the one the research recommends: fine-tune a **two-class
 (drone, bird) detector** so appearance and motion evidence can be combined
 properly, and validate on real Drone-vs-Bird footage.
+
+---
+
+# The two-class fine-tune (added 2026-08-28, measured on the PC / RTX 3060 Ti)
+
+Eight training runs and an overnight measurement campaign later, the two-class
+detector is installed (`camera/weights/drone_bird_v1.pt`) — but what it buys is
+different from what was hoped, and the honest account matters more than the
+headline.
+
+All numbers below are from the strictly held-out `eval_birds` clip (mission
+flight + 8 birds, never used in training) and the drone-only `baseline` clip,
+scored by the project evaluator (centre-distance matching).
+
+## What was hoped, and what happened
+
+The hope: a detector that keeps drone recall ≥ 0.99 while its bird class
+absorbs the ~439/min false alarms birds cause on this clip. What happened, in
+every recipe tried: **appearance alone cannot do both at 4–6 px.** The
+detector-alone Pareto frontier would not move:
+
+| recipe axis probed (40–60 epochs each) | recall ≥ 0.99 costs | low FP costs |
+|---|---|---|
+| longer training / pinned AdamW control | ~284 FP/min | recall ≤ 0.93 |
+| upscale-only scale jitter (label-safe) | ~320 FP/min | recall ≤ 0.92 |
+| cls loss ×3 | never reaches 0.99 | recall ≤ 0.87 |
+| combo + per-class BCE weights | ~278 FP/min | recall ≤ 0.83 |
+| P2 stride-4 head graft | never reaches 0.99 | recall ≤ 0.86 |
+| 3× drone-tile oversampling | never reaches 0.99 | recall ≤ 0.95 |
+| mosaic 0.1 (IJCNN winner recipe) | ~352 FP/min | recall ≤ 0.84 |
+
+Two measurement traps found on the way (both verified in ultralytics 8.4.131
+source): `optimizer='auto'` silently ignores `lr0` (it ran AdamW @ 0.001667,
+not the printed 0.01), and `best.pt` is selected by pure mAP50-95 — noise on
+2–10 px boxes — so every run saved per-epoch checkpoints and selection used
+the held-out evaluator instead.
+
+## The diagnosis that explains the frontier
+
+For every fine-tune, essentially **all** lost drone frames are *hard class
+flips*: the drone is perfectly localised but labelled `bird`, with zero
+drone-class score even at a 0.03 floor, concentrated at 48–77 m where the
+drone is 4–6 px. (The old single-class model cannot make this mistake — that
+is the only reason it scores recall 1.000.) The mirror image: when the
+detector false-fires `drone` on a bird, it emits *no* bird box at that spot,
+so cross-class vetoes at frame level were measured to do nothing. At these
+sizes the two classes are not separable per-frame; the information is simply
+not in the pixels. Phase 2's "no pixels left to argue about" conclusion,
+re-confirmed the hard way.
+
+## Where the fine-tune actually wins: the track level
+
+Per-frame flips average out over a track, and motion still separates the
+classes. Two pipeline changes (in `camera/tracking.py` / `classify.py` /
+`detect_live.py`):
+
+1. **Track every class.** Filtering to drone-class detections before tracking
+   punched holes in the drone's own track exactly on flip frames — and,
+   ironically, made *bird* tracks fragmentary too, starving the motion
+   classifier (an intermittently-detected bird has no readable wingbeat).
+   Class is now recorded per history sample instead of used as a pre-filter.
+2. **Appearance votes per track** (`drone_vote_fraction`) — measured honestly:
+   weak with this model (birds vote "drone" too), kept as a cheap extra gate.
+
+The stacked system on `eval_birds` (detector conf 0.05, motion threshold
+sweep):
+
+| system | drone track-frames kept | alarms/min |
+|---|---|---|
+| old detector, no filter | 100% | 438.8 |
+| old + motion 0.50 | 89.3% | 9.8 — **its floor is ~9.5/min at any threshold** |
+| two-class + motion 0.50 | 82.1% | 7.5 |
+| two-class + motion 0.90 | 71.9% | **0.5** |
+| two-class + motion 0.95 | 67.7% | **0.0** |
+
+That last column is the result of the campaign: the two-class detector plus
+continuous tracking gives the system a **~20× lower achievable false-alarm
+floor** (0–0.5/min vs 9.5/min). The cost is frame coverage, not silence: the
+drone stays continuously tracked (single ID, 2.4 s from first sighting to
+first confirmed call) and is declared on 68–72% of its visible frames instead
+of 89%.
+
+Detector-alone regression gates, installed weights (`drone_bird_v1.pt` =
+control-run epoch 40, selected by held-out sweep): `baseline` recall **1.000**,
+precision 1.000, 0.0 FP/min at conf 0.10 — no regression; `eval_birds` recall
+**1.000** at conf 0.05; the model also self-identifies birds (325 bird-class
+hits on birds at the operating floor). Offline regression tests: 6/7 (the
+seventh needs `data/clips/no_drone`, which was not migrated to this PC).
+
+## Honest caveats
+
+- Checkpoint and threshold selection used the held-out clip, which makes it a
+  dev set. The numbers above are fair comparisons between systems, but the
+  absolute values need one fresh, never-touched clip for a final quote (noted
+  in TODO).
+- The 68–72% coverage at ≤0.5 alarms/min is a *different operating point*, not
+  strictly better than old+motion at 89%/9.8 — which trade is right depends on
+  how expensive a false alarm is downstream. Both configurations remain
+  available (the old model still loads if `drone_bird_v1.pt` is removed).
+- Everything here is synthetic: simulated birds, clean skies. The mechanism
+  (track-level fusion beats per-frame appearance at tiny sizes) is the
+  transferable result; the specific numbers are not.

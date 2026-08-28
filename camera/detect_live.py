@@ -125,19 +125,29 @@ def main():
 
             if args.track and tracker is not None:
                 dets_all = det.infer(frame)
-                # only drone-class detections may raise alarms; a two-class
-                # model's bird detections are already-rejected distractors
-                drone_dets = [d for d in dets_all if d.cls_name == "drone"]
                 birds_seen += sum(1 for d in dets_all if d.cls_name == "bird")
-                results = tracker.update(drone_dets, timestamp=now)
                 verdicts = {}
                 if clf is not None:
+                    # Track EVERY class: a two-class model flip-flops per frame
+                    # on a 4 px target, and dropping bird-labelled frames would
+                    # fragment the drone's own track. Class votes are
+                    # aggregated per track and gate the alarm instead.
+                    from camera.classify import drone_vote_fraction
+                    results = tracker.update(dets_all, timestamp=now)
                     for t in results:
                         verdicts[t.track_id] = clf.classify_track(
                             t.history, args.classify_threshold)
-                    # Only declare targets whose motion says drone. A track too
-                    # short to judge is pending, not an alarm.
-                    results = [t for t in results if verdicts[t.track_id][0] == "drone"]
+                    # Declare only targets whose motion says drone AND whose
+                    # appearance votes agree. A track too short to judge is
+                    # pending, not an alarm.
+                    results = [t for t in results
+                               if verdicts[t.track_id][0] == "drone"
+                               and drone_vote_fraction(t.history) >= 0.5]
+                else:
+                    # without the classifier there is no vote gate, so only
+                    # drone-class detections may raise alarms
+                    drone_dets = [d for d in dets_all if d.cls_name == "drone"]
+                    results = tracker.update(drone_dets, timestamp=now)
                 reports = []
                 for t in results:
                     r = t.report()
