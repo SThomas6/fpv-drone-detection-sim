@@ -1,13 +1,64 @@
 # Handoff — continue this project in a fresh session
 
-Written 2026-08-28, end of a multi-day session, specifically so a **new**
-Claude Code session (new context window, possibly a cheaper model) can pick
-up the fusion-improvement campaign without re-deriving anything above. Read
-this file, then [phase2-results.md](phase2-results.md) for full measured
-numbers, then start work.
+Written 2026-08-28, updated continuously through that evening's session,
+specifically so a **new agent — possibly a different tool entirely (Gemini
+Antigravity, Codex, a fresh Claude Code session)** — can pick up the
+fusion-improvement campaign without re-deriving anything. Read this file,
+then [phase2-results.md](phase2-results.md) for full measured numbers, then
+start work.
 
 **First message to give the new session:** "Read docs/handoff.md and
 continue the fusion campaign toward the 90% target."
+
+## Environment — read before running anything
+
+- Repo root: `C:\Users\sctho\Projects\drone sim\fpv-drone-detection-sim`
+  (Windows 11, RTX 3060 Ti 8 GB).
+- **Always use the venv interpreter**, not bare `python`: `.venv/Scripts/python.exe`
+  (Python 3.12.8, torch 2.13.0+cu126 with working CUDA, ultralytics 8.4.131,
+  sahi 0.12.6). A bare `python` on this box has no torch.
+- `scipy` and `sklearn` are **not installed**. Everything is numpy-only by
+  design; keep it that way unless you deliberately add a dependency.
+- The `.sh` scripts in `scripts/` are bash and do not run on native Windows.
+  All the Python entry points are cross-platform.
+- **Writing Python files: use UTF-8 explicitly.** `Path.read_text()` /
+  `write_text()` default to cp1252 here and will silently corrupt the em-dashes
+  in these source files. This already broke `tests/test_phase2.py` once.
+- Tests: `.venv/Scripts/python.exe tests/test_phase2.py` — expect **8/9**.
+  The single failure is a missing `data/clips/no_drone` (data was never
+  migrated to this PC), not a code regression. Anything below 8/9 is real.
+
+## Quick command reference
+
+```bash
+# fused evaluation (the number the campaign is judged on)
+.venv/Scripts/python.exe camera/fuse_eval.py --clip data/clips/terrain_ir_canopy \
+    [--rgb-mode full|sahi|both] [--classifier camera/motion_classifier_v2.json] \
+    [--motion-thr 0.5] [--min-travel 8] [--young-tracks drop|pass] [--clutter]
+
+# plain-RGB real footage (no IR/motion streams exist for these)
+.venv/Scripts/python.exe camera/track_eval.py --clip data/clips/real_rgb_20190925_111757_1_5_masked \
+    --conf 0.10 --no-coast --clutter --clutter-radius 90 --clutter-window 16 \
+    --clutter-persist 6 --clutter-extent 40 --exempt-travel 0
+
+# detector alone, two stages (ALWAYS pass --tag, see the landmine below)
+.venv/Scripts/python.exe camera/evaluate.py run     --clip <clip> --mode full|sahi --tag <tag>
+.venv/Scripts/python.exe camera/evaluate.py analyze --clip <clip> --mode full|sahi --tag <tag>
+
+# retrain the track-level motion classifier (no GPU, cached detections only)
+.venv/Scripts/python.exe scripts/train_motion_classifier.py \
+    --clips data/clips/baseline data/clips/birds_only data/clips/backlit_birds \
+            data/clips/train_terrain_canopy data/clips/train_terrain_mission \
+    --holdout data/clips/eval_birds data/clips/terrain_ir_canopy data/clips/terrain_ir_birds \
+    --out camera/motion_classifier_v3.json
+```
+
+**Train/eval split — do not violate.** Training clips: `baseline`,
+`birds_only`, `backlit_birds`, `train_terrain_canopy` (seed 6),
+`train_terrain_mission` (seed 5), `train_zoom_a/b`. Evaluation clips, never
+to be trained on: `eval_birds`, `terrain_ir_canopy` (seed 13),
+`terrain_ir_birds` (seed 42), `terrain_ir_sweep`, `terrain_canopy`,
+`terrain_birds`, `terrain_zoomsweep`, and all `real_rgb_*` sequences.
 
 ## Where the project stands
 
@@ -234,10 +285,68 @@ attribution table changed what matters, so this list is rewritten:
   8-sample minimum is currently dropped, not judged, which costs canopy ~2-4
   points of coverage. `pass` declares it instead (and costs alarms).
 
+### Feature probe — WHY the classifier fails, feature by feature (2026-08-28, late)
+
+**User decisions taken at this point:** (a) leave `motion_classifier_v2.json`
+UNINSTALLED, keep v1 live and v2 selectable; (b) spend the remaining effort on
+**building a better discriminator** for canopy, not on trading coverage
+against alarms.
+
+Single-feature AUC for separating drone track-windows from bird track-windows
+(0.5 = chance; **below 0.5 means the feature is backwards on that clip**).
+Held-out clips, fused tracks:
+
+| Feature | canopy | terrain+birds | eval_birds (sky) | verdict |
+|---|---|---|---|---|
+| `drone_vote` (detector class votes over the track) | **0.820** | **0.978** | 0.614 | **best, and consistent** |
+| `straightness` | 0.733 | 0.722 | 0.836 | good, consistent |
+| `turn_rate` | 0.506 | 0.723 | 0.729 | useful off-sky |
+| `width_mean` | 0.188 | 0.244 | 0.448 | strong, INVERTED (birds are bigger) |
+| `rgb_frac` | 0.233 | 0.610 | 0.500 | inconsistent |
+| `speed_in_widths` | 0.757 | 0.675 | **0.218** | **flips sign on sky** |
+| `hover_fraction` | **0.355** | 0.541 | **0.961** | **flips sign on canopy** |
+| `vertical_ratio` | 0.407 | 0.266 | **0.984** | sky-only |
+| `y_norm` (image height) | 0.915 | 0.572 | 0.536 | **do NOT use — geometry overfit** |
+| `support_rate` | 0.269 | 0.460 | 0.907 | sky-only |
+| `speed_cv` | 0.603 | 0.663 | 0.947 | mild, consistent |
+
+This explains the AUC 0.419 exactly. The installed classifier's two largest
+weights are `hover_fraction` (+0.819) and `straightness` (+0.663).
+`hover_fraction` scores **0.961 on sky and 0.355 on canopy** — it is the single
+best feature in the domain it was trained on and backwards in the domain it is
+applied to. `speed_in_widths` flips the other way. A model built from
+sky-selected features cannot work on terrain; it inverts.
+
+**Two conclusions that should drive the next work:**
+
+1. **`drone_vote` is the strongest and most domain-stable signal available
+   (0.820 / 0.978 / 0.614) and it is not a classifier feature at all** — it is
+   used as a separate hard threshold in the `vote-gated` / `bird-mute`
+   policies. Folding it into the classifier so the model can weigh it against
+   the motion evidence is the highest-value single change left.
+2. **Reject `y_norm` even though it scores 0.915 on canopy.** It is the drone's
+   image height, i.e. it has memorised where this particular mission flies. It
+   drops to 0.572 / 0.536 on the other clips. Using it would produce a great
+   canopy number and a worthless system. Same caution applies to
+   `support_rate` and `vertical_ratio` (sky-only).
+
 **Open next steps, in order:**
 
-1. **Decide on `motion_classifier_v2.json`** (user call — it is a trade, see
-   the table in phase2-results.md). If installed, re-run the whole scoreboard.
+1. **Build the v3 track classifier** from the domain-stable features only:
+   `drone_vote`, `straightness`, `turn_rate`, `width_mean`, `speed_cv`, plus
+   `ir_frac`/`mv_frac` sensor support. Deliberately EXCLUDE `y_norm`,
+   `support_rate`, `vertical_ratio`, and treat `hover_fraction` and
+   `speed_in_widths` with suspicion (they invert between domains — if kept,
+   they need a domain-robust formulation, not a raw value). Target: canopy AUC
+   meaningfully above 0.594, without dropping `eval_birds` below ~0.97.
+   Probe script that produced the table above:
+   `scratchpad/feat_probe.py` (see the session's scratchpad; re-derivable from
+   `scripts/train_motion_classifier.py` + the feature list here).
+2. **Note the hard physical limit found while doing this**: bird wingbeat is
+   2–8 Hz, the sim clips are captured at 0.5 s intervals = 2 Hz, Nyquist 1 Hz.
+   **Wingbeat periodicity is not measurable in this data at all.** If you want
+   that discriminator you must re-capture at ≥20 Hz. Do not spend time trying
+   to extract it from the existing clips.
 2. **Canopy needs a discriminator that does not exist yet.** Best measured
    canopy coverage is 87.3% and only at ~1300 alarms/min. Detection is fine
    (96% ceiling, 94.7% held by the tracker); the problem is that 6 birds and
