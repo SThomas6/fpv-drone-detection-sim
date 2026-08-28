@@ -305,7 +305,9 @@ def main():
     vis = sum(1 for l in open(clip / "labels.jsonl")
               if json.loads(l)["visible"])
 
-    print(f"\n=== EO/IR fusion on {clip.name} [rgb={args.rgb_mode}{', clutter' if args.clutter else ''}] "
+    print(f"\n=== EO/IR fusion on {clip.name} "
+          f"[rgb={args.rgb_mode}{'/' + args.rgb_tag if args.rgb_tag else ''}"
+          f"{', clutter' if args.clutter else ''}] "
           f"({n_frames} frames, {vis} drone-visible, {minutes:.1f} min) ===")
     print(f"{'policy':>12} {'drone cover':>12} {'alarms/min':>11} "
           f"{'on birds':>9} {'clutter':>8}")
