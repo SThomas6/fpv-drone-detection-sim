@@ -91,10 +91,15 @@ def main():
     ap.add_argument("--guard-clip", default=GUARD_CLIP)
     ap.add_argument("--guard-limit", type=int, default=120,
                     help="frames of the guard clip to score (speed)")
+    ap.add_argument("--baseline", default="camera/weights/drone_bird_v1.pt",
+                    help="deployed weights scored first as the reference row; "
+                         "'' skips")
     ap.add_argument("--out", default="runs/m3_naming_sweep.json")
     args = ap.parse_args()
 
     ckpts = []
+    if args.baseline:
+        ckpts.append(("baseline", Path(args.baseline)))
     for run in args.runs:
         wdir = Path(run) / "weights"
         eps = sorted(wdir.glob("epoch*.pt"),

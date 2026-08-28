@@ -42,6 +42,6 @@ data/finetune/dataset_mixed*.yaml
 data/finetune/train_mixed*.txt
 runs/experiments/
 runs/m3_*.log
-runs/m3_kwargs.json
+runs/*_kwargs.json
 data/finetune/labels/*.cache
 data/finetune/images/*.cache

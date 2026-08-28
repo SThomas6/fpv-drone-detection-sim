@@ -1,0 +1,252 @@
+[
+  {
+    "run": "baseline",
+    "ckpt": "camera\\weights\\drone_bird_v1.pt",
+    "full": {
+      "recall": 0.33,
+      "drone_named": 0.9698492462311558,
+      "bird_named": 0.9212384573601303,
+      "n_drone_dets": 199,
+      "n_bird_dets": 1841
+    },
+    "sahi": {
+      "recall": 0.44,
+      "drone_named": 0.9844357976653697,
+      "bird_named": 0.7827982560443916,
+      "n_drone_dets": 257,
+      "n_bird_dets": 2523
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer",
+    "ckpt": "runs\\experiments\\m3_birdnamer\\weights\\epoch0.pt",
+    "full": {
+      "recall": 0.345,
+      "drone_named": 1.0,
+      "bird_named": 0.7790940766550523,
+      "n_drone_dets": 201,
+      "n_bird_dets": 1435
+    },
+    "sahi": {
+      "recall": 0.43,
+      "drone_named": 0.996,
+      "bird_named": 0.718200620475698,
+      "n_drone_dets": 250,
+      "n_bird_dets": 1934
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer",
+    "ckpt": "runs\\experiments\\m3_birdnamer\\weights\\epoch3.pt",
+    "full": {
+      "recall": 0.3233333333333333,
+      "drone_named": 0.9840425531914894,
+      "bird_named": 0.9088200238379023,
+      "n_drone_dets": 188,
+      "n_bird_dets": 1678
+    },
+    "sahi": {
+      "recall": 0.43833333333333335,
+      "drone_named": 0.9921568627450981,
+      "bird_named": 0.8841832324978393,
+      "n_drone_dets": 255,
+      "n_bird_dets": 2314
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer",
+    "ckpt": "runs\\experiments\\m3_birdnamer\\weights\\epoch4.pt",
+    "full": {
+      "recall": 0.35,
+      "drone_named": 0.9901960784313726,
+      "bird_named": 0.8303735456215554,
+      "n_drone_dets": 204,
+      "n_bird_dets": 1633
+    },
+    "sahi": {
+      "recall": 0.4683333333333333,
+      "drone_named": 0.9926470588235294,
+      "bird_named": 0.8237179487179487,
+      "n_drone_dets": 272,
+      "n_bird_dets": 2184
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch0.pt",
+    "full": {
+      "recall": 0.33666666666666667,
+      "drone_named": 0.9949494949494949,
+      "bird_named": 0.8548185231539425,
+      "n_drone_dets": 198,
+      "n_bird_dets": 1598
+    },
+    "sahi": {
+      "recall": 0.4166666666666667,
+      "drone_named": 0.9917355371900827,
+      "bird_named": 0.8563941299790356,
+      "n_drone_dets": 242,
+      "n_bird_dets": 1908
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch3.pt",
+    "full": {
+      "recall": 0.31833333333333336,
+      "drone_named": 0.9838709677419355,
+      "bird_named": 0.867665418227216,
+      "n_drone_dets": 186,
+      "n_bird_dets": 1602
+    },
+    "sahi": {
+      "recall": 0.4816666666666667,
+      "drone_named": 0.9857142857142858,
+      "bird_named": 0.707383773928897,
+      "n_drone_dets": 280,
+      "n_bird_dets": 2194
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch6.pt",
+    "full": {
+      "recall": 0.33,
+      "drone_named": 1.0,
+      "bird_named": 0.783974862529458,
+      "n_drone_dets": 192,
+      "n_bird_dets": 1273
+    },
+    "sahi": {
+      "recall": 0.49166666666666664,
+      "drone_named": 0.9930795847750865,
+      "bird_named": 0.7945482079757699,
+      "n_drone_dets": 289,
+      "n_bird_dets": 1981
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch9.pt",
+    "full": {
+      "recall": 0.3283333333333333,
+      "drone_named": 1.0,
+      "bird_named": 0.8283151825752723,
+      "n_drone_dets": 191,
+      "n_bird_dets": 1561
+    },
+    "sahi": {
+      "recall": 0.495,
+      "drone_named": 0.996551724137931,
+      "bird_named": 0.7933271547729379,
+      "n_drone_dets": 290,
+      "n_bird_dets": 2158
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch12.pt",
+    "full": {
+      "recall": 0.31666666666666665,
+      "drone_named": 0.9945652173913043,
+      "bird_named": 0.9111630625365283,
+      "n_drone_dets": 184,
+      "n_bird_dets": 1711
+    },
+    "sahi": {
+      "recall": 0.49666666666666665,
+      "drone_named": 0.9965156794425087,
+      "bird_named": 0.8724137931034482,
+      "n_drone_dets": 287,
+      "n_bird_dets": 2320
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  },
+  {
+    "run": "m3_birdnamer_b",
+    "ckpt": "runs\\experiments\\m3_birdnamer_b\\weights\\epoch14.pt",
+    "full": {
+      "recall": 0.325,
+      "drone_named": 1.0,
+      "bird_named": 0.8800695249130939,
+      "n_drone_dets": 189,
+      "n_bird_dets": 1726
+    },
+    "sahi": {
+      "recall": 0.485,
+      "drone_named": 0.9964539007092199,
+      "bird_named": 0.8432432432432433,
+      "n_drone_dets": 282,
+      "n_bird_dets": 2220
+    },
+    "guard": {
+      "recall": 1.0,
+      "drone_named": 1.0,
+      "bird_named": null,
+      "n_drone_dets": 120,
+      "n_bird_dets": 0
+    }
+  }
+]

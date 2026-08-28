@@ -46,7 +46,8 @@ from camera.tracking import CentroidTracker  # noqa: E402
 
 
 def samples_from_clip(clip: Path, rgb_conf: float, ir_conf: float,
-                      stride: int, feature_set: str = "v1"):
+                      stride: int, feature_set: str = "v1",
+                      rgb_tag: str | None = None):
     """(features, label) for every track-window in one clip.
 
     label 1 = the track is on the drone, 0 = on a bird. Clutter tracks are
@@ -55,7 +56,7 @@ def samples_from_clip(clip: Path, rgb_conf: float, ir_conf: float,
     negatives would teach it to reject anything with a short history, which is
     most of a fragmented terrain track.
     """
-    rows = load_clip(clip, rgb_conf, ir_conf)
+    rows = load_clip(clip, rgb_conf, ir_conf, rgb_tag=rgb_tag)
     tracker = CentroidTracker(class_consistent=True,
                               suppress_spawn_near_coasting=True)
     out = []
@@ -74,10 +75,12 @@ def samples_from_clip(clip: Path, rgb_conf: float, ir_conf: float,
     return out
 
 
-def collect(clips, rgb_conf, ir_conf, stride, feature_set="v1"):
+def collect(clips, rgb_conf, ir_conf, stride, feature_set="v1",
+            rgb_tag=None):
     X, y, per_clip = [], [], {}
     for c in clips:
-        s = samples_from_clip(Path(c), rgb_conf, ir_conf, stride, feature_set)
+        s = samples_from_clip(Path(c), rgb_conf, ir_conf, stride, feature_set,
+                              rgb_tag)
         n_d = sum(1 for _, lab in s if lab > 0.5)
         per_clip[Path(c).name] = (n_d, len(s) - n_d)
         print(f"  {Path(c).name:28s} {n_d:>5} drone  {len(s) - n_d:>5} bird",
@@ -111,6 +114,11 @@ def main():
     ap.add_argument("--stride", type=int, default=3,
                     help="sample every Nth frame; consecutive track-windows "
                          "are near-duplicates and just inflate the set")
+    ap.add_argument("--rgb-tag", default=None,
+                    help="build tracks from a TAGGED detector pass "
+                         "(detections_full_<tag>.jsonl) - training a "
+                         "classifier for a candidate detector whose votes "
+                         "differ from the deployed model's")
     ap.add_argument("--feature-set", default="v1", choices=list(FEATURE_SETS),
                     help="v1 = the original six sky-fitted motion features; "
                          "v3 = the domain-stable set (see camera/classify.py)")
@@ -119,7 +127,7 @@ def main():
 
     print("building training set from fused tracks...")
     X, y, _ = collect(args.clips, args.rgb_conf, args.ir_conf, args.stride,
-                      args.feature_set)
+                      args.feature_set, args.rgb_tag)
     if len(X) < 20:
         raise SystemExit("not enough track samples to train")
     print(f"\n{len(X)} samples: {int(y.sum())} drone, {int(len(y) - y.sum())} bird")
@@ -140,7 +148,7 @@ def main():
         print("\nheld-out clips (never trained on) — new vs current model:")
         for c in args.holdout:
             Xh, yh, _ = collect([c], args.rgb_conf, args.ir_conf,
-                                args.stride, args.feature_set)
+                                args.stride, args.feature_set, args.rgb_tag)
             Xo, yo, _ = ((Xh, yh, None) if args.feature_set == old.feature_set
                          else collect([c], args.rgb_conf, args.ir_conf,
                                       args.stride, old.feature_set))

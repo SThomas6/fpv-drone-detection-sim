@@ -1,300 +1,300 @@
-{"frame": "000000.png", "detections": [{"xyxy": [642.5, 244.0, 648.8, 249.6], "conf": 0.6777, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0343, "cls": "drone"}]}
-{"frame": "000001.png", "detections": [{"xyxy": [643.0, 246.4, 651.4, 252.0], "conf": 0.6181, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0373, "cls": "drone"}]}
-{"frame": "000002.png", "detections": [{"xyxy": [644.1, 247.0, 652.9, 252.0], "conf": 0.6135, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.039, "cls": "drone"}]}
-{"frame": "000003.png", "detections": [{"xyxy": [645.0, 247.4, 653.2, 252.0], "conf": 0.6401, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0392, "cls": "drone"}]}
-{"frame": "000004.png", "detections": [{"xyxy": [644.7, 247.3, 652.8, 252.0], "conf": 0.6182, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.039, "cls": "drone"}]}
-{"frame": "000005.png", "detections": [{"xyxy": [643.7, 240.4, 652.0, 246.8], "conf": 0.6945, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0315, "cls": "drone"}]}
-{"frame": "000006.png", "detections": [{"xyxy": [632.3, 219.1, 640.2, 227.1], "conf": 0.7057, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0398, "cls": "drone"}]}
-{"frame": "000007.png", "detections": [{"xyxy": [602.8, 205.2, 611.3, 213.6], "conf": 0.6744, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0419, "cls": "drone"}]}
-{"frame": "000008.png", "detections": [{"xyxy": [562.7, 197.9, 570.5, 205.7], "conf": 0.7051, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0434, "cls": "drone"}]}
-{"frame": "000009.png", "detections": [{"xyxy": [525.1, 194.6, 532.7, 201.0], "conf": 0.7532, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0407, "cls": "drone"}]}
-{"frame": "000010.png", "detections": [{"xyxy": [481.2, 187.9, 487.7, 194.8], "conf": 0.5239, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0437, "cls": "drone"}]}
-{"frame": "000011.png", "detections": [{"xyxy": [450.1, 185.3, 456.4, 190.4], "conf": 0.6831, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0469, "cls": "drone"}]}
-{"frame": "000012.png", "detections": [{"xyxy": [426.4, 180.0, 431.8, 185.0], "conf": 0.6296, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0416, "cls": "drone"}]}
-{"frame": "000013.png", "detections": [{"xyxy": [413.8, 178.5, 420.3, 182.2], "conf": 0.5318, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0474, "cls": "drone"}]}
-{"frame": "000014.png", "detections": [{"xyxy": [408.4, 176.9, 413.8, 181.5], "conf": 0.5113, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0468, "cls": "drone"}]}
-{"frame": "000015.png", "detections": [{"xyxy": [405.9, 177.1, 412.8, 181.2], "conf": 0.5909, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0445, "cls": "drone"}]}
-{"frame": "000016.png", "detections": [{"xyxy": [403.9, 176.7, 410.8, 180.3], "conf": 0.4395, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0451, "cls": "drone"}]}
-{"frame": "000017.png", "detections": [{"xyxy": [403.8, 176.3, 409.8, 180.1], "conf": 0.5619, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0446, "cls": "drone"}]}
-{"frame": "000018.png", "detections": [{"xyxy": [403.9, 176.3, 410.4, 180.1], "conf": 0.5119, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0452, "cls": "drone"}]}
-{"frame": "000019.png", "detections": [{"xyxy": [406.7, 176.1, 412.3, 180.1], "conf": 0.5013, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0447, "cls": "drone"}]}
-{"frame": "000020.png", "detections": [{"xyxy": [407.0, 176.1, 412.9, 180.1], "conf": 0.5137, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0457, "cls": "drone"}]}
-{"frame": "000021.png", "detections": [{"xyxy": [407.0, 176.1, 413.1, 180.1], "conf": 0.5358, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0454, "cls": "drone"}]}
-{"frame": "000022.png", "detections": [{"xyxy": [406.9, 175.5, 412.3, 180.0], "conf": 0.4567, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0457, "cls": "drone"}]}
-{"frame": "000023.png", "detections": [{"xyxy": [406.0, 175.9, 412.5, 180.1], "conf": 0.5513, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0439, "cls": "drone"}]}
-{"frame": "000024.png", "detections": [{"xyxy": [403.6, 176.5, 411.0, 180.2], "conf": 0.5345, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0449, "cls": "drone"}]}
-{"frame": "000025.png", "detections": [{"xyxy": [403.6, 176.4, 409.7, 180.1], "conf": 0.5541, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0446, "cls": "drone"}]}
-{"frame": "000026.png", "detections": [{"xyxy": [403.5, 177.2, 409.6, 180.7], "conf": 0.6077, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.043, "cls": "drone"}]}
-{"frame": "000027.png", "detections": [{"xyxy": [403.8, 177.5, 409.9, 181.5], "conf": 0.5901, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0442, "cls": "drone"}]}
-{"frame": "000028.png", "detections": [{"xyxy": [403.7, 178.2, 410.4, 182.2], "conf": 0.6262, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0425, "cls": "drone"}]}
-{"frame": "000029.png", "detections": [{"xyxy": [403.7, 179.8, 410.0, 184.8], "conf": 0.5498, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.045, "cls": "drone"}]}
-{"frame": "000030.png", "detections": [{"xyxy": [417.0, 190.3, 422.5, 196.1], "conf": 0.524, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0466, "cls": "drone"}]}
-{"frame": "000031.png", "detections": [{"xyxy": [442.6, 202.1, 447.9, 207.0], "conf": 0.5559, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0473, "cls": "drone"}]}
-{"frame": "000032.png", "detections": [{"xyxy": [480.1, 214.1, 486.7, 220.1], "conf": 0.3088, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0492, "cls": "drone"}]}
-{"frame": "000033.png", "detections": [{"xyxy": [521.1, 225.9, 526.1, 231.0], "conf": 0.5939, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0436, "cls": "drone"}]}
-{"frame": "000034.png", "detections": [{"xyxy": [571.9, 239.1, 578.6, 244.1], "conf": 0.4784, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0462, "cls": "drone"}]}
-{"frame": "000035.png", "detections": [{"xyxy": [619.2, 250.6, 624.7, 256.0], "conf": 0.6015, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0465, "cls": "drone"}]}
-{"frame": "000036.png", "detections": [{"xyxy": [675.9, 264.7, 682.3, 269.2], "conf": 0.5088, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0432, "cls": "drone"}]}
-{"frame": "000037.png", "detections": [{"xyxy": [721.9, 275.4, 726.8, 279.9], "conf": 0.6221, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0384, "cls": "drone"}]}
-{"frame": "000038.png", "detections": [{"xyxy": [774.4, 289.5, 780.1, 293.3], "conf": 0.5172, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.042, "cls": "drone"}]}
-{"frame": "000039.png", "detections": [{"xyxy": [806.1, 299.9, 812.0, 303.6], "conf": 0.4704, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0398, "cls": "drone"}]}
-{"frame": "000040.png", "detections": [{"xyxy": [833.9, 311.5, 839.7, 316.0], "conf": 0.456, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0467, "cls": "drone"}]}
-{"frame": "000041.png", "detections": [{"xyxy": [849.2, 321.4, 854.9, 325.3], "conf": 0.4358, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0436, "cls": "drone"}]}
-{"frame": "000042.png", "detections": [{"xyxy": [859.5, 331.8, 864.5, 335.7], "conf": 0.5412, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0433, "cls": "drone"}]}
-{"frame": "000043.png", "detections": [{"xyxy": [864.5, 340.0, 869.8, 344.3], "conf": 0.5274, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0429, "cls": "drone"}]}
-{"frame": "000044.png", "detections": [{"xyxy": [866.8, 352.4, 872.7, 356.0], "conf": 0.4897, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0411, "cls": "drone"}]}
-{"frame": "000045.png", "detections": [{"xyxy": [867.4, 360.5, 873.1, 364.0], "conf": 0.4783, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0434, "cls": "drone"}]}
-{"frame": "000046.png", "detections": [{"xyxy": [866.8, 370.2, 872.3, 374.0], "conf": 0.5189, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0446, "cls": "drone"}]}
-{"frame": "000047.png", "detections": [{"xyxy": [866.6, 378.8, 871.2, 382.6], "conf": 0.5635, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0488, "cls": "drone"}]}
-{"frame": "000048.png", "detections": [{"xyxy": [866.3, 388.0, 871.5, 393.3], "conf": 0.5159, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0471, "cls": "drone"}]}
-{"frame": "000049.png", "detections": [{"xyxy": [865.5, 396.0, 871.1, 401.6], "conf": 0.4726, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.048, "cls": "drone"}]}
-{"frame": "000050.png", "detections": [{"xyxy": [863.8, 404.0, 869.6, 409.0], "conf": 0.3943, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0501, "cls": "drone"}]}
-{"frame": "000051.png", "detections": [{"xyxy": [863.6, 409.6, 869.0, 414.1], "conf": 0.3092, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0508, "cls": "drone"}]}
-{"frame": "000052.png", "detections": [{"xyxy": [864.7, 411.9, 869.4, 415.7], "conf": 0.3933, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0501, "cls": "drone"}]}
-{"frame": "000053.png", "detections": [{"xyxy": [862.9, 410.5, 869.8, 413.6], "conf": 0.6009, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0498, "cls": "drone"}]}
-{"frame": "000054.png", "detections": [{"xyxy": [859.6, 394.3, 866.1, 399.2], "conf": 0.6751, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0478, "cls": "drone"}]}
-{"frame": "000055.png", "detections": [{"xyxy": [850.8, 376.2, 856.4, 380.4], "conf": 0.6242, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0473, "cls": "drone"}]}
-{"frame": "000056.png", "detections": [{"xyxy": [830.9, 351.2, 836.4, 356.0], "conf": 0.5316, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0419, "cls": "drone"}]}
-{"frame": "000057.png", "detections": [{"xyxy": [807.1, 324.0, 812.6, 328.6], "conf": 0.5794, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0365, "cls": "drone"}]}
-{"frame": "000058.png", "detections": [{"xyxy": [777.0, 290.7, 783.0, 294.8], "conf": 0.6587, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0383, "cls": "drone"}]}
-{"frame": "000059.png", "detections": [{"xyxy": [745.0, 252.0, 752.3, 257.8], "conf": 0.5891, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0393, "cls": "drone"}]}
-{"frame": "000060.png", "detections": [{"xyxy": [706.3, 208.5, 712.5, 212.6], "conf": 0.6487, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0411, "cls": "drone"}]}
-{"frame": "000061.png", "detections": [{"xyxy": [663.9, 160.9, 671.3, 165.8], "conf": 0.6893, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0462, "cls": "drone"}]}
-{"frame": "000062.png", "detections": [{"xyxy": [611.3, 104.4, 620.7, 109.5], "conf": 0.5957, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.05, "cls": "drone"}]}
-{"frame": "000063.png", "detections": [{"xyxy": [553.0, 42.8, 562.9, 47.7], "conf": 0.6318, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0516, "cls": "drone"}]}
-{"frame": "000064.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000065.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000066.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000067.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000068.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000069.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000070.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000071.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000072.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000073.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000074.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000075.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000076.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000077.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000078.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000079.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000080.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000081.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000082.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000083.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0521, "cls": "drone"}]}
-{"frame": "000084.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000085.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0524, "cls": "drone"}]}
-{"frame": "000086.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000087.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000088.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000089.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0524, "cls": "drone"}]}
-{"frame": "000090.png", "detections": [{"xyxy": [1113.7, 9.7, 1126.3, 16.9], "conf": 0.7856, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0515, "cls": "drone"}]}
-{"frame": "000091.png", "detections": [{"xyxy": [1121.8, 25.4, 1135.1, 31.9], "conf": 0.745, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0513, "cls": "drone"}]}
-{"frame": "000092.png", "detections": [{"xyxy": [1128.6, 42.6, 1140.5, 49.2], "conf": 0.7886, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0506, "cls": "drone"}]}
-{"frame": "000093.png", "detections": [{"xyxy": [1130.6, 55.8, 1143.0, 62.8], "conf": 0.7772, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0509, "cls": "drone"}]}
-{"frame": "000094.png", "detections": [{"xyxy": [1132.2, 71.8, 1143.9, 78.1], "conf": 0.7786, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0511, "cls": "drone"}]}
-{"frame": "000095.png", "detections": [{"xyxy": [1131.6, 85.4, 1143.9, 92.1], "conf": 0.6849, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0493, "cls": "drone"}]}
-{"frame": "000096.png", "detections": [{"xyxy": [1131.0, 96.4, 1143.3, 102.4], "conf": 0.7809, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0487, "cls": "drone"}]}
-{"frame": "000097.png", "detections": [{"xyxy": [1131.2, 99.9, 1143.5, 107.1], "conf": 0.6867, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0495, "cls": "drone"}]}
-{"frame": "000098.png", "detections": [{"xyxy": [1132.8, 105.1, 1144.4, 110.9], "conf": 0.7759, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0492, "cls": "drone"}]}
-{"frame": "000099.png", "detections": [{"xyxy": [1135.3, 106.5, 1147.1, 112.4], "conf": 0.753, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0486, "cls": "drone"}]}
-{"frame": "000100.png", "detections": [{"xyxy": [1137.7, 106.4, 1150.8, 112.3], "conf": 0.7638, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0489, "cls": "drone"}]}
-{"frame": "000101.png", "detections": [{"xyxy": [1138.3, 106.6, 1151.1, 117.3], "conf": 0.6344, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0479, "cls": "drone"}]}
-{"frame": "000102.png", "detections": [{"xyxy": [1120.2, 127.1, 1129.7, 137.6], "conf": 0.7275, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0444, "cls": "drone"}]}
-{"frame": "000103.png", "detections": [{"xyxy": [1081.4, 152.9, 1089.9, 163.1], "conf": 0.6642, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.2], "conf": 0.0445, "cls": "drone"}]}
-{"frame": "000104.png", "detections": [{"xyxy": [1026.0, 184.1, 1034.0, 193.5], "conf": 0.7441, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0387, "cls": "drone"}]}
-{"frame": "000105.png", "detections": [{"xyxy": [969.8, 211.8, 977.3, 221.1], "conf": 0.6054, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0351, "cls": "drone"}]}
-{"frame": "000106.png", "detections": [{"xyxy": [901.1, 244.5, 909.4, 253.3], "conf": 0.6174, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0362, "cls": "drone"}]}
-{"frame": "000107.png", "detections": [{"xyxy": [849.5, 267.7, 857.1, 275.3], "conf": 0.5721, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0347, "cls": "drone"}]}
-{"frame": "000108.png", "detections": [{"xyxy": [785.4, 296.6, 791.6, 303.8], "conf": 0.7082, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0393, "cls": "drone"}]}
-{"frame": "000109.png", "detections": [{"xyxy": [737.6, 320.5, 744.0, 325.4], "conf": 0.6815, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0375, "cls": "drone"}]}
-{"frame": "000110.png", "detections": [{"xyxy": [691.8, 343.8, 699.0, 348.1], "conf": 0.4446, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0415, "cls": "drone"}]}
-{"frame": "000111.png", "detections": [{"xyxy": [665.1, 358.9, 672.5, 364.0], "conf": 0.5126, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0455, "cls": "drone"}]}
-{"frame": "000112.png", "detections": [{"xyxy": [643.8, 375.6, 650.9, 380.0], "conf": 0.338, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.046, "cls": "drone"}]}
-{"frame": "000113.png", "detections": [{"xyxy": [634.6, 387.9, 640.2, 391.8], "conf": 0.5951, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.046, "cls": "drone"}]}
-{"frame": "000114.png", "detections": [{"xyxy": [625.8, 401.4, 632.9, 405.1], "conf": 0.5019, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0466, "cls": "drone"}]}
-{"frame": "000115.png", "detections": [{"xyxy": [624.4, 411.6, 630.0, 415.1], "conf": 0.5676, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0501, "cls": "drone"}]}
-{"frame": "000116.png", "detections": [{"xyxy": [622.0, 418.6, 628.5, 421.9], "conf": 0.5115, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0496, "cls": "drone"}]}
-{"frame": "000117.png", "detections": [{"xyxy": [622.7, 420.0, 628.5, 424.3], "conf": 0.5232, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0495, "cls": "drone"}]}
-{"frame": "000118.png", "detections": [{"xyxy": [622.6, 423.9, 628.9, 428.0], "conf": 0.5564, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0494, "cls": "drone"}]}
-{"frame": "000119.png", "detections": [{"xyxy": [622.2, 425.3, 628.7, 428.7], "conf": 0.5578, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0493, "cls": "drone"}]}
-{"frame": "000120.png", "detections": [{"xyxy": [623.9, 426.6, 630.2, 429.9], "conf": 0.5893, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0489, "cls": "drone"}]}
-{"frame": "000121.png", "detections": [{"xyxy": [624.8, 426.6, 630.9, 430.3], "conf": 0.594, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0491, "cls": "drone"}]}
-{"frame": "000122.png", "detections": [{"xyxy": [626.0, 426.4, 631.6, 430.2], "conf": 0.5742, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0493, "cls": "drone"}]}
-{"frame": "000123.png", "detections": [{"xyxy": [626.4, 425.5, 633.0, 429.2], "conf": 0.5799, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0493, "cls": "drone"}]}
-{"frame": "000124.png", "detections": [{"xyxy": [627.8, 425.3, 633.7, 428.7], "conf": 0.5605, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0495, "cls": "drone"}]}
-{"frame": "000125.png", "detections": [{"xyxy": [629.1, 418.1, 636.1, 422.1], "conf": 0.6518, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0473, "cls": "drone"}]}
-{"frame": "000126.png", "detections": [{"xyxy": [630.3, 392.6, 636.7, 398.5], "conf": 0.7071, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0471, "cls": "drone"}]}
-{"frame": "000127.png", "detections": [{"xyxy": [630.7, 364.0, 636.4, 369.2], "conf": 0.5826, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0414, "cls": "drone"}]}
-{"frame": "000128.png", "detections": [{"xyxy": [630.1, 336.9, 636.3, 340.5], "conf": 0.4193, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0419, "cls": "drone"}]}
-{"frame": "000129.png", "detections": [{"xyxy": [628.9, 302.5, 636.6, 308.0], "conf": 0.5441, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0323, "cls": "drone"}]}
-{"frame": "000130.png", "detections": [{"xyxy": [629.5, 279.1, 637.1, 284.0], "conf": 0.6232, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0396, "cls": "drone"}]}
-{"frame": "000131.png", "detections": [{"xyxy": [631.3, 260.0, 637.7, 265.2], "conf": 0.67, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0401, "cls": "drone"}]}
-{"frame": "000132.png", "detections": [{"xyxy": [631.9, 251.9, 639.7, 256.5], "conf": 0.6993, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0389, "cls": "drone"}]}
-{"frame": "000133.png", "detections": [{"xyxy": [632.2, 246.2, 640.4, 252.0], "conf": 0.6229, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0395, "cls": "drone"}]}
-{"frame": "000134.png", "detections": [{"xyxy": [632.8, 243.7, 640.5, 248.5], "conf": 0.7188, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0337, "cls": "drone"}]}
-{"frame": "000135.png", "detections": [{"xyxy": [632.7, 242.2, 640.4, 246.7], "conf": 0.7069, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0359, "cls": "drone"}]}
-{"frame": "000136.png", "detections": [{"xyxy": [632.6, 242.7, 640.8, 246.5], "conf": 0.6994, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0373, "cls": "drone"}]}
-{"frame": "000137.png", "detections": [{"xyxy": [633.1, 242.2, 641.0, 246.7], "conf": 0.7191, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0372, "cls": "drone"}]}
-{"frame": "000138.png", "detections": [{"xyxy": [633.3, 242.6, 642.1, 246.9], "conf": 0.735, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0388, "cls": "drone"}]}
-{"frame": "000139.png", "detections": [{"xyxy": [634.9, 243.3, 642.3, 248.2], "conf": 0.731, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0376, "cls": "drone"}]}
-{"frame": "000140.png", "detections": [{"xyxy": [635.5, 243.8, 644.3, 248.1], "conf": 0.7142, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0404, "cls": "drone"}]}
-{"frame": "000141.png", "detections": [{"xyxy": [637.5, 244.0, 644.7, 248.7], "conf": 0.7151, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0409, "cls": "drone"}]}
-{"frame": "000142.png", "detections": [{"xyxy": [638.6, 244.0, 644.8, 249.3], "conf": 0.6495, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0438, "cls": "drone"}]}
-{"frame": "000143.png", "detections": [{"xyxy": [638.4, 244.0, 644.8, 249.7], "conf": 0.5977, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0446, "cls": "drone"}]}
-{"frame": "000144.png", "detections": [{"xyxy": [638.6, 244.0, 645.7, 249.5], "conf": 0.6797, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.043, "cls": "drone"}]}
-{"frame": "000145.png", "detections": [{"xyxy": [639.1, 244.0, 645.7, 248.9], "conf": 0.6941, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0413, "cls": "drone"}]}
-{"frame": "000146.png", "detections": [{"xyxy": [639.0, 243.9, 645.5, 248.1], "conf": 0.7007, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.041, "cls": "drone"}]}
-{"frame": "000147.png", "detections": [{"xyxy": [638.8, 243.9, 646.0, 247.8], "conf": 0.7124, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0395, "cls": "drone"}]}
-{"frame": "000148.png", "detections": [{"xyxy": [638.7, 243.9, 646.2, 247.8], "conf": 0.7131, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0395, "cls": "drone"}]}
-{"frame": "000149.png", "detections": [{"xyxy": [639.0, 236.0, 646.0, 242.2], "conf": 0.6429, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0389, "cls": "drone"}]}
-{"frame": "000150.png", "detections": [{"xyxy": [630.0, 219.4, 638.3, 226.9], "conf": 0.7444, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0386, "cls": "drone"}]}
-{"frame": "000151.png", "detections": [{"xyxy": [599.6, 200.6, 607.0, 208.4], "conf": 0.7601, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0408, "cls": "drone"}]}
-{"frame": "000152.png", "detections": [{"xyxy": [566.1, 192.0, 574.1, 199.7], "conf": 0.7506, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0417, "cls": "drone"}]}
-{"frame": "000153.png", "detections": [{"xyxy": [527.1, 186.2, 534.3, 192.7], "conf": 0.7424, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0446, "cls": "drone"}]}
-{"frame": "000154.png", "detections": [{"xyxy": [491.6, 180.9, 499.6, 188.0], "conf": 0.5398, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0405, "cls": "drone"}]}
-{"frame": "000155.png", "detections": [{"xyxy": [461.3, 178.1, 468.2, 183.0], "conf": 0.6694, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0406, "cls": "drone"}]}
-{"frame": "000156.png", "detections": [{"xyxy": [440.2, 175.9, 446.4, 180.3], "conf": 0.6457, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0433, "cls": "drone"}]}
-{"frame": "000157.png", "detections": [{"xyxy": [422.9, 175.4, 429.6, 180.0], "conf": 0.6007, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0439, "cls": "drone"}]}
-{"frame": "000158.png", "detections": [{"xyxy": [414.0, 175.5, 420.4, 180.0], "conf": 0.5334, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0466, "cls": "drone"}]}
-{"frame": "000159.png", "detections": [{"xyxy": [407.9, 175.7, 414.4, 180.1], "conf": 0.5921, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.046, "cls": "drone"}]}
-{"frame": "000160.png", "detections": [{"xyxy": [406.2, 176.5, 412.1, 180.2], "conf": 0.4983, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0449, "cls": "drone"}]}
-{"frame": "000161.png", "detections": [{"xyxy": [403.7, 176.6, 409.4, 180.2], "conf": 0.5283, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0454, "cls": "drone"}]}
-{"frame": "000162.png", "detections": [{"xyxy": [403.5, 176.7, 409.3, 180.4], "conf": 0.5977, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0434, "cls": "drone"}]}
-{"frame": "000163.png", "detections": [{"xyxy": [403.2, 177.3, 408.9, 181.0], "conf": 0.5956, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.044, "cls": "drone"}]}
-{"frame": "000164.png", "detections": [{"xyxy": [403.5, 177.3, 409.9, 181.0], "conf": 0.6243, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0425, "cls": "drone"}]}
-{"frame": "000165.png", "detections": [{"xyxy": [403.7, 177.3, 410.2, 180.9], "conf": 0.5552, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0455, "cls": "drone"}]}
-{"frame": "000166.png", "detections": [{"xyxy": [405.1, 177.3, 412.2, 181.0], "conf": 0.5056, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0455, "cls": "drone"}]}
-{"frame": "000167.png", "detections": [{"xyxy": [406.3, 177.0, 412.7, 181.2], "conf": 0.5902, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0449, "cls": "drone"}]}
-{"frame": "000168.png", "detections": [{"xyxy": [406.6, 176.9, 412.1, 180.3], "conf": 0.5066, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0442, "cls": "drone"}]}
-{"frame": "000169.png", "detections": [{"xyxy": [405.3, 176.5, 412.2, 180.2], "conf": 0.4427, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0453, "cls": "drone"}]}
-{"frame": "000170.png", "detections": [{"xyxy": [403.7, 176.0, 409.5, 180.0], "conf": 0.5438, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.045, "cls": "drone"}]}
-{"frame": "000171.png", "detections": [{"xyxy": [402.3, 175.5, 409.4, 180.0], "conf": 0.5545, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0444, "cls": "drone"}]}
-{"frame": "000172.png", "detections": [{"xyxy": [401.4, 174.9, 408.8, 180.0], "conf": 0.5223, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0454, "cls": "drone"}]}
-{"frame": "000173.png", "detections": [{"xyxy": [403.2, 176.7, 408.6, 181.7], "conf": 0.636, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0433, "cls": "drone"}]}
-{"frame": "000174.png", "detections": [{"xyxy": [411.4, 184.5, 416.7, 189.3], "conf": 0.4341, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.049, "cls": "drone"}]}
-{"frame": "000175.png", "detections": [{"xyxy": [435.3, 195.1, 440.5, 199.9], "conf": 0.5741, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0463, "cls": "drone"}]}
-{"frame": "000176.png", "detections": [{"xyxy": [472.9, 206.3, 478.0, 212.1], "conf": 0.5321, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0446, "cls": "drone"}]}
-{"frame": "000177.png", "detections": [{"xyxy": [510.5, 216.0, 516.3, 220.5], "conf": 0.4179, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0483, "cls": "drone"}]}
-{"frame": "000178.png", "detections": [{"xyxy": [558.1, 227.2, 564.8, 232.0], "conf": 0.351, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0468, "cls": "drone"}]}
-{"frame": "000179.png", "detections": [{"xyxy": [599.5, 236.0, 604.7, 242.2], "conf": 0.3576, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0445, "cls": "drone"}]}
-{"frame": "000180.png", "detections": [{"xyxy": [648.7, 248.5, 654.5, 254.6], "conf": 0.476, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0472, "cls": "drone"}]}
-{"frame": "000181.png", "detections": [{"xyxy": [698.6, 260.8, 703.9, 268.0], "conf": 0.4026, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0445, "cls": "drone"}]}
-{"frame": "000182.png", "detections": [{"xyxy": [746.5, 274.1, 751.6, 278.8], "conf": 0.6579, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0349, "cls": "drone"}]}
-{"frame": "000183.png", "detections": [{"xyxy": [786.1, 286.6, 792.0, 292.0], "conf": 0.5131, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0421, "cls": "drone"}]}
-{"frame": "000184.png", "detections": [{"xyxy": [818.2, 298.0, 823.4, 302.1], "conf": 0.6212, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0415, "cls": "drone"}]}
-{"frame": "000185.png", "detections": [{"xyxy": [838.5, 307.9, 844.1, 311.7], "conf": 0.4215, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0392, "cls": "drone"}]}
-{"frame": "000186.png", "detections": [{"xyxy": [851.9, 319.8, 858.5, 324.0], "conf": 0.3592, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0433, "cls": "drone"}]}
-{"frame": "000187.png", "detections": [{"xyxy": [859.9, 329.2, 866.1, 332.8], "conf": 0.5014, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0426, "cls": "drone"}]}
-{"frame": "000188.png", "detections": [{"xyxy": [865.8, 339.3, 870.5, 343.1], "conf": 0.5128, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0419, "cls": "drone"}]}
-{"frame": "000189.png", "detections": [{"xyxy": [866.4, 348.0, 871.7, 353.4], "conf": 0.4025, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0452, "cls": "drone"}]}
-{"frame": "000190.png", "detections": [{"xyxy": [867.1, 360.2, 872.3, 364.0], "conf": 0.4094, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0451, "cls": "drone"}]}
-{"frame": "000191.png", "detections": [{"xyxy": [866.7, 370.3, 872.2, 374.1], "conf": 0.4805, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0454, "cls": "drone"}]}
-{"frame": "000192.png", "detections": [{"xyxy": [866.8, 379.9, 871.8, 384.1], "conf": 0.5387, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0485, "cls": "drone"}]}
-{"frame": "000193.png", "detections": [{"xyxy": [865.0, 391.4, 871.9, 396.0], "conf": 0.4613, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0492, "cls": "drone"}]}
-{"frame": "000194.png", "detections": [{"xyxy": [865.9, 400.3, 871.6, 404.0], "conf": 0.5231, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0477, "cls": "drone"}]}
-{"frame": "000195.png", "detections": [{"xyxy": [864.8, 407.3, 871.4, 412.0], "conf": 0.3815, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0506, "cls": "drone"}]}
-{"frame": "000196.png", "detections": [{"xyxy": [865.9, 410.4, 871.4, 414.1], "conf": 0.6092, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0496, "cls": "drone"}]}
-{"frame": "000197.png", "detections": [{"xyxy": [866.2, 409.0, 871.4, 412.2], "conf": 0.5646, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.05, "cls": "drone"}]}
-{"frame": "000198.png", "detections": [{"xyxy": [863.9, 394.1, 869.7, 398.9], "conf": 0.7091, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0468, "cls": "drone"}]}
-{"frame": "000199.png", "detections": [{"xyxy": [851.8, 374.0, 858.4, 380.0], "conf": 0.422, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0407, "cls": "drone"}]}
-{"frame": "000200.png", "detections": [{"xyxy": [832.8, 350.7, 838.9, 356.0], "conf": 0.5288, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0415, "cls": "drone"}]}
-{"frame": "000201.png", "detections": [{"xyxy": [802.9, 322.3, 809.2, 327.2], "conf": 0.6855, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0337, "cls": "drone"}]}
-{"frame": "000202.png", "detections": [{"xyxy": [770.0, 291.4, 776.5, 296.2], "conf": 0.6571, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0349, "cls": "drone"}]}
-{"frame": "000203.png", "detections": [{"xyxy": [735.9, 257.3, 742.9, 262.2], "conf": 0.6996, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0391, "cls": "drone"}]}
-{"frame": "000204.png", "detections": [{"xyxy": [688.8, 209.1, 695.5, 214.3], "conf": 0.6967, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0386, "cls": "drone"}]}
-{"frame": "000205.png", "detections": [{"xyxy": [640.3, 157.9, 648.1, 164.0], "conf": 0.5687, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.044, "cls": "drone"}]}
-{"frame": "000206.png", "detections": [{"xyxy": [585.8, 99.3, 594.1, 104.7], "conf": 0.6625, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0503, "cls": "drone"}]}
-{"frame": "000207.png", "detections": [{"xyxy": [528.0, 38.1, 537.3, 44.0], "conf": 0.4166, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0521, "cls": "drone"}, {"xyxy": [528.6, 36.0, 540.6, 43.6], "conf": 0.0342, "cls": "bird"}]}
-{"frame": "000208.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000209.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000210.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000211.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000212.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000213.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000214.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000215.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000216.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000217.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000218.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000219.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000220.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000221.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000222.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000223.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000224.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000225.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000226.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000227.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0526, "cls": "drone"}]}
-{"frame": "000228.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000229.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000230.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000231.png", "detections": [{"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0525, "cls": "drone"}]}
-{"frame": "000232.png", "detections": [{"xyxy": [1101.5, 11.8, 1112.7, 19.2], "conf": 0.7434, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.05, "cls": "drone"}]}
-{"frame": "000233.png", "detections": [{"xyxy": [1119.6, 30.7, 1129.7, 36.1], "conf": 0.7408, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0501, "cls": "drone"}]}
-{"frame": "000234.png", "detections": [{"xyxy": [1135.0, 50.5, 1145.0, 57.0], "conf": 0.7417, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0494, "cls": "drone"}]}
-{"frame": "000235.png", "detections": [{"xyxy": [1142.0, 66.9, 1153.4, 73.4], "conf": 0.7489, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0503, "cls": "drone"}]}
-{"frame": "000236.png", "detections": [{"xyxy": [1145.6, 84.7, 1158.8, 92.0], "conf": 0.6791, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0511, "cls": "drone"}]}
-{"frame": "000237.png", "detections": [{"xyxy": [1146.6, 95.2, 1159.3, 101.0], "conf": 0.769, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0491, "cls": "drone"}]}
-{"frame": "000238.png", "detections": [{"xyxy": [1145.2, 100.6, 1158.9, 108.1], "conf": 0.6773, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0495, "cls": "drone"}]}
-{"frame": "000239.png", "detections": [{"xyxy": [1143.9, 105.3, 1154.6, 111.5], "conf": 0.7763, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0499, "cls": "drone"}]}
-{"frame": "000240.png", "detections": [{"xyxy": [1142.0, 107.4, 1152.1, 113.3], "conf": 0.7536, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0475, "cls": "drone"}]}
-{"frame": "000241.png", "detections": [{"xyxy": [1137.8, 107.9, 1149.5, 114.8], "conf": 0.721, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0457, "cls": "drone"}]}
-{"frame": "000242.png", "detections": [{"xyxy": [1135.1, 109.5, 1145.1, 116.0], "conf": 0.6872, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0454, "cls": "drone"}]}
-{"frame": "000243.png", "detections": [{"xyxy": [1130.2, 109.1, 1143.3, 116.1], "conf": 0.6774, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0468, "cls": "drone"}]}
-{"frame": "000244.png", "detections": [{"xyxy": [1128.5, 107.9, 1139.8, 114.4], "conf": 0.7354, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.2], "conf": 0.0458, "cls": "drone"}]}
-{"frame": "000245.png", "detections": [{"xyxy": [1125.4, 110.1, 1136.2, 120.1], "conf": 0.7542, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0441, "cls": "drone"}]}
-{"frame": "000246.png", "detections": [{"xyxy": [1105.0, 132.5, 1117.9, 141.8], "conf": 0.4001, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0466, "cls": "drone"}]}
-{"frame": "000247.png", "detections": [{"xyxy": [1071.6, 157.3, 1080.1, 167.7], "conf": 0.7067, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0441, "cls": "drone"}]}
-{"frame": "000248.png", "detections": [{"xyxy": [1008.9, 194.0, 1016.7, 203.2], "conf": 0.6464, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0412, "cls": "drone"}]}
-{"frame": "000249.png", "detections": [{"xyxy": [954.2, 222.2, 961.7, 231.2], "conf": 0.7163, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0392, "cls": "drone"}]}
-{"frame": "000250.png", "detections": [{"xyxy": [884.5, 254.6, 893.0, 263.5], "conf": 0.6616, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0392, "cls": "drone"}]}
-{"frame": "000251.png", "detections": [{"xyxy": [830.4, 280.1, 837.5, 288.1], "conf": 0.7491, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0415, "cls": "drone"}]}
-{"frame": "000252.png", "detections": [{"xyxy": [773.1, 306.7, 780.2, 313.3], "conf": 0.7297, "cls": "drone"}]}
-{"frame": "000253.png", "detections": [{"xyxy": [726.4, 330.8, 732.9, 335.7], "conf": 0.7191, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0383, "cls": "drone"}]}
-{"frame": "000254.png", "detections": [{"xyxy": [687.4, 352.6, 694.3, 356.9], "conf": 0.6863, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0418, "cls": "drone"}]}
-{"frame": "000255.png", "detections": [{"xyxy": [662.7, 369.3, 669.3, 373.4], "conf": 0.6394, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0394, "cls": "drone"}]}
-{"frame": "000256.png", "detections": [{"xyxy": [646.1, 385.3, 652.5, 389.4], "conf": 0.4871, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0477, "cls": "drone"}]}
-{"frame": "000257.png", "detections": [{"xyxy": [635.7, 399.7, 642.8, 404.0], "conf": 0.2738, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0494, "cls": "drone"}]}
-{"frame": "000258.png", "detections": [{"xyxy": [630.3, 411.2, 636.8, 414.4], "conf": 0.5324, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0501, "cls": "drone"}]}
-{"frame": "000259.png", "detections": [{"xyxy": [627.6, 417.9, 633.6, 421.5], "conf": 0.5268, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0487, "cls": "drone"}]}
-{"frame": "000260.png", "detections": [{"xyxy": [626.5, 420.0, 632.6, 424.9], "conf": 0.5902, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0485, "cls": "drone"}]}
-{"frame": "000261.png", "detections": [{"xyxy": [624.2, 422.3, 631.3, 428.0], "conf": 0.3957, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0501, "cls": "drone"}]}
-{"frame": "000262.png", "detections": [{"xyxy": [624.4, 423.3, 631.0, 428.0], "conf": 0.4574, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0501, "cls": "drone"}]}
-{"frame": "000263.png", "detections": [{"xyxy": [624.3, 423.3, 631.0, 428.0], "conf": 0.517, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0499, "cls": "drone"}]}
-{"frame": "000264.png", "detections": [{"xyxy": [624.9, 423.1, 631.1, 428.0], "conf": 0.5084, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0496, "cls": "drone"}]}
-{"frame": "000265.png", "detections": [{"xyxy": [625.4, 422.9, 631.5, 428.0], "conf": 0.4747, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0495, "cls": "drone"}]}
-{"frame": "000266.png", "detections": [{"xyxy": [626.8, 420.0, 632.5, 425.5], "conf": 0.5283, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.049, "cls": "drone"}]}
-{"frame": "000267.png", "detections": [{"xyxy": [627.9, 420.0, 634.1, 424.4], "conf": 0.5276, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0485, "cls": "drone"}]}
-{"frame": "000268.png", "detections": [{"xyxy": [630.3, 419.9, 636.2, 423.6], "conf": 0.5743, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0481, "cls": "drone"}]}
-{"frame": "000269.png", "detections": [{"xyxy": [631.4, 412.0, 637.0, 416.5], "conf": 0.6241, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0484, "cls": "drone"}]}
-{"frame": "000270.png", "detections": [{"xyxy": [631.6, 384.5, 638.1, 389.6], "conf": 0.6995, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0448, "cls": "drone"}]}
-{"frame": "000271.png", "detections": [{"xyxy": [631.9, 359.5, 638.8, 364.1], "conf": 0.6387, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0451, "cls": "drone"}]}
-{"frame": "000272.png", "detections": [{"xyxy": [631.1, 324.0, 636.9, 328.5], "conf": 0.5653, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0427, "cls": "drone"}]}
-{"frame": "000273.png", "detections": [{"xyxy": [629.5, 294.2, 636.9, 300.0], "conf": 0.5528, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0416, "cls": "drone"}]}
-{"frame": "000274.png", "detections": [{"xyxy": [629.9, 267.9, 636.9, 272.2], "conf": 0.7095, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0374, "cls": "drone"}]}
-{"frame": "000275.png", "detections": [{"xyxy": [630.7, 253.9, 638.4, 260.0], "conf": 0.5962, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0391, "cls": "drone"}]}
-{"frame": "000276.png", "detections": [{"xyxy": [631.7, 243.3, 639.1, 247.3], "conf": 0.6962, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.036, "cls": "drone"}]}
-{"frame": "000277.png", "detections": [{"xyxy": [632.4, 238.3, 640.6, 244.0], "conf": 0.6214, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0361, "cls": "drone"}]}
-{"frame": "000278.png", "detections": [{"xyxy": [634.3, 235.0, 641.3, 240.0], "conf": 0.7061, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0422, "cls": "drone"}]}
-{"frame": "000279.png", "detections": [{"xyxy": [634.6, 233.7, 642.5, 238.0], "conf": 0.7176, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0426, "cls": "drone"}]}
-{"frame": "000280.png", "detections": [{"xyxy": [635.1, 233.5, 642.8, 238.4], "conf": 0.7242, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0422, "cls": "drone"}]}
-{"frame": "000281.png", "detections": [{"xyxy": [635.2, 234.9, 642.9, 239.3], "conf": 0.7204, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0422, "cls": "drone"}]}
-{"frame": "000282.png", "detections": [{"xyxy": [635.2, 236.0, 641.9, 241.2], "conf": 0.7033, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0413, "cls": "drone"}]}
-{"frame": "000283.png", "detections": [{"xyxy": [634.8, 236.0, 641.4, 241.7], "conf": 0.642, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.039, "cls": "drone"}]}
-{"frame": "000284.png", "detections": [{"xyxy": [634.6, 238.8, 642.2, 244.0], "conf": 0.6658, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0408, "cls": "drone"}]}
-{"frame": "000285.png", "detections": [{"xyxy": [633.7, 240.8, 642.0, 245.0], "conf": 0.7038, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0384, "cls": "drone"}]}
-{"frame": "000286.png", "detections": [{"xyxy": [634.3, 241.9, 642.0, 246.1], "conf": 0.7228, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0388, "cls": "drone"}]}
-{"frame": "000287.png", "detections": [{"xyxy": [634.1, 243.0, 642.0, 247.1], "conf": 0.7241, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0389, "cls": "drone"}]}
-{"frame": "000288.png", "detections": [{"xyxy": [634.4, 243.1, 641.9, 247.9], "conf": 0.7276, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0363, "cls": "drone"}]}
-{"frame": "000289.png", "detections": [{"xyxy": [634.0, 243.7, 641.8, 248.1], "conf": 0.7107, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0384, "cls": "drone"}]}
-{"frame": "000290.png", "detections": [{"xyxy": [633.5, 243.1, 641.7, 247.7], "conf": 0.7111, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0384, "cls": "drone"}]}
-{"frame": "000291.png", "detections": [{"xyxy": [633.8, 243.4, 641.9, 247.9], "conf": 0.7121, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0386, "cls": "drone"}]}
-{"frame": "000292.png", "detections": [{"xyxy": [633.1, 243.7, 641.6, 248.6], "conf": 0.7196, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0369, "cls": "drone"}]}
-{"frame": "000293.png", "detections": [{"xyxy": [632.2, 238.1, 640.7, 244.0], "conf": 0.6491, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0356, "cls": "drone"}]}
-{"frame": "000294.png", "detections": [{"xyxy": [624.0, 219.4, 631.2, 226.7], "conf": 0.7152, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0414, "cls": "drone"}]}
-{"frame": "000295.png", "detections": [{"xyxy": [593.4, 202.7, 601.2, 210.6], "conf": 0.7309, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0356, "cls": "drone"}]}
-{"frame": "000296.png", "detections": [{"xyxy": [560.6, 195.4, 568.2, 202.7], "conf": 0.7131, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.1], "conf": 0.0425, "cls": "drone"}]}
-{"frame": "000297.png", "detections": [{"xyxy": [516.7, 190.0, 524.7, 197.7], "conf": 0.7092, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0371, "cls": "drone"}]}
-{"frame": "000298.png", "detections": [{"xyxy": [487.4, 186.9, 494.4, 193.1], "conf": 0.7293, "cls": "drone"}, {"xyxy": [1275.7, 514.5, 1279.7, 535.1], "conf": 0.0411, "cls": "drone"}]}
-{"frame": "000299.png", "detections": [{"xyxy": [454.7, 183.5, 461.3, 188.2], "conf": 0.6646, "cls": "drone"}, {"xyxy": [1275.7, 514.4, 1279.7, 535.2], "conf": 0.0458, "cls": "drone"}]}
+{"frame": "000000.png", "detections": [{"xyxy": [642.2, 244.0, 650.0, 249.5], "conf": 0.6418, "cls": "drone"}]}
+{"frame": "000001.png", "detections": [{"xyxy": [643.7, 246.5, 651.2, 252.0], "conf": 0.4803, "cls": "drone"}]}
+{"frame": "000002.png", "detections": [{"xyxy": [645.1, 247.1, 652.7, 252.0], "conf": 0.554, "cls": "drone"}]}
+{"frame": "000003.png", "detections": [{"xyxy": [645.4, 247.4, 652.7, 252.0], "conf": 0.5993, "cls": "drone"}]}
+{"frame": "000004.png", "detections": [{"xyxy": [645.4, 247.4, 652.7, 252.0], "conf": 0.6024, "cls": "drone"}]}
+{"frame": "000005.png", "detections": [{"xyxy": [644.4, 241.0, 652.2, 245.6], "conf": 0.6631, "cls": "drone"}]}
+{"frame": "000006.png", "detections": [{"xyxy": [632.1, 218.9, 640.8, 228.1], "conf": 0.696, "cls": "drone"}]}
+{"frame": "000007.png", "detections": [{"xyxy": [603.0, 204.8, 612.8, 214.5], "conf": 0.6051, "cls": "drone"}]}
+{"frame": "000008.png", "detections": [{"xyxy": [562.9, 197.2, 571.4, 206.0], "conf": 0.6092, "cls": "drone"}]}
+{"frame": "000009.png", "detections": [{"xyxy": [525.2, 194.1, 533.1, 201.4], "conf": 0.6868, "cls": "drone"}]}
+{"frame": "000010.png", "detections": [{"xyxy": [480.7, 188.0, 487.8, 195.5], "conf": 0.5574, "cls": "drone"}]}
+{"frame": "000011.png", "detections": [{"xyxy": [449.9, 185.7, 457.1, 189.6], "conf": 0.6772, "cls": "drone"}]}
+{"frame": "000012.png", "detections": [{"xyxy": [426.3, 180.0, 432.2, 184.1], "conf": 0.568, "cls": "drone"}]}
+{"frame": "000013.png", "detections": [{"xyxy": [413.6, 178.1, 420.6, 181.5], "conf": 0.5336, "cls": "drone"}, {"xyxy": [412.0, 178.1, 420.5, 181.6], "conf": 0.1006, "cls": "bird"}]}
+{"frame": "000014.png", "detections": [{"xyxy": [408.7, 177.4, 414.4, 180.4], "conf": 0.45, "cls": "drone"}, {"xyxy": [404.0, 177.1, 412.3, 180.7], "conf": 0.0495, "cls": "bird"}]}
+{"frame": "000015.png", "detections": [{"xyxy": [406.2, 177.5, 412.9, 180.2], "conf": 0.6408, "cls": "drone"}]}
+{"frame": "000016.png", "detections": [{"xyxy": [404.0, 176.6, 410.9, 180.0], "conf": 0.3761, "cls": "drone"}]}
+{"frame": "000017.png", "detections": [{"xyxy": [403.9, 176.2, 410.9, 180.0], "conf": 0.5031, "cls": "drone"}]}
+{"frame": "000018.png", "detections": [{"xyxy": [405.0, 176.2, 412.0, 180.0], "conf": 0.453, "cls": "drone"}]}
+{"frame": "000019.png", "detections": [{"xyxy": [405.7, 176.0, 412.6, 180.0], "conf": 0.5636, "cls": "drone"}]}
+{"frame": "000020.png", "detections": [{"xyxy": [406.5, 176.3, 412.9, 180.0], "conf": 0.5084, "cls": "drone"}]}
+{"frame": "000021.png", "detections": [{"xyxy": [406.5, 176.2, 413.0, 180.0], "conf": 0.5313, "cls": "drone"}]}
+{"frame": "000022.png", "detections": [{"xyxy": [406.1, 175.5, 412.6, 180.0], "conf": 0.4964, "cls": "drone"}]}
+{"frame": "000023.png", "detections": [{"xyxy": [405.4, 176.1, 412.6, 180.0], "conf": 0.5572, "cls": "drone"}]}
+{"frame": "000024.png", "detections": [{"xyxy": [404.6, 176.3, 412.1, 180.0], "conf": 0.4499, "cls": "drone"}]}
+{"frame": "000025.png", "detections": [{"xyxy": [403.9, 176.2, 410.4, 180.0], "conf": 0.4651, "cls": "drone"}]}
+{"frame": "000026.png", "detections": [{"xyxy": [403.8, 176.9, 409.9, 180.0], "conf": 0.6039, "cls": "drone"}]}
+{"frame": "000027.png", "detections": [{"xyxy": [403.9, 177.7, 410.9, 180.7], "conf": 0.5717, "cls": "drone"}]}
+{"frame": "000028.png", "detections": [{"xyxy": [404.8, 178.3, 412.0, 181.3], "conf": 0.584, "cls": "drone"}]}
+{"frame": "000029.png", "detections": [{"xyxy": [403.7, 179.2, 411.5, 185.1], "conf": 0.2135, "cls": "drone"}, {"xyxy": [404.9, 178.8, 413.1, 188.0], "conf": 0.0895, "cls": "bird"}]}
+{"frame": "000030.png", "detections": [{"xyxy": [416.8, 190.8, 422.2, 196.0], "conf": 0.1804, "cls": "drone"}, {"xyxy": [417.5, 191.2, 424.2, 194.5], "conf": 0.1521, "cls": "bird"}]}
+{"frame": "000031.png", "detections": [{"xyxy": [443.3, 202.2, 448.6, 206.9], "conf": 0.2464, "cls": "bird"}]}
+{"frame": "000032.png", "detections": [{"xyxy": [480.4, 214.5, 486.9, 220.1], "conf": 0.3107, "cls": "bird"}]}
+{"frame": "000033.png", "detections": [{"xyxy": [520.7, 225.8, 526.3, 231.2], "conf": 0.3386, "cls": "bird"}]}
+{"frame": "000034.png", "detections": [{"xyxy": [573.2, 238.8, 580.1, 244.7], "conf": 0.2669, "cls": "drone"}]}
+{"frame": "000035.png", "detections": [{"xyxy": [619.6, 250.1, 625.6, 256.2], "conf": 0.4238, "cls": "drone"}]}
+{"frame": "000036.png", "detections": [{"xyxy": [677.5, 264.3, 684.1, 269.2], "conf": 0.1906, "cls": "drone"}]}
+{"frame": "000037.png", "detections": [{"xyxy": [720.8, 274.7, 727.3, 280.1], "conf": 0.5, "cls": "drone"}]}
+{"frame": "000038.png", "detections": [{"xyxy": [774.3, 289.5, 780.1, 292.7], "conf": 0.5967, "cls": "drone"}]}
+{"frame": "000039.png", "detections": [{"xyxy": [805.7, 299.9, 812.0, 302.6], "conf": 0.4146, "cls": "drone"}]}
+{"frame": "000040.png", "detections": [{"xyxy": [833.9, 311.3, 840.1, 316.0], "conf": 0.3803, "cls": "drone"}]}
+{"frame": "000041.png", "detections": [{"xyxy": [849.6, 321.6, 855.1, 324.3], "conf": 0.4032, "cls": "drone"}]}
+{"frame": "000042.png", "detections": [{"xyxy": [859.8, 332.0, 865.0, 334.9], "conf": 0.3617, "cls": "drone"}]}
+{"frame": "000043.png", "detections": [{"xyxy": [864.1, 340.0, 869.7, 344.0], "conf": 0.4919, "cls": "drone"}]}
+{"frame": "000044.png", "detections": [{"xyxy": [867.6, 352.2, 873.0, 356.0], "conf": 0.3529, "cls": "drone"}]}
+{"frame": "000045.png", "detections": [{"xyxy": [867.9, 360.3, 873.6, 364.0], "conf": 0.2364, "cls": "drone"}]}
+{"frame": "000046.png", "detections": [{"xyxy": [867.8, 370.6, 873.4, 373.2], "conf": 0.3113, "cls": "drone"}]}
+{"frame": "000047.png", "detections": [{"xyxy": [866.9, 378.9, 871.9, 381.8], "conf": 0.3566, "cls": "drone"}]}
+{"frame": "000048.png", "detections": [{"xyxy": [866.1, 388.0, 871.5, 392.6], "conf": 0.3014, "cls": "drone"}]}
+{"frame": "000049.png", "detections": [{"xyxy": [866.0, 398.5, 872.2, 400.9], "conf": 0.3743, "cls": "drone"}]}
+{"frame": "000050.png", "detections": [{"xyxy": [865.0, 404.0, 870.2, 408.6], "conf": 0.1121, "cls": "drone"}]}
+{"frame": "000051.png", "detections": [{"xyxy": [864.9, 409.8, 869.1, 412.6], "conf": 0.0798, "cls": "drone"}]}
+{"frame": "000052.png", "detections": [{"xyxy": [864.8, 412.0, 869.1, 415.1], "conf": 0.0919, "cls": "drone"}]}
+{"frame": "000053.png", "detections": [{"xyxy": [863.2, 410.3, 869.7, 413.1], "conf": 0.4404, "cls": "drone"}]}
+{"frame": "000054.png", "detections": [{"xyxy": [859.9, 394.3, 866.7, 397.8], "conf": 0.5902, "cls": "drone"}]}
+{"frame": "000055.png", "detections": [{"xyxy": [850.1, 375.1, 856.9, 380.3], "conf": 0.6786, "cls": "drone"}]}
+{"frame": "000056.png", "detections": [{"xyxy": [830.8, 351.0, 836.5, 356.0], "conf": 0.5462, "cls": "drone"}]}
+{"frame": "000057.png", "detections": [{"xyxy": [806.2, 324.0, 812.6, 328.6], "conf": 0.6281, "cls": "drone"}]}
+{"frame": "000058.png", "detections": [{"xyxy": [776.5, 290.3, 784.0, 295.3], "conf": 0.6114, "cls": "drone"}]}
+{"frame": "000059.png", "detections": [{"xyxy": [745.0, 252.0, 752.0, 257.9], "conf": 0.5695, "cls": "drone"}]}
+{"frame": "000060.png", "detections": [{"xyxy": [705.7, 207.6, 713.3, 212.3], "conf": 0.6327, "cls": "drone"}]}
+{"frame": "000061.png", "detections": [{"xyxy": [664.1, 160.9, 671.8, 165.8], "conf": 0.624, "cls": "drone"}]}
+{"frame": "000062.png", "detections": [{"xyxy": [611.5, 103.5, 621.7, 109.9], "conf": 0.3936, "cls": "bird"}]}
+{"frame": "000063.png", "detections": [{"xyxy": [552.8, 42.5, 564.4, 48.2], "conf": 0.1925, "cls": "bird"}]}
+{"frame": "000064.png", "detections": []}
+{"frame": "000065.png", "detections": []}
+{"frame": "000066.png", "detections": []}
+{"frame": "000067.png", "detections": []}
+{"frame": "000068.png", "detections": []}
+{"frame": "000069.png", "detections": []}
+{"frame": "000070.png", "detections": []}
+{"frame": "000071.png", "detections": []}
+{"frame": "000072.png", "detections": []}
+{"frame": "000073.png", "detections": []}
+{"frame": "000074.png", "detections": []}
+{"frame": "000075.png", "detections": []}
+{"frame": "000076.png", "detections": []}
+{"frame": "000077.png", "detections": []}
+{"frame": "000078.png", "detections": []}
+{"frame": "000079.png", "detections": []}
+{"frame": "000080.png", "detections": []}
+{"frame": "000081.png", "detections": []}
+{"frame": "000082.png", "detections": []}
+{"frame": "000083.png", "detections": []}
+{"frame": "000084.png", "detections": []}
+{"frame": "000085.png", "detections": []}
+{"frame": "000086.png", "detections": []}
+{"frame": "000087.png", "detections": []}
+{"frame": "000088.png", "detections": []}
+{"frame": "000089.png", "detections": []}
+{"frame": "000090.png", "detections": [{"xyxy": [1113.8, 9.2, 1126.8, 16.5], "conf": 0.3397, "cls": "drone"}, {"xyxy": [1115.0, 9.8, 1128.7, 20.1], "conf": 0.0869, "cls": "bird"}]}
+{"frame": "000091.png", "detections": [{"xyxy": [1123.0, 24.9, 1134.9, 31.8], "conf": 0.4599, "cls": "drone"}]}
+{"frame": "000092.png", "detections": [{"xyxy": [1128.8, 42.2, 1140.7, 48.4], "conf": 0.4357, "cls": "drone"}]}
+{"frame": "000093.png", "detections": [{"xyxy": [1130.3, 55.6, 1143.5, 62.5], "conf": 0.4663, "cls": "drone"}]}
+{"frame": "000094.png", "detections": [{"xyxy": [1131.2, 70.8, 1145.1, 78.4], "conf": 0.4127, "cls": "drone"}, {"xyxy": [1130.5, 71.5, 1146.1, 80.1], "conf": 0.1134, "cls": "bird"}]}
+{"frame": "000095.png", "detections": [{"xyxy": [1131.8, 85.3, 1144.2, 92.1], "conf": 0.4816, "cls": "drone"}]}
+{"frame": "000096.png", "detections": [{"xyxy": [1131.6, 96.2, 1143.6, 102.3], "conf": 0.4626, "cls": "drone"}]}
+{"frame": "000097.png", "detections": [{"xyxy": [1131.8, 100.0, 1144.0, 107.0], "conf": 0.4223, "cls": "drone"}]}
+{"frame": "000098.png", "detections": [{"xyxy": [1132.8, 104.5, 1145.7, 110.8], "conf": 0.5012, "cls": "drone"}]}
+{"frame": "000099.png", "detections": [{"xyxy": [1135.2, 106.0, 1148.2, 112.3], "conf": 0.4645, "cls": "drone"}]}
+{"frame": "000100.png", "detections": [{"xyxy": [1137.9, 106.0, 1150.9, 112.5], "conf": 0.5221, "cls": "drone"}]}
+{"frame": "000101.png", "detections": [{"xyxy": [1137.8, 105.8, 1153.2, 118.3], "conf": 0.3353, "cls": "bird"}]}
+{"frame": "000102.png", "detections": [{"xyxy": [1120.4, 127.4, 1132.8, 137.5], "conf": 0.2157, "cls": "bird"}, {"xyxy": [1119.4, 126.6, 1134.2, 137.6], "conf": 0.0848, "cls": "drone"}]}
+{"frame": "000103.png", "detections": [{"xyxy": [1080.5, 152.3, 1092.3, 164.2], "conf": 0.2808, "cls": "drone"}, {"xyxy": [1080.8, 153.1, 1092.7, 164.0], "conf": 0.1202, "cls": "bird"}]}
+{"frame": "000104.png", "detections": [{"xyxy": [1025.3, 183.0, 1036.2, 193.7], "conf": 0.452, "cls": "drone"}]}
+{"frame": "000105.png", "detections": [{"xyxy": [969.4, 211.6, 979.0, 221.3], "conf": 0.6769, "cls": "drone"}]}
+{"frame": "000106.png", "detections": [{"xyxy": [901.3, 244.0, 909.6, 252.9], "conf": 0.6313, "cls": "drone"}]}
+{"frame": "000107.png", "detections": [{"xyxy": [848.7, 267.5, 858.3, 276.5], "conf": 0.6852, "cls": "drone"}]}
+{"frame": "000108.png", "detections": [{"xyxy": [784.5, 296.1, 792.3, 304.1], "conf": 0.6305, "cls": "drone"}]}
+{"frame": "000109.png", "detections": [{"xyxy": [736.8, 320.5, 744.5, 325.3], "conf": 0.7026, "cls": "drone"}]}
+{"frame": "000110.png", "detections": [{"xyxy": [691.9, 343.9, 699.3, 348.0], "conf": 0.4533, "cls": "drone"}]}
+{"frame": "000111.png", "detections": [{"xyxy": [666.2, 358.8, 672.8, 364.0], "conf": 0.3506, "cls": "drone"}]}
+{"frame": "000112.png", "detections": [{"xyxy": [644.9, 375.8, 652.1, 380.0], "conf": 0.3475, "cls": "drone"}]}
+{"frame": "000113.png", "detections": [{"xyxy": [634.8, 387.9, 640.1, 390.9], "conf": 0.5224, "cls": "drone"}]}
+{"frame": "000114.png", "detections": [{"xyxy": [627.1, 401.7, 632.9, 404.2], "conf": 0.4266, "cls": "drone"}]}
+{"frame": "000115.png", "detections": [{"xyxy": [624.4, 411.9, 630.2, 414.5], "conf": 0.4953, "cls": "drone"}]}
+{"frame": "000116.png", "detections": [{"xyxy": [622.2, 418.6, 628.8, 421.1], "conf": 0.3964, "cls": "drone"}]}
+{"frame": "000117.png", "detections": [{"xyxy": [622.4, 420.0, 628.9, 424.3], "conf": 0.2666, "cls": "drone"}]}
+{"frame": "000118.png", "detections": [{"xyxy": [622.7, 424.1, 629.0, 428.0], "conf": 0.4628, "cls": "drone"}]}
+{"frame": "000119.png", "detections": [{"xyxy": [622.9, 425.7, 629.3, 428.1], "conf": 0.3734, "cls": "drone"}]}
+{"frame": "000120.png", "detections": [{"xyxy": [624.6, 426.5, 630.6, 429.2], "conf": 0.3633, "cls": "drone"}]}
+{"frame": "000121.png", "detections": [{"xyxy": [625.4, 426.6, 631.5, 429.3], "conf": 0.3937, "cls": "drone"}]}
+{"frame": "000122.png", "detections": [{"xyxy": [626.2, 426.5, 632.0, 429.2], "conf": 0.3141, "cls": "drone"}]}
+{"frame": "000123.png", "detections": [{"xyxy": [627.5, 425.8, 633.5, 428.3], "conf": 0.475, "cls": "drone"}]}
+{"frame": "000124.png", "detections": [{"xyxy": [627.9, 425.2, 634.1, 428.0], "conf": 0.3506, "cls": "drone"}]}
+{"frame": "000125.png", "detections": [{"xyxy": [629.2, 418.3, 636.1, 421.0], "conf": 0.7, "cls": "drone"}]}
+{"frame": "000126.png", "detections": [{"xyxy": [630.2, 393.0, 636.8, 397.8], "conf": 0.7556, "cls": "drone"}]}
+{"frame": "000127.png", "detections": [{"xyxy": [629.7, 366.1, 636.6, 369.2], "conf": 0.5729, "cls": "drone"}]}
+{"frame": "000128.png", "detections": [{"xyxy": [630.2, 337.1, 636.3, 340.0], "conf": 0.4778, "cls": "drone"}]}
+{"frame": "000129.png", "detections": [{"xyxy": [629.3, 302.7, 636.5, 305.8], "conf": 0.6054, "cls": "drone"}]}
+{"frame": "000130.png", "detections": [{"xyxy": [629.9, 279.0, 636.8, 284.0], "conf": 0.6286, "cls": "drone"}]}
+{"frame": "000131.png", "detections": [{"xyxy": [630.7, 260.0, 638.1, 265.7], "conf": 0.6283, "cls": "drone"}]}
+{"frame": "000132.png", "detections": [{"xyxy": [631.7, 251.9, 639.4, 256.2], "conf": 0.6503, "cls": "drone"}]}
+{"frame": "000133.png", "detections": [{"xyxy": [632.8, 246.0, 640.3, 252.0], "conf": 0.5202, "cls": "drone"}]}
+{"frame": "000134.png", "detections": [{"xyxy": [632.8, 243.9, 640.5, 247.6], "conf": 0.6786, "cls": "drone"}]}
+{"frame": "000135.png", "detections": [{"xyxy": [633.2, 242.2, 640.8, 245.8], "conf": 0.7282, "cls": "drone"}]}
+{"frame": "000136.png", "detections": [{"xyxy": [633.2, 242.6, 640.9, 246.4], "conf": 0.6899, "cls": "drone"}]}
+{"frame": "000137.png", "detections": [{"xyxy": [633.7, 242.4, 641.2, 246.2], "conf": 0.719, "cls": "drone"}]}
+{"frame": "000138.png", "detections": [{"xyxy": [634.3, 242.8, 642.1, 246.6], "conf": 0.7189, "cls": "drone"}]}
+{"frame": "000139.png", "detections": [{"xyxy": [635.2, 243.2, 643.1, 246.9], "conf": 0.7173, "cls": "drone"}]}
+{"frame": "000140.png", "detections": [{"xyxy": [636.0, 243.9, 644.5, 247.9], "conf": 0.6182, "cls": "drone"}]}
+{"frame": "000141.png", "detections": [{"xyxy": [637.0, 244.0, 644.6, 248.5], "conf": 0.5943, "cls": "drone"}]}
+{"frame": "000142.png", "detections": [{"xyxy": [637.4, 244.0, 644.7, 249.2], "conf": 0.5324, "cls": "drone"}]}
+{"frame": "000143.png", "detections": [{"xyxy": [637.5, 244.0, 645.3, 249.7], "conf": 0.3614, "cls": "drone"}]}
+{"frame": "000144.png", "detections": [{"xyxy": [637.7, 244.0, 645.5, 249.5], "conf": 0.4321, "cls": "drone"}]}
+{"frame": "000145.png", "detections": [{"xyxy": [637.8, 244.0, 645.9, 248.8], "conf": 0.5906, "cls": "drone"}]}
+{"frame": "000146.png", "detections": [{"xyxy": [638.3, 244.0, 645.9, 247.7], "conf": 0.6621, "cls": "drone"}]}
+{"frame": "000147.png", "detections": [{"xyxy": [637.8, 243.9, 646.2, 247.6], "conf": 0.6395, "cls": "drone"}]}
+{"frame": "000148.png", "detections": [{"xyxy": [637.9, 243.9, 646.6, 247.6], "conf": 0.6217, "cls": "drone"}]}
+{"frame": "000149.png", "detections": [{"xyxy": [638.0, 237.8, 646.1, 244.0], "conf": 0.542, "cls": "drone"}]}
+{"frame": "000150.png", "detections": [{"xyxy": [628.8, 219.0, 638.9, 228.3], "conf": 0.6915, "cls": "drone"}]}
+{"frame": "000151.png", "detections": [{"xyxy": [599.5, 200.2, 607.4, 208.8], "conf": 0.7118, "cls": "drone"}]}
+{"frame": "000152.png", "detections": [{"xyxy": [566.2, 192.6, 574.4, 199.8], "conf": 0.702, "cls": "drone"}]}
+{"frame": "000153.png", "detections": [{"xyxy": [525.7, 185.1, 535.1, 193.5], "conf": 0.6095, "cls": "drone"}]}
+{"frame": "000154.png", "detections": [{"xyxy": [492.3, 180.0, 500.4, 187.5], "conf": 0.5268, "cls": "drone"}]}
+{"frame": "000155.png", "detections": [{"xyxy": [461.4, 177.9, 468.4, 182.8], "conf": 0.6413, "cls": "drone"}]}
+{"frame": "000156.png", "detections": [{"xyxy": [439.5, 176.4, 446.3, 180.0], "conf": 0.6102, "cls": "drone"}]}
+{"frame": "000157.png", "detections": [{"xyxy": [422.8, 175.8, 429.0, 180.0], "conf": 0.5542, "cls": "drone"}]}
+{"frame": "000158.png", "detections": [{"xyxy": [413.7, 175.4, 421.2, 180.0], "conf": 0.5166, "cls": "drone"}]}
+{"frame": "000159.png", "detections": [{"xyxy": [408.5, 176.0, 415.1, 180.0], "conf": 0.5232, "cls": "drone"}]}
+{"frame": "000160.png", "detections": [{"xyxy": [405.5, 175.9, 412.6, 180.0], "conf": 0.5401, "cls": "drone"}]}
+{"frame": "000161.png", "detections": [{"xyxy": [403.9, 176.5, 410.3, 180.0], "conf": 0.4393, "cls": "drone"}]}
+{"frame": "000162.png", "detections": [{"xyxy": [403.7, 176.3, 409.9, 180.0], "conf": 0.5646, "cls": "drone"}]}
+{"frame": "000163.png", "detections": [{"xyxy": [403.2, 177.1, 409.6, 180.2], "conf": 0.594, "cls": "drone"}]}
+{"frame": "000164.png", "detections": [{"xyxy": [403.6, 177.2, 410.4, 180.2], "conf": 0.642, "cls": "drone"}]}
+{"frame": "000165.png", "detections": [{"xyxy": [403.9, 177.1, 411.2, 180.4], "conf": 0.526, "cls": "drone"}]}
+{"frame": "000166.png", "detections": [{"xyxy": [405.0, 177.3, 412.2, 180.4], "conf": 0.5775, "cls": "drone"}]}
+{"frame": "000167.png", "detections": [{"xyxy": [406.2, 177.4, 412.5, 180.2], "conf": 0.6347, "cls": "drone"}]}
+{"frame": "000168.png", "detections": [{"xyxy": [406.1, 177.0, 412.1, 180.0], "conf": 0.6217, "cls": "drone"}]}
+{"frame": "000169.png", "detections": [{"xyxy": [405.1, 176.4, 412.2, 180.0], "conf": 0.5145, "cls": "drone"}]}
+{"frame": "000170.png", "detections": [{"xyxy": [403.9, 175.9, 410.7, 180.0], "conf": 0.426, "cls": "drone"}]}
+{"frame": "000171.png", "detections": [{"xyxy": [403.7, 175.6, 409.9, 178.5], "conf": 0.5128, "cls": "drone"}]}
+{"frame": "000172.png", "detections": [{"xyxy": [402.4, 175.0, 408.8, 180.0], "conf": 0.4196, "cls": "drone"}]}
+{"frame": "000173.png", "detections": [{"xyxy": [402.2, 175.9, 410.1, 181.6], "conf": 0.2122, "cls": "bird"}]}
+{"frame": "000174.png", "detections": [{"xyxy": [411.9, 184.4, 417.3, 188.6], "conf": 0.2632, "cls": "bird"}]}
+{"frame": "000175.png", "detections": [{"xyxy": [435.7, 195.0, 441.1, 199.6], "conf": 0.2506, "cls": "bird"}]}
+{"frame": "000176.png", "detections": [{"xyxy": [472.5, 206.5, 477.9, 212.0], "conf": 0.2216, "cls": "drone"}, {"xyxy": [471.8, 207.0, 478.0, 210.5], "conf": 0.0947, "cls": "bird"}]}
+{"frame": "000177.png", "detections": [{"xyxy": [510.4, 215.1, 516.4, 220.4], "conf": 0.3064, "cls": "bird"}]}
+{"frame": "000178.png", "detections": [{"xyxy": [558.3, 226.8, 564.7, 232.4], "conf": 0.2236, "cls": "bird"}]}
+{"frame": "000179.png", "detections": [{"xyxy": [600.1, 237.6, 605.2, 244.0], "conf": 0.3893, "cls": "drone"}]}
+{"frame": "000180.png", "detections": [{"xyxy": [648.9, 249.0, 654.1, 254.7], "conf": 0.2302, "cls": "bird"}]}
+{"frame": "000181.png", "detections": [{"xyxy": [697.9, 260.0, 703.7, 266.5], "conf": 0.4118, "cls": "drone"}, {"xyxy": [692.0, 260.0, 701.4, 265.8], "conf": 0.0321, "cls": "bird"}]}
+{"frame": "000182.png", "detections": [{"xyxy": [745.8, 273.8, 752.1, 278.6], "conf": 0.5311, "cls": "drone"}]}
+{"frame": "000183.png", "detections": [{"xyxy": [786.9, 286.7, 792.7, 289.4], "conf": 0.5594, "cls": "drone"}]}
+{"frame": "000184.png", "detections": [{"xyxy": [817.7, 298.1, 823.4, 301.0], "conf": 0.5704, "cls": "drone"}]}
+{"frame": "000185.png", "detections": [{"xyxy": [838.0, 308.0, 844.1, 311.0], "conf": 0.3844, "cls": "drone"}]}
+{"frame": "000186.png", "detections": [{"xyxy": [853.0, 319.9, 859.1, 322.9], "conf": 0.3951, "cls": "drone"}]}
+{"frame": "000187.png", "detections": [{"xyxy": [859.9, 329.3, 866.3, 332.1], "conf": 0.4655, "cls": "drone"}]}
+{"frame": "000188.png", "detections": [{"xyxy": [865.2, 339.7, 871.0, 342.6], "conf": 0.5126, "cls": "drone"}]}
+{"frame": "000189.png", "detections": [{"xyxy": [867.5, 350.4, 872.5, 352.7], "conf": 0.4421, "cls": "drone"}]}
+{"frame": "000190.png", "detections": [{"xyxy": [867.7, 359.9, 872.9, 364.0], "conf": 0.2685, "cls": "drone"}]}
+{"frame": "000191.png", "detections": [{"xyxy": [867.8, 370.6, 873.2, 373.4], "conf": 0.254, "cls": "drone"}]}
+{"frame": "000192.png", "detections": [{"xyxy": [867.2, 380.0, 872.0, 383.3], "conf": 0.2909, "cls": "drone"}]}
+{"frame": "000193.png", "detections": [{"xyxy": [866.0, 391.2, 872.3, 396.0], "conf": 0.2807, "cls": "drone"}]}
+{"frame": "000194.png", "detections": [{"xyxy": [866.0, 400.1, 871.4, 404.0], "conf": 0.338, "cls": "drone"}]}
+{"frame": "000195.png", "detections": [{"xyxy": [866.4, 406.8, 871.8, 412.0], "conf": 0.0769, "cls": "drone"}]}
+{"frame": "000196.png", "detections": [{"xyxy": [865.9, 410.3, 871.4, 413.1], "conf": 0.4138, "cls": "drone"}]}
+{"frame": "000197.png", "detections": [{"xyxy": [866.4, 409.0, 871.7, 412.0], "conf": 0.3505, "cls": "drone"}]}
+{"frame": "000198.png", "detections": [{"xyxy": [864.0, 394.3, 869.8, 397.9], "conf": 0.6798, "cls": "drone"}]}
+{"frame": "000199.png", "detections": [{"xyxy": [851.8, 372.0, 859.0, 378.2], "conf": 0.3588, "cls": "drone"}]}
+{"frame": "000200.png", "detections": [{"xyxy": [833.0, 350.2, 838.6, 356.0], "conf": 0.5867, "cls": "drone"}]}
+{"frame": "000201.png", "detections": [{"xyxy": [803.2, 321.9, 810.2, 326.7], "conf": 0.6253, "cls": "drone"}]}
+{"frame": "000202.png", "detections": [{"xyxy": [770.9, 291.5, 776.6, 295.1], "conf": 0.6611, "cls": "drone"}]}
+{"frame": "000203.png", "detections": [{"xyxy": [736.2, 257.7, 743.0, 261.8], "conf": 0.6908, "cls": "drone"}]}
+{"frame": "000204.png", "detections": [{"xyxy": [688.7, 209.1, 695.8, 213.9], "conf": 0.6837, "cls": "drone"}]}
+{"frame": "000205.png", "detections": [{"xyxy": [639.9, 158.1, 648.5, 161.8], "conf": 0.4211, "cls": "drone"}]}
+{"frame": "000206.png", "detections": [{"xyxy": [585.8, 98.8, 596.1, 104.8], "conf": 0.2073, "cls": "bird"}]}
+{"frame": "000207.png", "detections": [{"xyxy": [527.8, 37.5, 538.9, 44.1], "conf": 0.2537, "cls": "bird"}]}
+{"frame": "000208.png", "detections": []}
+{"frame": "000209.png", "detections": []}
+{"frame": "000210.png", "detections": []}
+{"frame": "000211.png", "detections": []}
+{"frame": "000212.png", "detections": []}
+{"frame": "000213.png", "detections": []}
+{"frame": "000214.png", "detections": []}
+{"frame": "000215.png", "detections": []}
+{"frame": "000216.png", "detections": []}
+{"frame": "000217.png", "detections": []}
+{"frame": "000218.png", "detections": []}
+{"frame": "000219.png", "detections": []}
+{"frame": "000220.png", "detections": []}
+{"frame": "000221.png", "detections": []}
+{"frame": "000222.png", "detections": []}
+{"frame": "000223.png", "detections": []}
+{"frame": "000224.png", "detections": []}
+{"frame": "000225.png", "detections": []}
+{"frame": "000226.png", "detections": []}
+{"frame": "000227.png", "detections": []}
+{"frame": "000228.png", "detections": []}
+{"frame": "000229.png", "detections": []}
+{"frame": "000230.png", "detections": []}
+{"frame": "000231.png", "detections": []}
+{"frame": "000232.png", "detections": [{"xyxy": [1101.0, 12.5, 1113.5, 20.1], "conf": 0.4366, "cls": "drone"}]}
+{"frame": "000233.png", "detections": [{"xyxy": [1119.0, 30.2, 1131.2, 36.4], "conf": 0.5608, "cls": "drone"}]}
+{"frame": "000234.png", "detections": [{"xyxy": [1134.3, 49.8, 1147.2, 56.8], "conf": 0.4675, "cls": "drone"}]}
+{"frame": "000235.png", "detections": [{"xyxy": [1141.1, 66.3, 1154.7, 73.2], "conf": 0.4083, "cls": "drone"}]}
+{"frame": "000236.png", "detections": [{"xyxy": [1146.0, 84.9, 1159.0, 92.3], "conf": 0.4563, "cls": "drone"}]}
+{"frame": "000237.png", "detections": [{"xyxy": [1146.7, 94.8, 1160.2, 101.1], "conf": 0.4684, "cls": "drone"}]}
+{"frame": "000238.png", "detections": [{"xyxy": [1145.0, 101.1, 1157.9, 108.5], "conf": 0.514, "cls": "drone"}]}
+{"frame": "000239.png", "detections": [{"xyxy": [1143.9, 105.1, 1156.3, 110.7], "conf": 0.4786, "cls": "drone"}]}
+{"frame": "000240.png", "detections": [{"xyxy": [1140.9, 106.8, 1153.5, 113.1], "conf": 0.4656, "cls": "drone"}]}
+{"frame": "000241.png", "detections": [{"xyxy": [1137.4, 108.0, 1149.5, 114.8], "conf": 0.4923, "cls": "drone"}]}
+{"frame": "000242.png", "detections": [{"xyxy": [1134.6, 108.0, 1146.9, 114.8], "conf": 0.4636, "cls": "drone"}]}
+{"frame": "000243.png", "detections": [{"xyxy": [1130.7, 109.3, 1143.2, 116.1], "conf": 0.451, "cls": "drone"}]}
+{"frame": "000244.png", "detections": [{"xyxy": [1128.5, 108.0, 1140.7, 114.9], "conf": 0.4858, "cls": "drone"}]}
+{"frame": "000245.png", "detections": [{"xyxy": [1124.5, 109.8, 1138.6, 120.7], "conf": 0.2909, "cls": "drone"}, {"xyxy": [1122.1, 109.4, 1137.4, 120.3], "conf": 0.178, "cls": "bird"}]}
+{"frame": "000246.png", "detections": [{"xyxy": [1105.8, 132.0, 1118.1, 142.5], "conf": 0.1969, "cls": "bird"}]}
+{"frame": "000247.png", "detections": [{"xyxy": [1070.8, 157.2, 1082.9, 168.3], "conf": 0.2101, "cls": "drone"}, {"xyxy": [1072.3, 159.1, 1085.1, 167.7], "conf": 0.1439, "cls": "bird"}]}
+{"frame": "000248.png", "detections": [{"xyxy": [1007.3, 193.8, 1018.1, 204.4], "conf": 0.483, "cls": "drone"}, {"xyxy": [1003.8, 193.9, 1015.8, 202.1], "conf": 0.0365, "cls": "bird"}]}
+{"frame": "000249.png", "detections": [{"xyxy": [954.1, 221.8, 963.0, 231.4], "conf": 0.6166, "cls": "drone"}]}
+{"frame": "000250.png", "detections": [{"xyxy": [884.7, 254.8, 893.2, 263.9], "conf": 0.6235, "cls": "drone"}]}
+{"frame": "000251.png", "detections": [{"xyxy": [829.3, 280.0, 837.9, 288.3], "conf": 0.7179, "cls": "drone"}]}
+{"frame": "000252.png", "detections": [{"xyxy": [773.0, 306.0, 781.4, 313.5], "conf": 0.7489, "cls": "drone"}]}
+{"frame": "000253.png", "detections": [{"xyxy": [725.9, 331.0, 733.2, 335.4], "conf": 0.7091, "cls": "drone"}]}
+{"frame": "000254.png", "detections": [{"xyxy": [687.2, 353.1, 694.3, 356.4], "conf": 0.6851, "cls": "drone"}]}
+{"frame": "000255.png", "detections": [{"xyxy": [662.9, 370.0, 669.4, 372.9], "conf": 0.6611, "cls": "drone"}]}
+{"frame": "000256.png", "detections": [{"xyxy": [646.3, 385.9, 652.7, 388.4], "conf": 0.5118, "cls": "drone"}]}
+{"frame": "000257.png", "detections": [{"xyxy": [637.1, 399.9, 644.1, 404.0], "conf": 0.2501, "cls": "drone"}]}
+{"frame": "000258.png", "detections": [{"xyxy": [630.9, 411.4, 637.2, 414.1], "conf": 0.3617, "cls": "drone"}]}
+{"frame": "000259.png", "detections": [{"xyxy": [627.9, 418.0, 633.9, 420.8], "conf": 0.2445, "cls": "drone"}]}
+{"frame": "000260.png", "detections": [{"xyxy": [626.6, 420.0, 632.4, 424.1], "conf": 0.3329, "cls": "drone"}]}
+{"frame": "000261.png", "detections": [{"xyxy": [625.6, 422.7, 631.6, 428.0], "conf": 0.0674, "cls": "drone"}]}
+{"frame": "000262.png", "detections": [{"xyxy": [625.1, 423.1, 631.1, 428.0], "conf": 0.1276, "cls": "drone"}]}
+{"frame": "000263.png", "detections": [{"xyxy": [624.3, 423.3, 631.2, 428.0], "conf": 0.1534, "cls": "drone"}]}
+{"frame": "000264.png", "detections": [{"xyxy": [625.4, 423.2, 631.3, 428.0], "conf": 0.212, "cls": "drone"}]}
+{"frame": "000265.png", "detections": [{"xyxy": [626.1, 422.7, 632.2, 428.0], "conf": 0.2261, "cls": "drone"}]}
+{"frame": "000266.png", "detections": [{"xyxy": [626.9, 420.0, 633.1, 425.3], "conf": 0.1961, "cls": "drone"}]}
+{"frame": "000267.png", "detections": [{"xyxy": [627.9, 420.0, 634.5, 423.7], "conf": 0.3849, "cls": "drone"}]}
+{"frame": "000268.png", "detections": [{"xyxy": [629.5, 420.0, 636.1, 422.8], "conf": 0.5387, "cls": "drone"}]}
+{"frame": "000269.png", "detections": [{"xyxy": [630.7, 412.0, 637.3, 416.0], "conf": 0.5591, "cls": "drone"}]}
+{"frame": "000270.png", "detections": [{"xyxy": [631.8, 384.6, 638.0, 389.2], "conf": 0.7272, "cls": "drone"}]}
+{"frame": "000271.png", "detections": [{"xyxy": [631.6, 360.0, 638.6, 364.0], "conf": 0.6757, "cls": "drone"}]}
+{"frame": "000272.png", "detections": [{"xyxy": [630.5, 324.0, 637.1, 328.5], "conf": 0.4528, "cls": "drone"}]}
+{"frame": "000273.png", "detections": [{"xyxy": [629.8, 294.2, 637.1, 300.0], "conf": 0.3978, "cls": "drone"}]}
+{"frame": "000274.png", "detections": [{"xyxy": [629.3, 268.0, 636.9, 271.8], "conf": 0.6572, "cls": "drone"}]}
+{"frame": "000275.png", "detections": [{"xyxy": [629.9, 254.4, 638.2, 257.9], "conf": 0.6076, "cls": "drone"}]}
+{"frame": "000276.png", "detections": [{"xyxy": [631.8, 243.2, 639.4, 247.5], "conf": 0.6737, "cls": "drone"}]}
+{"frame": "000277.png", "detections": [{"xyxy": [632.9, 238.2, 640.6, 244.0], "conf": 0.5006, "cls": "drone"}]}
+{"frame": "000278.png", "detections": [{"xyxy": [634.3, 235.0, 641.9, 239.1], "conf": 0.7144, "cls": "drone"}]}
+{"frame": "000279.png", "detections": [{"xyxy": [635.5, 233.8, 643.2, 237.3], "conf": 0.7016, "cls": "drone"}]}
+{"frame": "000280.png", "detections": [{"xyxy": [635.8, 233.9, 643.7, 237.5], "conf": 0.6715, "cls": "drone"}]}
+{"frame": "000281.png", "detections": [{"xyxy": [635.8, 234.9, 643.8, 238.4], "conf": 0.6448, "cls": "drone"}]}
+{"frame": "000282.png", "detections": [{"xyxy": [635.0, 236.0, 642.7, 240.7], "conf": 0.6477, "cls": "drone"}]}
+{"frame": "000283.png", "detections": [{"xyxy": [634.5, 236.0, 642.8, 242.0], "conf": 0.5015, "cls": "drone"}]}
+{"frame": "000284.png", "detections": [{"xyxy": [634.9, 239.1, 642.3, 244.0], "conf": 0.6635, "cls": "drone"}]}
+{"frame": "000285.png", "detections": [{"xyxy": [634.8, 240.4, 642.0, 244.2], "conf": 0.7334, "cls": "drone"}]}
+{"frame": "000286.png", "detections": [{"xyxy": [634.9, 242.0, 642.8, 245.5], "conf": 0.7118, "cls": "drone"}]}
+{"frame": "000287.png", "detections": [{"xyxy": [634.5, 242.9, 642.7, 246.6], "conf": 0.7078, "cls": "drone"}]}
+{"frame": "000288.png", "detections": [{"xyxy": [634.5, 243.0, 642.2, 247.0], "conf": 0.7209, "cls": "drone"}]}
+{"frame": "000289.png", "detections": [{"xyxy": [634.2, 243.6, 641.9, 247.3], "conf": 0.7091, "cls": "drone"}]}
+{"frame": "000290.png", "detections": [{"xyxy": [634.2, 243.2, 642.1, 246.9], "conf": 0.7167, "cls": "drone"}]}
+{"frame": "000291.png", "detections": [{"xyxy": [634.0, 243.6, 642.0, 247.2], "conf": 0.7098, "cls": "drone"}]}
+{"frame": "000292.png", "detections": [{"xyxy": [633.3, 244.0, 641.8, 247.6], "conf": 0.6801, "cls": "drone"}]}
+{"frame": "000293.png", "detections": [{"xyxy": [633.0, 238.2, 640.5, 244.0], "conf": 0.6584, "cls": "drone"}]}
+{"frame": "000294.png", "detections": [{"xyxy": [623.0, 218.7, 632.1, 228.1], "conf": 0.7067, "cls": "drone"}]}
+{"frame": "000295.png", "detections": [{"xyxy": [592.8, 202.0, 601.9, 211.7], "conf": 0.7424, "cls": "drone"}]}
+{"frame": "000296.png", "detections": [{"xyxy": [560.5, 195.2, 569.0, 203.8], "conf": 0.6942, "cls": "drone"}]}
+{"frame": "000297.png", "detections": [{"xyxy": [516.9, 189.6, 525.1, 197.9], "conf": 0.6567, "cls": "drone"}]}
+{"frame": "000298.png", "detections": [{"xyxy": [487.0, 186.5, 494.6, 193.5], "conf": 0.6346, "cls": "drone"}]}
+{"frame": "000299.png", "detections": [{"xyxy": [453.7, 183.4, 461.6, 188.0], "conf": 0.6394, "cls": "drone"}]}
