@@ -149,11 +149,19 @@ evaluate with** (`--classifier camera/motion_classifier_v6.json`).
 |---|---|---|---|---|
 | **Long-range sweep** | v6, or-fusion, thr 0.3, plain full RGB | **90.5%** | 29.4 | **MET** |
 | **Long-range sweep** (conservative) | v6, and-confirm, thr 0.3 | **90.25%** | **4.5** | **MET** |
-| Terrain + birds | v6, rgb-only, thr 0.5 | 84.5% | 63–70 | short 5.5 pts |
+| Terrain + birds | v6, rgb-only, thr 0.5, `--coast-alarms none` | **83.9%** | **24.4** | short 6 pts; alarms cut 60% for 0.6 pts (coast=all: 84.5% @ 63–70) |
 | **Canopy (coverage-first)** | v6, thr 0.5, `--rgb-mode both --young-tracks pass --coast-alarms none --clutter`, row `or-fusion` | **86.5%** | **177** | short 3.5 pts; was 68.8% @ 765 (v1) |
 | Canopy (middle) | same config, row `vote-gated` | 85.2% | 142 | |
 | **Canopy (balanced)** | same config, row `and+mute` | **80.2%** | **75** | alarm-matched frontier moved +30 pts coverage vs old 49.8% @ 71 |
-| Sky (eval_birds) | v6, rgb-only, thr 0.9 | 86.9% | **16.8** | better than v1's 86.1% @ 32.8 on both axes |
+| Sky (eval_birds) | v6, rgb-only, thr 0.9, `--coast-alarms none` | 86.9% | **5.0** | clutter alarms ZERO; v1 was 86.1% @ 32.8 |
+
+**The coast-alarms discipline generalizes (measured):** terrain+birds
+83.9% @ 24.4/min and sky 86.9% @ 5.0/min under `--coast-alarms none`, both
+at ≤0.6 pts coverage cost. The ONE scenario where it must NOT be used is the
+long-range sweep: its coverage genuinely lives in coasting frames (tracker
+holds 97% against a 75.5% detection ceiling), and its alarms are already
+4.5/min — keep `coast=all` there. The SAHI union likewise stays canopy-only:
+on terrain+birds it adds alarms and no coverage (drone is RGB-visible 93%).
 
 **Canopy alarm mechanics (2026-08-28, latest — how 237 became 75):** at the
 84% operating point, 57% of alarm track-frames came from tracks NOT detected
