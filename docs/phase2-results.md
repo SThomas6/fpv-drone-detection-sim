@@ -662,6 +662,78 @@ rate on the clear-sky case, which is this project's cleanest existing result.
 Installing it is a deployment trade-off for the user to make, not a silent
 default swap.
 
+## Fixing it: the v3 feature set (canopy AUC 0.419 → 0.925)
+
+The retrain above changed the training data but kept the six original
+features. Probing each feature individually
+(`scripts/probe_track_features.py`) showed the features themselves are the
+problem. Per-feature AUC, drone vs bird track-windows, held-out clips — below
+0.5 means the feature is **backwards** on that clip:
+
+| Feature | canopy | terrain+birds | sky | |
+|---|---|---|---|---|
+| `drone_vote` (class votes over the track) | **0.820** | **0.978** | 0.614 | best, consistent |
+| `straightness` | 0.733 | 0.722 | 0.836 | consistent |
+| `hover_fraction` | **0.355** | 0.541 | **0.961** | **inverts** |
+| `speed_in_widths` | 0.757 | 0.675 | **0.218** | **inverts** |
+| `width_mean` | 0.188 | 0.244 | 0.448 | scene prior |
+| `y_norm` (image height) | 0.915 | 0.572 | 0.536 | geometry overfit |
+
+`hover_fraction` is the installed model's largest weight (+0.819). It is the
+**best feature in the domain it was fitted on and backwards in the domain it
+is applied to** — that single fact is the whole below-chance result. The
+mechanism is the width normalisation: `hover_fraction` and `speed_in_widths`
+divide speed by apparent target size, and over terrain the *birds* are the
+bigger targets (`width_mean` AUC 0.188), so slow-looking birds masquerade as
+hovering drones.
+
+**v3** (`camera/classify.py`, `FEATURE_NAMES_V3`) normalises by the track's
+own median step instead of by target size, admits only features whose AUC
+lands on the same side of 0.5 on all three held-out clips, and promotes the
+detector's class votes from a hard gate to a weighted feature:
+
+| Clip | v1 (installed) | v2 (fused data, v1 features) | **v3** |
+|---|---|---|---|
+| terrain_ir_canopy | 0.419 | 0.594 | **0.925** |
+| terrain_ir_birds | 0.585 | 0.775 | **0.973** |
+| eval_birds (sky) | 0.987 | 0.975 | 0.958 |
+
+Learned weights are readable and physical: `dwell_fraction +1.58`,
+`bird_evidence −1.19`, `drone_evidence +0.90`, `width_cv −0.84` (birds flap,
+so projected size varies — the wingbeat signature surviving as *variance*
+even though 2 Hz sampling cannot resolve 2–8 Hz flapping), `turn_rate +0.65`,
+`straightness +0.61`.
+
+Two features were deliberately refused despite scoring well, and the reasons
+are recorded in the source so nobody re-adds them: **`y_norm`** (0.915 on
+canopy, 0.54 elsewhere — it is the drone's image height, i.e. memorised
+mission geometry; it would produce a great canopy number and a worthless
+system) and **`width_mean`** (encodes "birds are nearer than the drone in
+these captures", a scene prior rather than physics).
+
+End-to-end, v3 cuts false alarms hard: canopy or-fusion 765 → 187 alarms/min;
+terrain+birds `rgb-only` reaches 84.5% coverage at 75 alarms/min against v1's
+79.2% at 112 — better on both axes.
+
+### Two errors found while doing this, both worth remembering
+
+**A train/eval violation of my own.** `backlit_birds` is an evaluation clip —
+its `meta.json` note says so — but it carries no `train_`/`eval_` naming cue,
+and it was in the training set for v2 and the first v3. Corrected; the split
+is now written out explicitly in handoff.md, with the rule to read
+`meta.json`'s note before adding any clip to a training set.
+
+**The training set has no long-range and no thermal clip**, which is why the
+long-range sweep regressed (88.7% → ~72%) even as canopy improved. It shows
+up directly in the weights: `ir_frac` learns **+0.000**, because no training
+clip has a thermal stream at all, so the feature is constant and standardises
+away — the classifier is *structurally unable* to use the sensor that carries
+the long-range case. Meanwhile `dwell_fraction` and `width_cv`, fitted on
+fragmented terrain tracks, vote "bird" on exactly the smooth 2–3 px
+constant-velocity tracks the sweep consists of. Adding `train_zoom_a/b`
+(130–250 m, same range regime) addresses the first half; a thermal *training*
+capture does not exist and must be made before `ir_frac` can ever be learned.
+
 ## The travel gate is already well tuned
 
 Checked because the attribution table showed it costing 4.5 points. Dropping
