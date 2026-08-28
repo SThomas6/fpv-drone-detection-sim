@@ -135,6 +135,26 @@ canopy ceiling 97.5%/tracker 96.0%; t+b 96.9%/91.8%; **sky 99.4%/97.2% with
 the classifier eating 26.6 pts** — sky loss is pure drone-track bird-vote
 contamination (m3 sky drone naming 0.745), the one place NAMING still binds.
 
+**Improvement loop #5-#7 (same night, continued):**
+- **Sky classifier dead ends measured** (v8 symmetric size-trust on votes:
+  sky 0.773→0.571, the sky drone's 7 px votes are 3:1 correct; v9
+  asymmetric: a wash — its bird-flips are on the LARGER frames). Sky's fix
+  must be detector naming. The context trap: m3 names the sky drone 0.982
+  ALONE but 0.745 NEAR BIRDS — any birdless sky clip is blind to the
+  failure; only the original sky tiles (built from birds_drone on the Mac)
+  contain the context.
+- **Checkpoint re-pick: dead end** — extended sweep (m3_naming_sweep_v2)
+  shows epoch12 already the best row.
+- **m4 running**: m1 base + mixed_v4 (sky share 19%→29%, real 22%→25%,
+  terrain/SAHI tiles unchanged), full batch. Evaluate with
+  sweep_m3_naming --runs runs/experiments/m4_rebalance, then the tagged →
+  fused pipeline as for m3. Aimed at: sky-near-birds naming, real-hard
+  recall, keeping every m3 gain.
+- **Real-footage motion channel: NEGATIVE, closed** (see commit ccec621) —
+  132-240 movers/frame at thresh 35 even pan-gated; fusion degrades. Needs
+  a redesign, not tuning. The cv2 blob pass (100x) and the ego-gating
+  recipe survive for whoever attempts it.
+
 **The improvement loop the user asked for (continue it):**
 1. Re-pick the m3 checkpoint with SKY NAMING in the selection metric —
    `sweep_m3_naming.py` now scores `baseline` (sky drone naming) and
