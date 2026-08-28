@@ -12,6 +12,7 @@ left, +Z is up.
 """
 
 import math
+import os
 
 import numpy as np
 
@@ -19,7 +20,9 @@ import numpy as np
 CAM_POS = np.array([0.1, 0.0, 2.5])   # link pose, station model sits at origin
 CAM_PITCH = -0.15                     # radians, nose-up about +Y
 W, H = 1280, 720
-HFOV = 1.047                          # radians
+# Overridable for narrow-FOV (zoom-lens) ablation worlds; must match the
+# world's <horizontal_fov> or check_intrinsics will flag the mismatch.
+HFOV = float(os.environ.get("STATION_HFOV", "1.047"))   # radians
 
 # --- target_drone model extents (metres, half-sizes incl. propeller discs)
 DRONE_HALF = np.array([0.17, 0.17, 0.04])

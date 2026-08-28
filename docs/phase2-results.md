@@ -359,12 +359,18 @@ zoomed crops), and fragmented bird tracks against terrain get straightened by
 the tracker's coasting, which **breaks the motion filter's bird rejection**
 (bird alarms pass at ~300/min vs ~9/min over sky).
 
-A terrain-positive retrain (2,202 new tiles, drone-tile protection, pinned
-recipe, per-epoch checkpoint sweep on a separate selection clip) was the
-obvious fix and it **failed**: identical recall on every terrain clip, 2-4x
-the false alarms, small regressions on sky clips. The weights were not
-adopted; `drone_bird_v1.pt` is unchanged. Conclusion: canopy/mountain
-blindness is information-limited for this RGB camera, not training-limited.
+A terrain-positive retrain was attempted and appeared to fail — **but that
+conclusion was later found to be an artifact of a silent dataset bug** and is
+retracted. Ultralytics resolves only `./`-prefixed lines of a txt train list
+against the dataset root; the retrain's `../finetune_terrain/...` lines were
+resolved against the working directory and silently dropped as "corrupt", so
+the run trained on zero terrain tiles (which is why it exactly matched the
+sky model). The corrected mixed retrain below shows terrain recall IS
+substantially trainable (canopy 0.125 → 0.458), though not to 1.0 — the ≤6 px
+contrast ceiling against rock is real, just higher than a sky-only model
+reaches. Post-mortem lesson (the project's third): when a retrain changes
+nothing at all, first suspect that it trained on nothing at all — read the
+scanner's corrupt count.
 
 ## The thermal camera, honestly
 
@@ -419,3 +425,54 @@ is unchanged by thermal (by design of the honest benchmark).
   biggest open problem in the system; track gap-filling and a track-sequence
   classifier (Drone-vs-Bird literature's winning increments) are the queued
   levers, followed by real-footage validation on Anti-UAV (paired RGB+IR).
+
+---
+
+# Real footage, and the model that holds every domain (added 2026-08-28, evening)
+
+## The reality check
+
+The full pipeline was run against real drone videos (Anti-UAV300 test split,
+12 sequences, hand-annotated; imported to our clip format by
+`scripts/import_antiuav.py` — pseudo-range from box width, noted in each
+clip's meta). Verdict on the sim-trained detector: **catastrophic forgetting.**
+Mean recall 0.08 at 2,000-3,700 FP/min — while the ORIGINAL base checkpoint
+(trained on real photos) scores recall 0.99-1.00 at ~6 FP/min on the same
+sequences. Forty sim-only epochs had erased what the base model knew about
+real imagery. Every sim result in this file describes a model that, as of
+that measurement, did not work outside the simulator.
+
+## The fix: one mixed retrain across all four domains
+
+25 epochs over 8,668 tiles — sim sky + sim terrain + zoom-lens terrain + real
+Anti-UAV train-split frames (real tiles double-weighted; test sequences never
+touched; checkpoint chosen by held-out sweep). Deployed as
+`camera/weights/drone_bird_v1.pt` (m1 epoch 24; the previous sim-specialist
+weights are superseded). Detector-level, max recall @ FP/min:
+
+| Held-out clip | sim-specialist (before) | mixed model (after) |
+|---|---|---|
+| real seq 1_4 | 0.280 @ 2,048 | **1.000 @ 0** |
+| real seq 1_5 | 0.200 @ 3,326 | **0.952 @ 260** |
+| real seq 1_9 | 0.136 @ 2,966 | **0.766 @ 35** (beats even the base model's 0.609 @ 16) |
+| baseline (sim sky) | 1.000 @ 0 | 0.940 @ 0 |
+| terrain_birds | 0.911 @ 170 | 0.915 @ **52** |
+| terrain_canopy | 0.125 @ 306 | **0.458 @ 69** |
+| terrain_zoomsweep | 0.186 @ 0 | **0.693 @ 1** |
+
+System-level on sky-birds (tracker + motion + class votes): 60% drone
+track-frame coverage at **0.2 alarms/min** — and the per-track appearance
+votes, useless under the old model (birds voted "drone"), now genuinely work.
+The cost of cross-domain competence is ~6 pts of sim-sky recall: a fair trade
+for a model that functions on real video.
+
+## Honest caveats
+
+- 12 real test sequences from one dataset, one country, mostly urban/sky
+  backgrounds; real-world bird pressure remains unmeasured (Anti-UAV has no
+  bird labels — the bird class is still sim-taught).
+- Real sequences carry a burned-in tracking-turret reticle/OSD; the model
+  trained on tiles containing it, which flatters FP counts on this dataset.
+- Thermal fusion is not yet validated on real data: Anti-UAV's IR is 8-bit
+  processed video from a separate, unregistered camera — the sim fusion
+  design needs a contrast-based port before it can be tested there.

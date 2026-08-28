@@ -194,6 +194,10 @@ def main():
                     help="add the station thermal camera (Boson-class 640x512 "
                          "24deg L16), ambient atmosphere temperature, and "
                          "sun-warmed clutter patches; writes *_ir.sdf")
+    ap.add_argument("--rgb-hfov", type=float, default=None,
+                    help="override the RGB camera's horizontal FOV (radians) — "
+                         "the narrow-lens ablation; writes *_zoom.sdf and "
+                         "captures must set STATION_HFOV to match")
     args = ap.parse_args()
 
     ASSETS.mkdir(parents=True, exist_ok=True)
@@ -252,6 +256,9 @@ def main():
                           f'<temperature>{AMBIENT_K:.0f}</temperature>'
                           '</atmosphere>')
         out = out.replace("</sensor>", "</sensor>" + THERMAL_SENSOR, 1)
+    if args.rgb_hfov:
+        out = out.replace("<horizontal_fov>1.047</horizontal_fov>",
+                          f"<horizontal_fov>{args.rgb_hfov}</horizontal_fov>")
     gp0 = out.index('<model name="ground_plane">')
     gp1 = out.index('</model>', gp0) + len('</model>')
     heightmap = f"""<model name="terrain">
@@ -281,7 +288,8 @@ def main():
     </model>"""
     out = out[:gp0] + heightmap + out[gp1:]
     out = out.replace("</world>", "".join(models) + "\n  </world>")
-    dest = WORLDS / ("detection_world_terrain_ir.sdf" if args.thermal
+    dest = WORLDS / ("detection_world_terrain_zoom.sdf" if args.rgb_hfov
+                     else "detection_world_terrain_ir.sdf" if args.thermal
                      else "detection_world_terrain.sdf")
     dest.write_text(out)
     import json

@@ -70,13 +70,20 @@
       blindness is information-limited (retrain failed, weights unchanged).
       Full account: "Terrain backgrounds and EO/IR fusion" in
       docs/phase2-results.md
-- [ ] NEXT MILESTONE (user-approved 2026-08-28): real-data validation — download
-      the Anti-UAV dataset (github.com/ZhaoJ9014/Anti-UAV, MIT; 300+ sequences
-      with PAIRED RGB + thermal video) and run the full fused pipeline
-      (detector + tracker + motion filter + EO/IR fusion) against real footage;
-      quantify the sim-to-real gap and mix real frames into training if large.
-      Also consider Anti-UAV410 (thermal, 438K boxes) and the Drone-vs-Bird
-      challenge data (registration needed) for training hardening.
+- [x] Real-data validation (2026-08-28 evening): Anti-UAV300 downloaded; the
+      sim-trained detector had CATASTROPHICALLY FORGOTTEN real imagery
+      (recall 0.08 vs the base model's 0.99 on the same sequences). Fixed with
+      a mixed four-domain retrain (sky+terrain+zoom+real) — deployed weights
+      now score 0.77-1.00 on real sequences AND 3.7x the old terrain/zoom
+      recall, at ~6pts sim-sky cost. En route, found + fixed a silent dataset
+      bug (ultralytics drops non-"./" txt entries as corrupt) that had
+      invalidated the earlier "terrain retrain failed" conclusion. Full
+      account: "Real footage" section of docs/phase2-results.md
+- [ ] Real thermal/fusion validation: port the IR detector to contrast-based
+      detection for Anti-UAV's 8-bit unregistered IR videos, then test the
+      fusion layer on real paired sequences
+- [ ] Real bird pressure: Anti-UAV has no bird labels; find/label real
+      drone-vs-bird footage (Drone-vs-Bird challenge data, registration)
 - [ ] Narrow-FOV RGB ablation (mandatory before attributing the IR range gain
       to thermal physics rather than the 24° optics)
 - [ ] Track gap-filling interpolation + track-sequence classifier (the
