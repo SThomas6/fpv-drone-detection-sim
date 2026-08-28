@@ -105,6 +105,13 @@ set on the launched PID die with the launcher or miss the child entirely
 /affinity F ...` so creation-time attributes inherit, and verify with
 Get-Process afterwards on ALL python PIDs.
 
+**SWEEP RESULT (done):** winner `runs/experiments/m3_birdnamer_b/weights/epoch12.pt`.
+On the selection clip: SAHI bird naming 0.783 → **0.872**, SAHI drone recall
+0.440 → **0.497**, full-frame naming 0.995/0.911, real-footage guard 1.000
+(no forgetting). Full table in `runs/m3_naming_sweep.json`. Tagged inference
+(`--tag m3`) on the five eval-clip passes was launched next; end-to-end fused
+numbers with `--rgb-tag m3` are the step after.
+
 **When it finishes (the plan, so any agent can execute it):**
 1. Pick a checkpoint: score epochs {4,8,12,16,20} on `train_ir_sweep`
    (drone recall + bird naming, both classes matter) with a guard check on
