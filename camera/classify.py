@@ -257,7 +257,19 @@ class MotionClassifier:
         X = np.asarray(X, dtype=float)
         y = np.asarray(y, dtype=float)
         self.mean = X.mean(axis=0)
-        self.std = X.std(axis=0) + 1e-6
+        # A feature that is CONSTANT in training must standardise to zero at
+        # inference, not explode. With `std + 1e-6` a constant-zero feature
+        # divides an inference-time value of 0.5 by 1e-6 — a 500000x input to
+        # a linear model. It happens to be harmless today only because such a
+        # feature also gets exactly zero gradient and keeps its zero initial
+        # weight, so nothing multiplies the blow-up. That is luck, not design:
+        # a NEARLY constant feature (tiny but non-zero variance) would get a
+        # real weight and a huge amplification. This is live right now —
+        # `ir_frac` is constant 0 across every training clip, because none of
+        # them has a thermal stream, while the terrain_ir_* evaluation clips
+        # feed it real values.
+        raw_std = X.std(axis=0)
+        self.std = np.where(raw_std < 1e-6, 1.0, raw_std)
         Z = (X - self.mean) / self.std
         n, d = Z.shape
         self.w = np.zeros(d)
