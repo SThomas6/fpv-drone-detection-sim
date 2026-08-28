@@ -69,7 +69,40 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
-## m3 RESULTS + the SIXTH measurement error (2026-08-28, latest — CURRENT)
+## INSTALLED SYSTEM CHANGED (2026-08-28, final act — read before anything)
+
+**m3 + v7 is now the INSTALLED default**, per the user's decision to build on
+the line with the best improvement potential:
+
+- `camera/weights/drone_bird_v1.pt` = **m3** (b/epoch12). md5 prefix now
+  **`ff2e44b992e7`**. The old m1 is preserved at
+  `camera/weights/m1_ep24_backup.pt` (md5 `e794dc0a2855`).
+- `camera/motion_classifier.json` = **v7** (v3 feature set, 12 weights).
+  Old v1 preserved at `camera/motion_classifier_v1_backup.json`.
+- Every untagged detection cache was regenerated with the new deployed model
+  immediately after install (the discipline errors #4 and #6 bought). The
+  `_m3`-tagged files from the pre-install evaluation are now redundant
+  duplicates of the untagged ones.
+- Any older section below saying "v1 is still installed" or quoting the m1
+  hash as deployed is HISTORY as of this section.
+
+**The improvement loop the user asked for (continue it):**
+1. Re-pick the m3 checkpoint with SKY NAMING in the selection metric —
+   `sweep_m3_naming.py` now scores `baseline` (sky drone naming) and
+   `birds_only` (sky bird naming) alongside the sweep clip. 14 sibling
+   epochs already exist; B/epoch6 probed sky drone naming 0.775 vs
+   epoch12's 0.734. If another epoch dominates, install it the same way
+   (backup → copy → hash → regenerate untagged → verify).
+2. Recover the sweep's 3 frames (89.75% vs the MET 90.5% under m1+v6r) —
+   likely the same re-pick, else a short m4 with half-weight bird tiles.
+3. Attribute the canopy and-confirm coverage loss under m3 (81→66 on the
+   balanced row; or-fusion is fine, so it is the IR-persistence interaction
+   with m3's changed track composition).
+4. Real-footage numbers under m3 need re-verifying (`track_eval` on the
+   three masked clips) — the caches were refreshed but the headline
+   0.960@178 was measured under m1.
+
+## m3 RESULTS + the SIXTH measurement error (2026-08-28, history)
 
 **This supersedes every sky (eval_birds/backlit_birds) number below it.**
 
@@ -433,7 +466,8 @@ any cached eval file:
 
 ```bash
 python -c "import hashlib; print(hashlib.md5(open('camera/weights/drone_bird_v1.pt','rb').read()).hexdigest()[:12])"
-# expect: e794dc0a2855  (= m1 epoch 24)
+# expect: ff2e44b992e7  (= m3, b/epoch12 — installed 2026-08-28 late)
+# the older e794dc0a2855 = m1 epoch 24, now camera/weights/m1_ep24_backup.pt
 ```
 
 **A landmine already hit once — check for it before trusting ANY untagged
