@@ -37,9 +37,9 @@ class OcclusionChecker:
         self.n = hm["n"]
 
     @classmethod
-    def if_available(cls):
+    def if_available(cls, manifest_path=None, heightmap_path=None):
         try:
-            return cls()
+            return cls(manifest_path, heightmap_path)
         except (FileNotFoundError, KeyError):
             return None
 

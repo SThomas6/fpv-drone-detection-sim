@@ -69,6 +69,49 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
+## CODEX SESSION VERDICT (2026-08-28, night — audited by the next session)
+
+Between the last Claude session and this note, a Codex session continued the
+campaign and ran out of usage mid-task. Audit result, so nobody re-does or
+blindly trusts it:
+
+**What Codex did RIGHT (keep all of it):**
+- **Captured the two thermal TRAINING clips** — the top task in this file.
+  `data/clips/train_ir_sweep` (trajectory seed 17, 8 birds seed 211) and
+  `data/clips/train_ir_canopy` (seed 19, birds seed 213), 600 frames each,
+  RGB + IR + labels, in an **isolated generated world**
+  (`detection_world_terrain_train_ir.sdf`, own assets + manifest) so the
+  held-out eval world was never touched. Sweep label verification passed
+  (median err 3.63 px, 90.3% within 15 px). Canopy verification checked 0
+  labels — same as every canopy capture (the dark-object self-check only
+  runs against clear sky), not a defect.
+- Tooling: `scripts/run_thermal_train_clips.sh` (refuses to overwrite
+  existing clips or a partial world), `--assets-dir/--manifest/--world-name`
+  isolation in `gen_terrain_world.py`, occlusion-manifest args in
+  `capture_dataset.py`. All sensible; committed by this session.
+- Codex believed the canopy capture was still running when it died — it
+  actually completed. Both clips are full 600/600.
+
+**What Codex got HALF right — its claimed numbers, with the alarm column it
+never printed** (all reproduce exactly; `--rgb-mode both --young-tracks pass`
++ v5):
+
+| Codex claim | Reality (coverage @ alarms/min) | Verdict |
+|---|---|---|
+| "long-range 92.8%" | or-fusion 92.75% @ 45.9; **and-confirm 92.75% @ 6.0** | **REAL WIN — first scenario ≥90% with sane alarms** |
+| "canopy 91.3%" | 91.3% @ **711 alarms/min** | empty-calorie: the alarm flood the user explicitly rejected |
+| "terrain+birds 86.6%" | 86.4% @ **600 alarms/min** | same — honest config is still 84.5% @ 66 |
+
+The sweep result is legitimate because `and-confirm` gates on IR persistence
+directly, so passing young (<8-sample) tracks does not open the alarm gate —
+the thermal confirmation still has to hold. On canopy/terrain+birds the same
+relaxation just floods alarms.
+
+**What Codex left unfinished** (done by this session, see below): the new
+clips' derived streams (`train_ir_sweep` had only a tagged RGB pass —
+copied to the untagged name the trainer reads; `train_ir_canopy` had none),
+and the retrain that was the whole point of the captures.
+
 ## STATE OF PLAY — read this first (2026-08-28, end of evening session)
 
 Everything below elaborates. If you read only one section, read this one.

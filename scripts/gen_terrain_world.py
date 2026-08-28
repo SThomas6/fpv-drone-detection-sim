@@ -28,6 +28,9 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 WORLDS = ROOT / "simulator" / "worlds"
+# Kept as the default for the original benchmark world.  `main()` may select
+# an isolated asset directory for a training world so generating new data never
+# overwrites the heightmap/manifest that labels the held-out evaluation clips.
 ASSETS = WORLDS / "terrain_assets"
 
 # Heightmap footprint: 800x800 m centred 250 m east of the station.
@@ -198,19 +201,36 @@ def main():
                     help="override the RGB camera's horizontal FOV (radians) — "
                          "the narrow-lens ablation; writes *_zoom.sdf and "
                          "captures must set STATION_HFOV to match")
+    ap.add_argument("--world-name", default="detection_world_terrain",
+                    help="SDF world name (default preserves the benchmark)")
+    ap.add_argument("--out", default=None,
+                    help="SDF filename under simulator/worlds; default is the "
+                         "historic terrain/terrain_ir/terrain_zoom name")
+    ap.add_argument("--assets-dir", default="terrain_assets",
+                    help="asset directory under simulator/worlds; use a unique "
+                         "one for a training world so eval assets stay untouched")
+    ap.add_argument("--manifest", default="terrain_manifest.json",
+                    help="manifest filename under simulator/worlds")
     args = ap.parse_args()
 
-    ASSETS.mkdir(parents=True, exist_ok=True)
+    assets_rel = Path(args.assets_dir)
+    if assets_rel.is_absolute() or ".." in assets_rel.parts:
+        raise SystemExit("--assets-dir must stay under simulator/worlds")
+    assets = WORLDS / assets_rel
+    manifest_path = WORLDS / args.manifest
+    if manifest_path.resolve().parent != WORLDS.resolve():
+        raise SystemExit("--manifest must be a filename under simulator/worlds")
+    assets.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
 
     h = build_heightmap(args.seed)
-    Image.fromarray((h * 65535).astype(np.uint16)).save(ASSETS / "heightmap.png")
-    noise_texture(ASSETS / "grass.png", (86, 118, 60), 14, seed=args.seed)
-    noise_texture(ASSETS / "rock.png", (117, 110, 100), 18, seed=args.seed + 1)
+    Image.fromarray((h * 65535).astype(np.uint16)).save(assets / "heightmap.png")
+    noise_texture(assets / "grass.png", (86, 118, 60), 14, seed=args.seed)
+    noise_texture(assets / "rock.png", (117, 110, 100), 18, seed=args.seed + 1)
     flat = np.zeros((8, 8, 3), dtype=np.uint8)
     flat[..., 2] = 255
     flat[..., 0] = flat[..., 1] = 128
-    Image.fromarray(flat).save(ASSETS / "flat_normal.png")
+    Image.fromarray(flat).save(assets / "flat_normal.png")
 
     models = []
     manifest = {"heightmap": {"size": HM_SIZE, "max": HM_MAX,
@@ -249,7 +269,8 @@ def main():
 
     src = (WORLDS / "detection_world.sdf").read_text()
     # rename world; drop the flat ground plane (heightmap replaces it)
-    out = src.replace('world name="detection_world"', 'world name="detection_world_terrain"')
+    out = src.replace('world name="detection_world"',
+                      f'world name="{args.world_name}"')
     if args.thermal:
         out = out.replace('<atmosphere type="adiabatic"/>',
                           '<atmosphere type="adiabatic">'
@@ -267,17 +288,17 @@ def main():
         <visual name="visual">
           <geometry>
             <heightmap>
-              <uri>terrain_assets/heightmap.png</uri>
+              <uri>{assets_rel.as_posix()}/heightmap.png</uri>
               <size>{HM_SIZE:.0f} {HM_SIZE:.0f} {HM_MAX:.0f}</size>
               <pos>{HM_CENTRE_X:.0f} 0 0</pos>
               <texture>
-                <diffuse>terrain_assets/grass.png</diffuse>
-                <normal>terrain_assets/flat_normal.png</normal>
+                <diffuse>{assets_rel.as_posix()}/grass.png</diffuse>
+                <normal>{assets_rel.as_posix()}/flat_normal.png</normal>
                 <size>18</size>
               </texture>
               <texture>
-                <diffuse>terrain_assets/rock.png</diffuse>
-                <normal>terrain_assets/flat_normal.png</normal>
+                <diffuse>{assets_rel.as_posix()}/rock.png</diffuse>
+                <normal>{assets_rel.as_posix()}/flat_normal.png</normal>
                 <size>30</size>
               </texture>
               <blend><min_height>28</min_height><fade_dist>18</fade_dist></blend>
@@ -288,16 +309,19 @@ def main():
     </model>"""
     out = out[:gp0] + heightmap + out[gp1:]
     out = out.replace("</world>", "".join(models) + "\n  </world>")
-    dest = WORLDS / ("detection_world_terrain_zoom.sdf" if args.rgb_hfov
-                     else "detection_world_terrain_ir.sdf" if args.thermal
-                     else "detection_world_terrain.sdf")
+    dest = WORLDS / (args.out or
+                     ("detection_world_terrain_zoom.sdf" if args.rgb_hfov
+                      else "detection_world_terrain_ir.sdf" if args.thermal
+                      else "detection_world_terrain.sdf"))
+    if dest.resolve().parent != WORLDS.resolve():
+        raise SystemExit("--out must be a filename under simulator/worlds")
     dest.write_text(out)
     import json
-    np.save(ASSETS / "heightmap.npy", h)   # exact array for occlusion tests
-    (WORLDS / "terrain_manifest.json").write_text(json.dumps(manifest, indent=1))
+    np.save(assets / "heightmap.npy", h)   # exact array for occlusion tests
+    manifest_path.write_text(json.dumps(manifest, indent=1))
     print(f"wrote {dest} ({args.trees + 14} trees, {args.bushes} bushes"
           f"{', thermal camera ON' if args.thermal else ''}) "
-          f"+ assets in {ASSETS} + terrain_manifest.json")
+          f"+ assets in {assets} + {manifest_path.name}")
 
 
 if __name__ == "__main__":

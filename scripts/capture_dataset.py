@@ -90,6 +90,11 @@ def main():
                     help="only self-check labels above this pixel row; on "
                          "terrain worlds pass ~250 so the dark-object check "
                          "runs only against clear sky")
+    ap.add_argument("--occlusion-manifest", default=None,
+                    help="terrain manifest used for occlusion-aware labels; "
+                         "needed for an isolated generated training world")
+    ap.add_argument("--occlusion-heightmap", default=None,
+                    help="heightmap .npy paired with --occlusion-manifest")
     args = ap.parse_args()
 
     # Terrain worlds carry an occlusion manifest; a drone behind a tree or a
@@ -97,7 +102,8 @@ def main():
     occ = None
     if "terrain" in args.world:
         from simulator.occlusion import OcclusionChecker
-        occ = OcclusionChecker.if_available()
+        occ = OcclusionChecker.if_available(args.occlusion_manifest,
+                                             args.occlusion_heightmap)
         print(f"occlusion checking: {'ON' if occ else 'manifest missing!'}",
               flush=True)
 
@@ -254,6 +260,9 @@ def main():
             "median_px_err": round(float(np.median(verify_err)), 2) if verify_err else None,
             "fraction_within_15px": round(ok_frac, 4) if ok_frac is not None else None,
         },
+        "occlusion_assets": ({"manifest": args.occlusion_manifest,
+                              "heightmap": args.occlusion_heightmap}
+                             if args.occlusion_manifest else None),
     }
     (out / "meta.json").write_text(json.dumps(meta, indent=2))
     print(f"\nsaved {kept} frames to {out}/ ({visible_n} with the drone in frame)")
