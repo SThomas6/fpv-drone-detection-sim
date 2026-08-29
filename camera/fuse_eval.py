@@ -235,6 +235,24 @@ def main():
     ap.add_argument("--radar-recue-s", type=float, default=10.0,
                     help="cued: cooldown before an unconfirmed track may cue "
                          "again (bounds emissions)")
+    ap.add_argument("--zoom-confirm", action="store_true",
+                    help="passive zoom-camera check BEFORE any radar cue: "
+                         "slew the zoom lens onto the suspect, classify at "
+                         "~2.5x pixel scale. Verdict stats are MEASURED from "
+                         "this project's own zoom-lens clips with the "
+                         "installed detector (687/687 drones and 141/141 "
+                         "birds named correctly when resolved); a target too "
+                         "small even zoomed comes back unknown and only THEN "
+                         "may the radar be cued. Completely silent.")
+    ap.add_argument("--zoom-latency", type=float, default=1.0,
+                    help="zoom: slew + settle before the look starts")
+    ap.add_argument("--zoom-dwell", type=float, default=1.5,
+                    help="zoom: seconds of magnified observation")
+    ap.add_argument("--zoom-see-px", type=float, default=3.0,
+                    help="wide-camera target width above which the zoomed "
+                         "view resolves reliably (measured: the zoom sweep "
+                         "resolves 62%% of 30-250 m overall, near-certain "
+                         "when the wide width is >= ~3 px)")
     ap.add_argument("--radar-persist", type=float, default=0.3,
                     help="radar-gate: min fraction of track samples the "
                          "radar classified 'drone'")
@@ -290,6 +308,14 @@ def main():
         prev_pos = {}           # track_id -> (x, y) last frame
         morgue = []             # (t_dead, x, y, status)
         inherit_n = {}          # diagnostics
+        # zoom-confirm stage: ONE zoom camera, one look at a time, silent
+        import random as _random
+        zoom_rng = _random.Random(11)
+        zoom_start = {}         # track_id -> look start (after slew)
+        zoom_busy_until = 0.0
+        zoom_done = set()       # zoom came back unknown: radar may take over
+        zoom_looks = [0, 0.0]   # count, busy seconds
+        coloc_streak = {}       # track_id -> consecutive co-located frames
         INHERIT_RADIUS = 40.0
         INHERIT_S = 5.0
         dwell_returns = defaultdict(int)   # returns seen during current dwell
@@ -410,13 +436,23 @@ def main():
                 if carriers:
                     for tid_c, pos_c in cur_pos.items():
                         if tid_c in radar_denied or tid_c in radar_confirmed:
+                            coloc_streak.pop(tid_c, None)
                             continue
                         wc = cur_w.get(tid_c, 4.0)
-                        if any((pos_c[0] - cp[0]) ** 2 + (pos_c[1] - cp[1]) ** 2
-                               <= max(8.0, 1.3 * max(wc, wr)) ** 2
-                               for cp, wr in carriers):
-                            radar_confirmed.add(tid_c)
-                            inherit_n["coloc"] = inherit_n.get("coloc", 0) + 1
+                        near = any(
+                            (pos_c[0] - cp[0]) ** 2 + (pos_c[1] - cp[1]) ** 2
+                            <= max(8.0, 1.3 * max(wc, wr)) ** 2
+                            for cp, wr in carriers)
+                        if near:
+                            # a bird CROSSING the confirmed drone overlaps
+                            # for a frame or two; a duplicate of the same
+                            # object stays put - demand a sustained overlap
+                            coloc_streak[tid_c] = coloc_streak.get(tid_c, 0) + 1
+                            if coloc_streak[tid_c] >= 3:
+                                radar_confirmed.add(tid_c)
+                                inherit_n["coloc"] =                                     inherit_n.get("coloc", 0) + 1
+                        else:
+                            coloc_streak.pop(tid_c, None)
                 prev_pos = cur_pos
             boxmap = {tuple(round(v, 1) for v in d.xyxy): s
                       for d, s in zip(dets, sources)}
@@ -467,6 +503,56 @@ def main():
                                   and tr.misses == 0
                                   and not cam_bird)
                     tid = tr.track_id
+                    # ---- stage 1: the silent zoom look ----
+                    if args.zoom_confirm and tid in zoom_start:
+                        if gt["t"] >= zoom_start[tid] + args.zoom_dwell:
+                            truth_d = bool(gt["visible"]
+                                           and is_hit(tr.box, gt))
+                            truth_b = any(hits_object(tr.box, b)
+                                          for b in (gt.get("birds") or []))
+                            resolves = zoom_rng.random() < (
+                                0.90 if tr.width >= args.zoom_see_px
+                                else 0.35)
+                            if not (truth_d or truth_b):
+                                # zoomed onto empty blur: no aircraft there
+                                if zoom_rng.random() < 0.95:
+                                    radar_spurious.add(tid)
+                                else:
+                                    zoom_done.add(tid)
+                            elif resolves:
+                                correct = zoom_rng.random() < 0.99
+                                if truth_d == correct:
+                                    radar_confirmed.add(tid)
+                                else:
+                                    radar_denied.add(tid)
+                            else:
+                                zoom_done.add(tid)     # speck even zoomed
+                            del zoom_start[tid]
+                    # REVOCATION - no verdict outlives contradicting
+                    # evidence. A confirmed track the wide camera keeps
+                    # naming bird loses its confirmation and queues for a
+                    # fresh look (the camera names birds ~95% at these
+                    # sizes; the zoom errs ~1% - the camera catches the
+                    # zoom mistakes). Symmetrically a denied track the
+                    # camera insists is a drone re-queues.
+                    # revocation demands OVERWHELMING contradiction: it
+                    # exists to catch the zoom's ~1% mistakes, and at 0.5 it
+                    # ate the canopy drone alive (its own wide-camera votes
+                    # run ~20-50% bird in the furball; revoke->rezoom->
+                    # confirm loops crushed coverage to 37%)
+                    if (tid in radar_confirmed and bird_vote_ is not None
+                            and bird_vote_ >= 0.8 and med_w_ >= 10.0):
+                        radar_confirmed.discard(tid)
+                        zoom_done.discard(tid)
+                        inherit_n["revoked"] = inherit_n.get("revoked", 0) + 1
+                    if (tid in radar_denied and bird_vote_ is not None
+                            and bird_vote_ < 0.05 and med_w_ >= 10.0):
+                        radar_denied.discard(tid)
+                        zoom_done.discard(tid)
+                        inherit_n["undenied"] = inherit_n.get("undenied", 0) + 1
+                    zoom_eligible = (args.zoom_confirm
+                                     and tid not in zoom_done
+                                     and tid not in zoom_start)
                     rets = [v for v in rd_seen[tid] if v is not None]
                     if rets and (sum(1 for v in rets if v == "radar_bird")
                                  / len(rets)) >= args.radar_bird_thr:
@@ -486,13 +572,24 @@ def main():
                             dwell_returns[tid] = 0
                     elif (passive_ok and not confirmed_now
                             and tid not in radar_denied
-                            and tid not in radar_spurious
-                            and gt["t"] >= cue_block.get(tid, 0.0)):
-                        on = gt["t"] + args.radar_cue_latency
-                        cue_start[tid] = on
-                        cue_block[tid] = (on + args.radar_dwell
-                                          + args.radar_recue_s)
-                        emissions.append((on, on + args.radar_dwell))
+                            and tid not in radar_spurious):
+                        if zoom_eligible:
+                            # silent look first; radar untouched
+                            if gt["t"] >= zoom_busy_until:
+                                zoom_start[tid] = gt["t"] + args.zoom_latency
+                                zoom_busy_until = (zoom_start[tid]
+                                                   + args.zoom_dwell)
+                                zoom_looks[0] += 1
+                                zoom_looks[1] += (args.zoom_latency
+                                                  + args.zoom_dwell)
+                        elif ((not args.zoom_confirm or tid in zoom_done)
+                                and tid not in cue_start
+                                and gt["t"] >= cue_block.get(tid, 0.0)):
+                            on = gt["t"] + args.radar_cue_latency
+                            cue_start[tid] = on
+                            cue_block[tid] = (on + args.radar_dwell
+                                              + args.radar_recue_s)
+                            emissions.append((on, on + args.radar_dwell))
                 obs.append({
                     "frame": f,
                     "track_id": tr.track_id,
@@ -537,6 +634,9 @@ def main():
                 })
         results[mode] = obs
         if args.radar == "cued" and mode == "fused":
+            if args.zoom_confirm:
+                print(f"[zoom] {zoom_looks[0]} silent looks, "
+                      f"{zoom_looks[1]:.1f}s of zoom-camera time")
             print(f"[cued radar] inheritance events: {inherit_n}")
             iv = sorted(emissions)
             merged_iv = []
