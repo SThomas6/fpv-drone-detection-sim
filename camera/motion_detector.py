@@ -36,6 +36,7 @@ DIFF_THRESH = 14.0       # background difference threshold, DN
 MIN_AREA = 2             # pixels
 MAX_AREA = 2500          # larger movers = camera bump / scene change, drop
 MAX_CANDIDATES = 40      # per frame; above this the scene model has failed
+STORM_PIXELS = 4000      # changed pixels that mean 'the scene itself moved'
 
 
 def _global_shift(a, b):
@@ -62,7 +63,8 @@ def _global_shift(a, b):
 
 
 def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
-                  scene_motion=True, flood_limit=MAX_CANDIDATES):
+                  scene_motion=True, flood_limit=MAX_CANDIDATES,
+                  fast_mover="auto"):
     """Yield per-frame candidate lists from an iterable of RGB arrays.
 
     scene_motion: register the background model to whole-frame motion before
@@ -79,11 +81,26 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
     rng = rng or np.random.default_rng(0)
     window: deque = deque(maxlen=BG_WINDOW)
     prev = None
+    # Sub-pixel drift accumulator. Cloud in these clips drifts ~0.35 px per
+    # frame: a naive "roll if >= 1 px" test NEVER fires, the shift silently
+    # accumulates across the 9-frame window, and the flood guard then has to
+    # blank the frame. Carry the fraction and roll when it reaches a pixel.
+    acc_x = acc_y = 0.0
     for frame in frames:
         grey = frame.astype(np.float32).mean(axis=2)
         grey += rng.normal(0.0, NOISE_DN, grey.shape).astype(np.float32)
         if scene_motion and prev is not None and window:
             dx, dy = _global_shift(prev, grey)
+            if abs(dx) < 1.0 and abs(dy) < 1.0:
+                # phase correlation is integer-valued; a sub-pixel drift
+                # shows up as a long run of zeros with occasional ones.
+                # Estimate the trend from the frame difference instead.
+                acc_x += dx
+                acc_y += dy
+                dx = float(int(acc_x))
+                dy = float(int(acc_y))
+                acc_x -= dx
+                acc_y -= dy
             if abs(dx) >= 1.0 or abs(dy) >= 1.0:
                 # roll the whole background history into the new frame's
                 # reference so the median is compared like-for-like
@@ -96,6 +113,32 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
         if len(window) >= BG_WINDOW // 2 + 1:
             bg = np.median(np.stack(window), axis=0)
             diff = np.abs(grey - bg)
+            if fast_mover == "auto":
+                # Adaptive, because neither mode is right everywhere:
+                #   standard  - sees a HOVERING drone (measured: clear-sky
+                #               canopy 83% vs 66% under fast-mover, because
+                #               a hovering target has little frame-to-frame
+                #               motion)
+                #   fast      - survives DRIFTING CLOUD (measured: cloud 2%
+                #               vs 65%, and the detection ceiling 68% -> 92%)
+                # Decide per frame on the evidence: if the plain background
+                # difference is producing a candidate storm, the background
+                # model is no longer describing the scene, so trust motion
+                # speed instead of background difference.
+                storm = int((diff > thresh).sum())
+                use_fast = storm > STORM_PIXELS
+            else:
+                use_fast = bool(fast_mover)
+            if use_fast:
+                # SPEED is what separates a drone from cloud. The median
+                # background says "different from the last 4.5 s", which a
+                # slowly evolving sky also satisfies. Requiring the pixel to
+                # ALSO differ from the immediately preceding (registered)
+                # frame demands motion on a ~0.5 s timescale: a drone crosses
+                # several pixels in that time, cloud crosses a fraction of
+                # one. Cheap, and it needs no cloud model.
+                fast = np.abs(grey - window[-1])
+                diff = np.minimum(diff, fast)
             mask = diff > thresh
             # cv2 connected components when available: the pure-python
             # flood fill is fine on 720p sim frames and takes tens of
@@ -112,6 +155,14 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                     y = int(stats[i, cv2.CC_STAT_TOP])
                     w = int(stats[i, cv2.CC_STAT_WIDTH])
                     h = int(stats[i, cv2.CC_STAT_HEIGHT])
+                    # Cloud EDGES differ from aircraft in shape: a mis-
+                    # registered cloud rim is a long thin ribbon, an aircraft
+                    # is compact. Reject extreme elongation and very sparse
+                    # fills - both are edge artefacts, neither is a drone.
+                    if max(w, h) > 3 * max(min(w, h), 1) and max(w, h) > 6:
+                        continue
+                    if area < 0.25 * w * h and area > 6:
+                        continue
                     cx, cy = float(cent[i][0]), float(cent[i][1])
                     strength = float(diff[y:y + h, x:x + w].max())
                     dets.append({
@@ -145,7 +196,7 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
 
 
 def run(clip: Path, thresh: float, scene_motion: bool = True,
-        flood_limit: int = MAX_CANDIDATES):
+        flood_limit: int = MAX_CANDIDATES, fast_mover="auto"):
     frames_dir = clip / "frames"
     files = sorted(frames_dir.glob("*.png"))
     out = clip / "detections_motion.jsonl"
@@ -156,7 +207,8 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
     with open(out, "w") as fh:
         for f, dets in zip(files, detect_stream(frame_iter(), thresh,
                                                 scene_motion=scene_motion,
-                                                flood_limit=flood_limit)):
+                                                flood_limit=flood_limit,
+                                                fast_mover=fast_mover)):
             fh.write(json.dumps({"frame": f.name, "detections": dets}) + "\n")
             n += 1
             if n % 100 == 0:
@@ -174,8 +226,12 @@ def main():
                     help="disable global-motion registration of the "
                          "background model (the pre-2026-08-29 behaviour)")
     ap.add_argument("--flood-limit", type=int, default=MAX_CANDIDATES)
+    ap.add_argument("--fast-mover", default="auto",
+                    choices=["auto", "on", "off"],
+                    help="short-baseline motion requirement. auto (default): per-frame, engaged only when the background model is storming - keeps hovering targets in calm scenes and survives drifting cloud")
     args = ap.parse_args()
-    run(Path(args.clip), args.thresh, args.scene_motion, args.flood_limit)
+    run(Path(args.clip), args.thresh, args.scene_motion, args.flood_limit,
+        {"auto": "auto", "on": True, "off": False}[args.fast_mover])
 
 
 if __name__ == "__main__":
