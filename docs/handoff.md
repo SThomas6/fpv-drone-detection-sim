@@ -69,7 +69,38 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
-## CAMPAIGN TARGET MET — all four sim scenarios ≥90% (2026-08-29, CURRENT)
+## FINAL STATE — m5+v10 installed; loop concluded at the measured plateau (2026-08-29, CURRENT)
+
+**Installed:** detector = **m5** (`camera/weights/drone_bird_v1.pt`, md5
+`7b7a0173278d`; = m3 + 1320 motion-blurred real tiles, 10-epoch continuation)
+and classifier = **v10** (v3 features on m5 votes). Backups: m3
+(`m3_ep12_backup.pt`, `ff2e44b992e7`), m1 (`m1_ep24_backup.pt`,
+`e794dc0a2855`), v7/v1 classifier JSONs alongside. All untagged caches match
+the installed pair; tests 8/9 (known data gap).
+
+**Final scoreboard (deployed defaults, per-scenario configs as below):**
+
+| Scenario | Coverage | Alarms/min |
+|---|---|---|
+| Long-range sweep | **93.75%** | **6.6** |
+| Terrain + birds | **93.5%** | 55.2 (89.4% @ 18.6 low-alarm) |
+| Canopy | **91.2%** | 177 (**88.0% @ 74.6** balanced) |
+| Sky | **95.4%** | 141 (**85.5% @ 10.8** balanced) |
+| Real — easy / medium / hard | 100% / 94.4% / **65.5%** | 0 / ~58 / 14.4 |
+
+**Why the loop stops here — the frontier, measured:** canopy's and sky's
+coverage-first alarm prices are now REAL BIRDS correctly tracked (not naming
+errors — m5 names birds 91-96% everywhere); discriminating them further at
+2 Hz sampling is bounded by physics this suite already exploits. The real
+hard clip's remaining misses sit beyond the detector's blur-augmented
+ceiling (~0.72 at conf floor) — extreme blur + partial out-of-frame. Every
+gate in the policy layer has been swept per-scenario. **What would move the
+numbers now is new data**: ≥20 Hz captures (wingbeat/track features), more
+real footage diversity, a third terrain seed, and a sky-with-birds training
+capture. Design lesson that produced m5 after m4 failed: augment the
+measured failure mode; never re-weight what works.
+
+## CAMPAIGN TARGET MET (2026-08-29, history below — superseded numbers)
 
 With the INSTALLED pair (m3 + v7) and per-scenario configs, fresh caches:
 
