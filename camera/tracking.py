@@ -213,19 +213,26 @@ class CentroidTracker:
         and unlike acoustic it comes with a range, so the cue tells a zoom
         both where to look AND how far out to expect the target.
         """
-        matched, used = {}, set()
-        for tr in sorted(self._tracks, key=lambda t: (-t.hits, t.misses)):
-            best, best_d = None, None
-            for i, c in enumerate(cues):
-                if i in used:
-                    continue
-                d = abs(c[0] - float(tr.mean[0]))
-                if d <= gate_px and (best_d is None or d < best_d):
-                    best, best_d = i, d
-            if best is None:
+        # Assign by DISTANCE, not by track seniority. Iterating tracks in
+        # hits order let the longest-lived track claim the nearest cue first,
+        # so a stale clutter track sitting within the gate stole the range
+        # from the real target: measured, only 8.3% of tracked frames carried
+        # a range where the cue was almost always available. Pair up shortest
+        # link first instead, which is what update() already does.
+        pairs = sorted(
+            ((abs(c[0] - float(tr.mean[0])), ti, ci)
+             for ti, tr in enumerate(self._tracks)
+             for ci, c in enumerate(cues)
+             if abs(c[0] - float(tr.mean[0])) <= gate_px),
+            key=lambda x: x[0])
+        matched, used, claimed = {}, set(), set()
+        for _, ti, ci in pairs:
+            if ti in claimed or ci in used:
                 continue
-            used.add(best)
-            col, sig, rng_m, rng_sig = cues[best]
+            claimed.add(ti)
+            used.add(ci)
+            tr = self._tracks[ti]
+            col, sig, rng_m, rng_sig = cues[ci]
             tr.mean, tr.cov = self._update_bearing(
                 tr.mean, tr.cov, float(col), float(max(sig, 1.0)) ** 2)
             tr.range_m = float(rng_m)

@@ -1,0 +1,166 @@
+#### full ####
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=3663
+  50/3663  (19 ms/frame)
+  100/3663  (19 ms/frame)
+  150/3663  (18 ms/frame)
+  200/3663  (18 ms/frame)
+  250/3663  (18 ms/frame)
+  300/3663  (18 ms/frame)
+  350/3663  (18 ms/frame)
+  400/3663  (18 ms/frame)
+  450/3663  (18 ms/frame)
+  500/3663  (18 ms/frame)
+  550/3663  (18 ms/frame)
+  600/3663  (18 ms/frame)
+  650/3663  (18 ms/frame)
+  700/3663  (18 ms/frame)
+  750/3663  (18 ms/frame)
+  800/3663  (18 ms/frame)
+  850/3663  (18 ms/frame)
+  900/3663  (18 ms/frame)
+  950/3663  (18 ms/frame)
+  1000/3663  (18 ms/frame)
+  1050/3663  (18 ms/frame)
+  1100/3663  (18 ms/frame)
+  1150/3663  (18 ms/frame)
+  1200/3663  (18 ms/frame)
+  1250/3663  (18 ms/frame)
+  1300/3663  (18 ms/frame)
+  1350/3663  (18 ms/frame)
+  1400/3663  (18 ms/frame)
+  1450/3663  (18 ms/frame)
+  1500/3663  (18 ms/frame)
+  1550/3663  (18 ms/frame)
+  1600/3663  (18 ms/frame)
+  1650/3663  (18 ms/frame)
+  1700/3663  (18 ms/frame)
+  1750/3663  (18 ms/frame)
+  1800/3663  (18 ms/frame)
+  1850/3663  (18 ms/frame)
+  1900/3663  (18 ms/frame)
+  1950/3663  (18 ms/frame)
+  2000/3663  (18 ms/frame)
+  2050/3663  (18 ms/frame)
+  2100/3663  (18 ms/frame)
+  2150/3663  (18 ms/frame)
+  2200/3663  (18 ms/frame)
+  2250/3663  (18 ms/frame)
+  2300/3663  (18 ms/frame)
+  2350/3663  (18 ms/frame)
+  2400/3663  (18 ms/frame)
+  2450/3663  (18 ms/frame)
+  2500/3663  (18 ms/frame)
+  2550/3663  (18 ms/frame)
+  2600/3663  (18 ms/frame)
+  2650/3663  (18 ms/frame)
+  2700/3663  (18 ms/frame)
+  2750/3663  (18 ms/frame)
+  2800/3663  (18 ms/frame)
+  2850/3663  (18 ms/frame)
+  2900/3663  (18 ms/frame)
+  2950/3663  (18 ms/frame)
+  3000/3663  (18 ms/frame)
+  3050/3663  (18 ms/frame)
+  3100/3663  (18 ms/frame)
+  3150/3663  (18 ms/frame)
+  3200/3663  (18 ms/frame)
+  3250/3663  (18 ms/frame)
+  3300/3663  (18 ms/frame)
+  3350/3663  (18 ms/frame)
+  3400/3663  (18 ms/frame)
+  3450/3663  (18 ms/frame)
+  3500/3663  (18 ms/frame)
+  3550/3663  (18 ms/frame)
+  3600/3663  (18 ms/frame)
+  3650/3663  (18 ms/frame)
+
+wrote data\clips\range_dual\detections_full.jsonl
+latency: median 17.5 ms -> 57.1 FPS
+#### ir ####
+intrinsics from range_dual/meta.json: RGB fx=1108.8, IR fx=1505.4
+  100 frames
+  200 frames
+  300 frames
+  400 frames
+  500 frames
+  600 frames
+  700 frames
+  800 frames
+  900 frames
+  1000 frames
+  1100 frames
+  1200 frames
+  1300 frames
+  1400 frames
+  1500 frames
+  1600 frames
+  1700 frames
+  1800 frames
+  1900 frames
+  2000 frames
+  2100 frames
+  2200 frames
+  2300 frames
+  2400 frames
+  2500 frames
+  2600 frames
+  2700 frames
+  2800 frames
+  2900 frames
+  3000 frames
+  3100 frames
+  3200 frames
+  3300 frames
+  3400 frames
+  3500 frames
+  3600 frames
+wrote data\clips\range_dual\detections_ir.jsonl (3663 frames)
+#### motion ####
+  100 frames
+  200 frames
+  300 frames
+  400 frames
+  500 frames
+  600 frames
+  700 frames
+  800 frames
+  900 frames
+  1000 frames
+  1100 frames
+  1200 frames
+  1300 frames
+  1400 frames
+  1500 frames
+  1600 frames
+  1700 frames
+  1800 frames
+  1900 frames
+  2000 frames
+  2100 frames
+  2200 frames
+  2300 frames
+  2400 frames
+  2500 frames
+  2600 frames
+  2700 frames
+  2800 frames
+  2900 frames
+  3000 frames
+  3100 frames
+  3200 frames
+  3300 frames
+  3400 frames
+  3500 frames
+  3600 frames
+wrote data\clips\range_dual\detections_motion.jsonl (3663 frames)
+#### pcl ####
+
+illuminator dvbt: 600 MHz, 8.0 MHz BW, 50 kW ERP
+  DVB-T: the workhorse - 19 m cells, 2 m array, high power
+  wavelength 0.50 m -> half-wave element 0.25 m, 8-element array 2.00 m
+  range resolution 19 m, Doppler resolution 2.0 Hz (0.50 s dwell)
+
+range_dual: 2804/3194 moving-target dwells detected = 87.8%
+  missed - zero-Doppler ridge        390 (12.2%)
+wrote data\clips\range_dual\detections_pcl.jsonl
+#### DUAL STREAMS DONE ####

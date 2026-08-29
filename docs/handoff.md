@@ -138,6 +138,46 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### THE CHAIN CLOSES: cue -> slew -> track -> range (2026-08-29, latest)
+
+`data/clips/range_dual` is the first clip with TWO cameras on one mount
+(`detection_world_terrain_dual.sdf`: wide 60 deg + telephoto 6 deg + thermal,
+separate topics; `capture_dataset.py --zoom`). 3663 frames, both views
+frame-synchronised, 150 kph, 308-1385 m, sky background.
+`labels_zoom.jsonl` is derived by scaling the wide bbox about the principal
+point - exact, since both cameras share a pose and sensor, and it avoids a
+second projection path that could silently disagree with the first.
+
+`scripts/cued_handoff.py` runs the whole chain with the slew charged
+honestly (0.4 s slew+settle during which the telephoto is unavailable):
+
+| | without the telephoto | **with the cued telephoto** |
+|---|---|---|
+| tracked | 10.8% | **99.6%** |
+| tracked WITH a measured range | 0.0% | **99.0%** |
+| cue -> ranged track | never | **0.17 s** |
+
+Telephoto point detection on the zoom view: 98-100% in every bin to 1500 m.
+
+**Two bugs, both found because a number looked wrong rather than because
+anything errored.**
+
+1. *The zoom was never commanded* - 0 looks in 2804 cue frames. The trigger
+   fired only on cues `fuse_pcl` left UNMATCHED, but a cue matches ANY track
+   within the gate and clutter tracks are always somewhere near. Matching a
+   clutter track is not knowing what is out there. Trigger is now "no
+   ESTABLISHED track (hits >= 3) at this bearing", which is the question the
+   zoom answers.
+2. *Range attached to the wrong track* - 99.6% tracked but only 8.3% carrying
+   a range. `fuse_pcl` looped tracks in `(-hits, misses)` order, so the
+   longest-lived track claimed the nearest cue first and a stale clutter
+   track stole the range from the real target. Now assigns shortest-link
+   first, as `update()` already did: 8.3% -> 99.0%.
+
+**`fuse_bearings` (acoustic) still has flaw 2** - same seniority-ordered
+loop. Left alone deliberately so a benchmarked number does not move silently;
+fix it and re-measure the acoustic rows together.
+
 ### PCL FUSED INTO THE TRACKER + RANGE TABLE RERUN (2026-08-29, latest)
 
 `CentroidTracker.fuse_pcl(cues)` folds passive-radar cues in after the camera

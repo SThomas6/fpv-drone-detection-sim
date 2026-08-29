@@ -115,18 +115,27 @@ def main():
     ap.add_argument("--alarm-budget", type=float, default=3.0,
                     help="false alarms/frame above which a bin's detection "
                          "rate is flagged as clutter coincidence, not signal")
+    ap.add_argument("--frames-subdir", default="frames",
+                    help="which image stream to run on; frames_zoom is the "
+                         "telephoto view of a dual-camera clip")
+    ap.add_argument("--labels", default="labels.jsonl",
+                    help="label file matching --frames-subdir's pixel frame")
+    ap.add_argument("--out-name", default="point",
+                    help="writes detections_<out-name>.jsonl")
     ap.add_argument("--save", action="store_true",
                     help="write detections_point.jsonl into the clip")
     args = ap.parse_args()
 
     clip = Path(args.clip)
-    recs = [json.loads(l) for l in open(clip / "labels.jsonl")]
+    recs = [json.loads(l) for l in open(clip / args.labels)]
     BINS = [(300, 450), (450, 550), (550, 700), (700, 850), (850, 1000),
             (1000, 1150), (1150, 1300), (1300, 1500)]
     rows = {b: [0, 0, 0.0, 0.0] for b in BINS}     # n, hits, alarms, px
-    fh = open(clip / "detections_point.jsonl", "w") if args.save else None
+    fh = (open(clip / f"detections_{args.out_name}.jsonl", "w")
+          if args.save else None)
     for rec in recs[::args.step]:
-        im = np.array(Image.open(clip / "frames" / rec["frame"]).convert("L"))
+        im = np.array(Image.open(
+            clip / args.frames_subdir / rec["frame"]).convert("L"))
         dets = detect(im, args.bg_px, args.k, args.polarity, args.max_dets)
         if fh:
             fh.write(json.dumps({"frame": rec["frame"],
