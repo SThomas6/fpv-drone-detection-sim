@@ -45,7 +45,7 @@ capture() { # name world sdf profile tseed birds bseed thermal(0/1) manifest hei
     # or the NEXT capture finds a zombie server on the same topics and every
     # spawn fails (hit once: two zombie servers, drive_scene spawn FAILED)
     kill "$gzpid" 2>/dev/null || true
-    pkill -9 -f "gz sim" 2>/dev/null || true
+    pkill -9 -f "[g]z sim" 2>/dev/null || true   # [g] so pkill never matches itself
     sleep 2
   }
   trap cleanup RETURN
