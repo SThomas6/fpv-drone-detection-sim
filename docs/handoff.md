@@ -138,6 +138,71 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### CROSSING TEST CORRECTS THE GATE STORY + PCL BUILT (2026-08-29, latest)
+
+**The tracker was never the bottleneck.** `data/clips/range_cross`
+(`--profile crosssweep`, 150 kph, 15 Hz) finally stresses image motion
+properly: median 12.3 px/frame, p90 41.3, p99 90.3, against the skysweep's
+median 1.5. Raw hold rate looks bad - 70.7% overall, 22% in the 30-60
+px/frame bin - and widening the gate does almost nothing (30 -> 60 -> 120
+moves it 70.7% -> 71.3% -> 71.5%).
+
+Attributing it properly: **given a detection on the target, the tracker holds
+it 98.2% of the time - 97% even in the fast bins.** The 70.7% is the
+DETECTOR missing frames (1976 detections across 2727 visible frames), not
+association failing. `class_consistent` makes no difference either (98.2% vs
+98.5%).
+
+So the earlier recommendation - raise `base_gate_px` for the 150 kph
+requirement - was **wrong in its reasoning**. The per-bin hold rates that
+motivated it on `range_fast_sky` were detection-limited too. The change to 60
+is KEPT, but on its own merit: it cuts clutter tracks (canopy 13 -> 9/min,
+sky 11 -> 7/min) because a wider gate lets an existing track absorb a
+detection instead of a rival spawning. It buys nothing for speed.
+
+Why the crossing clip detects poorly is also a profile flaw, not physics:
++/-50 m of lateral travel at 410 m is +/-7 deg against a 3 deg half-FOV, so
+whenever the target IS in frame at close range it is near the edge
+(mean |x-640| = 341 px) where the background is no longer clean sky
+(sigma 4.95 vs 0.00 mid-frame). Scale the lateral sweep with range before
+quoting any crossing detection number.
+
+### PASSIVE RADAR (PCL) IMPLEMENTED - `scripts/pcl_sim.py`
+
+Built as a sensor model over ground truth, same discipline as `radar_sim.py`.
+Bistatic range sum + bistatic Doppler from a chosen illuminator, with the
+three failure modes that actually dominate: finite direct-signal
+cancellation, the zero-Doppler ridge, and the baseline null.
+
+**The absolute range scale is CALIBRATED, not derived, and that matters.**
+Written as a from-scratch link budget the model predicted detection to 5 km
+with 34 dB spare - contradicting every published micro-UAV field result,
+because the residual-clutter term that really sets the floor is not
+analytically tractable. `--anchor-km` (default 1.5 km for 0.01 m^2 at 80 dB
+cancellation) pins the scale to published performance; the physics then
+supplies only RELATIVE scaling across RCS, power, cancellation and geometry.
+
+Calibrated envelope (DVB-T, 600 MHz, 8 MHz, 50 kW ERP, 20 km away):
+detects to ~1.5 km, gone by 2 km. Cancellation is the make-or-break number -
+at 1200 m: 60 dB -> -1.9 dB (no detection), 70 dB -> 7.0, 80 dB -> 11.9,
+90 dB -> 13.0, 100 dB -> 13.1. **Above ~90 dB there is no further gain**, so
+that is the engineering target, not "as much as possible".
+
+On `range_fast_sky` (150 kph, 308-1386 m): **90.3% of dwells detected**, the
+9.7% lost entirely to the zero-Doppler ridge. Per range bin 71-96%, with
+**median range error 3.1 m at 300 m rising to 11.8 m at 1400 m** - and range
+is information no passive optical channel provides at all.
+
+**Verdict: worth building, for narrower reasons than first argued.** It is
+NOT the thing that unlocks range - the telephoto already does that (100% to
+1.4 km against sky). Its value is what no camera can do: it measures RANGE,
+it has no revisit gap (decisive at 150 kph, where a 69 s raster revisit lets
+the target close 2.9 km), it works in cloud/fog/night, and it still works
+against a terrain-masked low flyer where the camera is background-limited to
+~420 m. Its own blind spot is a target with near-zero bistatic Doppler,
+which is exactly when a camera sees it best - the two fail in different
+places, which is the whole point of putting them together.
+
 ### 150 kph TARGET: tracker and motion blur both hold (2026-08-29, latest)
 
 User requirement: the threat flies 150 kph (41.7 m/s). New clip

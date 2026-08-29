@@ -107,6 +107,22 @@ def profile_waypoints(name: str, rng: random.Random):
                (1350, -16, 314, 14, 2), (1200, 14, 280, 14, 0),
                (1000, -12, 233, 14, 0), (800, 9, 187, 14, 0),
                (600, -7, 141, 13, 0), (400, 0, 95, 12, 2)]
+    elif name == "crosssweep":
+        # Pure CROSSING passes at fixed ranges - the worst case for
+        # the tracker, and the one skysweep does not test. Radial
+        # flight barely moves the image (skysweep median 1.5
+        # px/frame); a target crossing at 41.7 m/s at 500 m through
+        # the 6 deg lens moves 1018 px/s = 68 px/frame at 15 Hz.
+        # Shuttles +/-50 m across the boresight at 400/600/900/1200 m,
+        # each leg long enough to actually reach speed at accel 15.
+        # Use with the tele_sky world and STATION_PITCH=-0.2269.
+        pts = [(400, -50, 95, 14, 0), (400, 50, 95, 14, 0),
+               (600, -50, 141, 14, 0), (600, 50, 141, 14, 0),
+               (900, -50, 210, 14, 0), (900, 50, 210, 14, 0),
+               (1200, -50, 280, 14, 0), (1200, 50, 280, 14, 0),
+               (900, -50, 210, 14, 0), (900, 50, 210, 14, 0),
+               (600, -50, 141, 14, 0), (600, 50, 141, 14, 0),
+               (400, -50, 95, 14, 0), (400, 50, 95, 14, 0)]
     else:
         raise SystemExit(f"unknown profile {name}")
     # jitter waypoints a little so seeds differ
@@ -208,7 +224,8 @@ def main():
     ap.add_argument("--world", default="detection_world_terrain")
     ap.add_argument("--profile", default="mission",
                     choices=["mission", "canopy", "sweep", "longsweep",
-                             "telesweep", "skysweep", "none"])
+                             "telesweep", "skysweep",
+                             "crosssweep", "none"])
     ap.add_argument("--birds", type=int, default=0)
     ap.add_argument("--bird-seed", type=int, default=7)
     ap.add_argument("--seed", type=int, default=0)
