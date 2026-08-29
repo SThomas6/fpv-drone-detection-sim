@@ -48,3 +48,4 @@ data/finetune/labels/*.cache
 data/finetune/images/*.cache
 runs/m4_*.log
 runs/m5_*.log
+data/clips/eval_birds_broken_cloud/

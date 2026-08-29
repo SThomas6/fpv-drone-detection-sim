@@ -82,11 +82,33 @@ def sky_mask(img: np.ndarray) -> np.ndarray:
     return bright & smooth
 
 
-def apply_sky(img: np.ndarray, mode: str, rng, boxes) -> np.ndarray:
+_CLOUD_CACHE: dict = {}
+
+
+def cloud_field(h, w, rng, drift_px: float = 0.0):
+    """The SAME cloud field every frame, slowly drifting.
+
+    Regenerating noise per frame makes the sky flicker completely between
+    consecutive frames - meaningless for a single-frame detector test but
+    catastrophic (and wrong) for tracking and the motion channel, which
+    reasonably assume the world is temporally coherent. Real cloud drifts a
+    few pixels a second.
+    """
+    key = (h, w)
+    if key not in _CLOUD_CACHE:
+        _CLOUD_CACHE[key] = fractal_noise(h, w, rng)
+    base = _CLOUD_CACHE[key]
+    if drift_px:
+        return np.roll(base, int(drift_px), axis=1)
+    return base
+
+
+def apply_sky(img: np.ndarray, mode: str, rng, boxes,
+              drift_px: float = 0.0) -> np.ndarray:
     if mode == "clear":
         return img
     h, w = img.shape[:2]
-    n = fractal_noise(h, w, rng)
+    n = cloud_field(h, w, rng, drift_px)
     out = img.astype(np.float32)
     m = sky_mask(img).astype(np.float32)
     # never touch the target itself - recall changes must come from context
