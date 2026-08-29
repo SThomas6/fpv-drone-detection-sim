@@ -1,0 +1,37 @@
+scripts/run_sky_clip.sh: line 45:   359 Killed                  gz sim -s -r --headless-rendering "$sdf" > "/tmp/gz_${name}.log" 2>&1
+1.9)
+  20/600 frames
+  40/600 frames
+  60/600 frames
+  80/600 frames
+  100/600 frames
+  120/600 frames
+  140/600 frames
+  160/600 frames
+  180/600 frames
+  200/600 frames
+  220/600 frames
+  240/600 frames
+  260/600 frames
+  280/600 frames
+  300/600 frames
+  320/600 frames
+  340/600 frames
+  360/600 frames
+  380/600 frames
+  400/600 frames
+  420/600 frames
+  440/600 frames
+  460/600 frames
+  480/600 frames
+  500/600 frames
+  520/600 frames
+  540/600 frames
+  560/600 frames
+  580/600 frames
+  600/600 frames
+
+saved 600 frames to data/clips/range_tele_sky/ (600 with the drone in frame)
+size buckets: {'<16px': 600}
+WARNING: could not verify any labels against rendered pixels
+=== telephoto + high-rate captures complete ===

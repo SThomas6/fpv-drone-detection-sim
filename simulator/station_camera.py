@@ -18,7 +18,11 @@ import numpy as np
 
 # --- from detection_world.sdf: detection_station/camera_link + station_camera
 CAM_POS = np.array([0.1, 0.0, 2.5])   # link pose, station model sits at origin
-CAM_PITCH = -0.15                     # radians, nose-up about +Y
+# Overridable like STATION_HFOV: a sky-background long-range world has to
+# pitch the camera ABOVE the ridge line (~10.2 deg at 650 m), and the
+# label projection must use the same pitch as the SDF or every box is
+# wrong - at 12212 px focal length a 0.1 deg mismatch is 21 px.
+CAM_PITCH = float(os.environ.get("STATION_PITCH", "-0.15"))  # rad, nose-up +Y
 W, H = 1280, 720
 # Overridable for narrow-FOV (zoom-lens) ablation worlds; must match the
 # world's <horizontal_fov> or check_intrinsics will flag the mismatch.

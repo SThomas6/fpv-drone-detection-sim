@@ -92,6 +92,21 @@ def profile_waypoints(name: str, rng: random.Random):
                (1200, 14, 184, 14, 0), (1350, -16, 206, 14, 2),
                (1200, 14, 184, 14, 0), (1000, -12, 154, 14, 0),
                (800, 9, 123, 14, 0), (600, -7, 93, 13, 0), (400, 0, 63, 12, 2)]
+    elif name == "skysweep":
+        # Same 300 m -> 1.35 km fly-out as telesweep, but held on the
+        # 13 deg boresight of the sky world instead of 8.6 deg. The
+        # terrain ridge tops out at ~10.2 deg elevation (120 m high,
+        # 650 m out), so this profile keeps the target ABOVE it and
+        # therefore against SKY - the realistic geometry for a drone
+        # at a kilometre, and a far easier background than rock.
+        # Requires STATION_PITCH=-0.2269 and the tele_sky world.
+        pts = [(300, 0, 72, 12, 2), (420, 5, 99, 12, 0),
+               (540, -6, 127, 13, 0), (660, 8, 155, 14, 0),
+               (780, -9, 183, 14, 0), (900, 11, 210, 14, 2),
+               (1050, -12, 245, 14, 0), (1200, 14, 280, 14, 0),
+               (1350, -16, 314, 14, 2), (1200, 14, 280, 14, 0),
+               (1000, -12, 233, 14, 0), (800, 9, 187, 14, 0),
+               (600, -7, 141, 13, 0), (400, 0, 95, 12, 2)]
     else:
         raise SystemExit(f"unknown profile {name}")
     # jitter waypoints a little so seeds differ
@@ -192,7 +207,7 @@ def main():
     ap.add_argument("--world", default="detection_world_terrain")
     ap.add_argument("--profile", default="mission",
                     choices=["mission", "canopy", "sweep", "longsweep",
-                             "telesweep", "none"])
+                             "telesweep", "skysweep", "none"])
     ap.add_argument("--birds", type=int, default=0)
     ap.add_argument("--bird-seed", type=int, default=7)
     ap.add_argument("--seed", type=int, default=0)

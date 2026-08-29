@@ -75,16 +75,24 @@ def detect(gray: np.ndarray, bg_px, k: float, polarity: str,
     for s in scales[1:]:
         np.maximum(score, _score_at_scale(g, s, polarity), out=score)
     mask = (score > k).astype(np.uint8)
-    n, _, stats, cent = cv2.connectedComponentsWithStats(mask, 8)
+    n, lab, stats, cent = cv2.connectedComponentsWithStats(mask, 8)
     out = []
     for i in range(1, n):
         x, y, w, h, area = stats[i]
         if area > 400:                 # a cloud edge or ridge line, not a point
             continue
         cx, cy = cent[i]
+        # Confidence is the blob's PEAK score, not the score at its centroid.
+        # A blob need not contain its own centroid - an annulus around a
+        # bright core does not - so the centroid pixel can sit below
+        # threshold, and was measured at -0.05 on a real detection. Any
+        # downstream `conf >= 0` filter then silently discarded a correct
+        # detection: it cost 3-12 percentage points per range bin before the
+        # cause was found.
+        sub = score[y:y + h, x:x + w][lab[y:y + h, x:x + w] == i]
         out.append({"xyxy": [cx - w / 2 - 2, cy - h / 2 - 2,
                              cx + w / 2 + 2, cy + h / 2 + 2],
-                    "conf": float(score[int(cy), int(cx)]),
+                    "conf": float(sub.max()) if sub.size else float(k),
                     "cls": "point"})
     out.sort(key=lambda d: -d["conf"])
     return out[:max_dets]

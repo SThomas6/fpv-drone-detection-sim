@@ -138,6 +138,76 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### SKY BACKGROUND CHANGES EVERYTHING (2026-08-29, later)
+
+The user pushed back on the rock-background caveat: at a kilometre a drone is
+usually high in the sky, not silhouetted on a hillside. Correct, and it is
+the single biggest variable measured in this project.
+
+`detection_world_terrain_tele_sky.sdf` pitches the camera to 13 deg (the
+ridge tops out at ~10.2 deg elevation at 650 m, so this clears it) and
+`drive_scene.py --profile skysweep` holds the target on that boresight.
+`STATION_PITCH` is a new env override alongside `STATION_HFOV` - at 12212 px
+focal length a 0.1 deg pitch mismatch is 21 px of label error, so the
+projection MUST be told. Labels verified at 1.0 px median offset.
+
+Same lens, same ranges, only the background differs (`data/clips/range_tele`
+vs `range_tele_sky`):
+
+| range | target | point det. SKY | point det. ROCK | YOLO SKY | YOLO ROCK |
+|---|---|---|---|---|---|
+| 300-450 m | 11.4 px | **100%** | 88% | 100% | 0% |
+| 550-700 m | 7.2 px | **100%** | 47% | 98% | 0% |
+| 700-850 m | 5.9 px | **100%** | 0% | 85% | 0% |
+| 1000-1150 m | 4.4 px | **100%** | 0% | 51% | 0% |
+| 1300-1500 m | 3.5 px | **100%** | 0% | 46% | 0% |
+
+Target contrast against sky is 58-193 DN on a uniform 219 DN background;
+against rock it is 12-40 DN on texture of ~9 DN. **The pixel threshold is a
+property of the BACKGROUND, not of the lens.** Whole-system table with the
+sky telephoto: 100% in every bin from 0 to 1500 m.
+
+So the honest summary is two numbers, not one:
+- **against sky: 100% to 1.4 km** (the limit of the captured clip, not of
+  the sensor - the target is still 3.5 px and at full contrast)
+- **against terrain: ~95% to 550 m, 47% to 700 m, then nothing**
+
+### Bug: point-detector confidence was the CENTROID score, not the peak
+
+`detect()` reported `score[centroid]`, but a blob need not contain its own
+centroid (an annulus around a bright core does not), so the centroid pixel
+could sit below threshold - measured at **-0.05 on a real detection**. Any
+downstream `conf >= 0` filter then silently dropped a correct detection,
+costing 3-12 points per range bin (sky 1300-1500 m read 81% instead of
+100%). Confidence is now the blob's peak score. Caught only because the
+detector's own table and the fused table disagreed - keep cross-checking two
+independent paths to the same number.
+
+### How many zoom levels are worth having? (`scripts/optics_ladder.py`)
+
+| FOV | focal px | range @2.5 px | range @8 px | share of wide field | pointings to search it |
+|---|---|---|---|---|---|
+| 60 deg | 1109 | 151 m | 47 m | 100% | 1 |
+| 24 deg | 3011 | 409 m | 128 m | 16% | 6 |
+| 12 deg | 6089 | 828 m | 259 m | 4% | 25 |
+| 6 deg | 12212 | 1661 m | 519 m | 1% | 100 |
+
+A fixed ladder of staring cameras is the wrong trade. Three cameras
+(60/24/6) cost **117% of one RTX 3060 Ti** at 15 Hz native inference and buy
+no more reach than one steerable 6 deg lens; five cost 195%. A narrow lens
+staring straight ahead covers 1% of the wide field, so it is not a search
+sensor - it can only ever confirm. Wide at 15 Hz + ONE steerable 6 deg at
+5 Hz costs 52% of the card and reaches the same distance over the whole sky.
+The one defensible extra rung is a ~12-24 deg tier to bridge the cueing gap,
+and the 24 deg thermal already occupies it.
+
+### Video: H.264 is unavailable in this OpenCV build
+
+`cv2.VideoWriter` reports `isOpened()` for avc1/H264/X264 but the OpenH264
+DLL is absent, so it silently falls back and the MP4s are mp4v, which many
+players refuse. Deliver GIFs (`Image.save(save_all=True)`) until ffmpeg or
+openh264 is installed.
+
 ### WHOLE-SYSTEM DETECTION RATE vs RANGE (the headline number)
 
 `scripts/system_range_table.py --clip data/clips/range_1km_hr --tele-clip
