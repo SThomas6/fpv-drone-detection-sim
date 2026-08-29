@@ -49,10 +49,11 @@ capture() { # name world sdf profile tseed birds bseed thermal(0/1) manifest hei
     > "/tmp/drive_${name}.log" 2>&1 &
   drpid=$!
   sleep 18
-  local occ_flags=""
-  [ -n "$manifest" ] && occ_flags="--occlusion-manifest $manifest --occlusion-heightmap $heightmap"
+  # bash array so the repo path's SPACE ("drone sim") survives word-splitting
+  local occ=()
+  [ -n "$manifest" ] && occ=(--occlusion-manifest "$manifest" --occlusion-heightmap "$heightmap")
   python3 scripts/capture_dataset.py --seconds "$SECONDS_CAP" --interval "$INTERVAL" \
-    --world "$world" $thermal_flag --verify-below-v 250 $occ_flags \
+    --world "$world" $thermal_flag --verify-below-v 250 "${occ[@]}" \
     --out "data/clips/$name" \
     --note "15 Hz wingbeat campaign: $profile seed $tseed, $birds birds seed $bseed"
   trap - RETURN
