@@ -39,6 +39,14 @@ class TrackState:
     last_t: float = 0.0
     coasting: bool = False
     history: list = field(default_factory=list)
+    # Measured slant range, from PCL. The image-plane filter has no range
+    # state and cannot get one from a camera - two pixels and a bearing do
+    # not constrain distance - so this is carried alongside rather than
+    # fused into mean/cov. It is the one thing no passive optical channel
+    # supplies, and what a hand-off to an effector actually needs.
+    range_m: float | None = None
+    range_sigma_m: float | None = None
+    range_age: int = 0
 
     @property
     def position(self) -> tuple[float, float]:
@@ -188,6 +196,46 @@ class CentroidTracker:
                     tr.mean, tr.cov, float(col), float(max(sig, 1.0)) ** 2)
                 matched[tr.track_id] = float(sig)
         unmatched = [b for i, b in enumerate(bearings) if i not in used]
+        return matched, unmatched
+
+    def fuse_pcl(self, cues, gate_px: float = 160.0):
+        """Fold passive-radar cues into the live tracks.
+
+        A PCL dwell yields a bearing AND a slant range. The bearing goes
+        through the same 1-D Kalman update as an acoustic bearing (H=[1 0 0
+        0]: it sharpens image column and x-velocity and claims nothing about
+        the row). The range is ATTACHED to the matched track instead, because
+        the filter has no range dimension to fold it into.
+
+        Cues are (column_px, sigma_px, range_m, range_sigma_m). Like
+        bearings, an unmatched cue is never spawned as a track - PCL gives no
+        elevation, so it cannot start one - but it is returned as a slew cue,
+        and unlike acoustic it comes with a range, so the cue tells a zoom
+        both where to look AND how far out to expect the target.
+        """
+        matched, used = {}, set()
+        for tr in sorted(self._tracks, key=lambda t: (-t.hits, t.misses)):
+            best, best_d = None, None
+            for i, c in enumerate(cues):
+                if i in used:
+                    continue
+                d = abs(c[0] - float(tr.mean[0]))
+                if d <= gate_px and (best_d is None or d < best_d):
+                    best, best_d = i, d
+            if best is None:
+                continue
+            used.add(best)
+            col, sig, rng_m, rng_sig = cues[best]
+            tr.mean, tr.cov = self._update_bearing(
+                tr.mean, tr.cov, float(col), float(max(sig, 1.0)) ** 2)
+            tr.range_m = float(rng_m)
+            tr.range_sigma_m = float(rng_sig)
+            tr.range_age = 0
+            matched[tr.track_id] = float(rng_m)
+        for tr in self._tracks:
+            if tr.track_id not in matched and tr.range_m is not None:
+                tr.range_age += 1        # stale: no PCL support this frame
+        unmatched = [c for i, c in enumerate(cues) if i not in used]
         return matched, unmatched
 
     @staticmethod

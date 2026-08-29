@@ -138,6 +138,49 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### PCL FUSED INTO THE TRACKER + RANGE TABLE RERUN (2026-08-29, latest)
+
+`CentroidTracker.fuse_pcl(cues)` folds passive-radar cues in after the camera
+update, same sequential order `fuse_bearings` requires. The BEARING goes
+through the identical 1-D Kalman update (H=[1 0 0 0]). The RANGE cannot: the
+filter is image-plane and has no range dimension, so it is attached to the
+matched track as `range_m` / `range_sigma_m` / `range_age`. That is the one
+quantity no passive optical channel supplies and the one an effector
+hand-off needs.
+
+| range | tiled | thermal | motion | acoustic | **PCL** | ANY | TRACKED | RANGED | TELE |
+|---|---|---|---|---|---|---|---|---|---|
+| 0-30 m | 100% | 39% | 100% | 92% | 40% | 100% | 100% | 27% | - |
+| 150-200 m | 92% | 25% | 90% | 57% | 84% | 100% | 96% | 66% | - |
+| 200-300 m | 50% | 9% | 66% | 23% | 79% | 96% | 90% | 25% | - |
+| 300-400 m | 15% | 2% | 25% | 0% | **76%** | 80% | 57% | 4% | 100% |
+| 400-550 m | 7% | 1% | 5% | 0% | **80%** | 82% | 22% | 1% | 100% |
+| 550-700 m | 1% | 2% | 0% | 0% | **79%** | 79% | 13% | 2% | 100% |
+| 700-850 m | 1% | 1% | 0% | 0% | **77%** | 77% | 4% | 1% | 100% |
+| 850-1000 m | 0% | 0% | 0% | 0% | **87%** | 87% | 0% | 0% | 100% |
+| 1000-1150 m | 0% | 0% | 0% | 0% | 37% | 37% | 0% | 0% | 100% |
+
+PCL carries the entire 300-1000 m band on its own: `ANY` goes from 33% to
+80% at 300-400 m, from 3% to 79% at 550-700 m, and from 0% to 87% at
+850-1000 m. Every camera channel is at 0-2% there.
+
+**But look at RANGED: 0-4% beyond 300 m, and that is the finding.** A PCL cue
+is deliberately never spawned as a track - it has no elevation, so it cannot
+start one - and beyond 300 m no camera channel can spawn one either. So there
+is no track object for the range to attach to, and PCL's best product (a
+measured range, 3-12 m accurate) never reaches the track layer. PCL detects
+at long range and simultaneously cannot be tracked at long range, using
+cameras alone to start tracks.
+
+**That is precisely the architecture the two sensors imply:** PCL cue (bearing
++ range, 300-1000 m) -> slew the 6 deg telephoto to that bearing -> the
+telephoto detection spawns the track (measured 100% to 1.4 km against sky)
+-> PCL range then attaches to it. Neither sensor closes the loop alone. The
+current table cannot show that loop because the telephoto flew a separate
+sortie, so TELE is still merged per range bin rather than frame by frame. A
+single clip carrying BOTH a wide and a telephoto view is what would close it,
+and does not exist yet - it needs two cameras in one world.
+
 ### CROSSING TEST CORRECTS THE GATE STORY + PCL BUILT (2026-08-29, latest)
 
 **The tracker was never the bottleneck.** `data/clips/range_cross`

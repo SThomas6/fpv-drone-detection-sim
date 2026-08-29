@@ -22,6 +22,9 @@ Columns:
   motion         background-subtraction movers
   point          local-contrast point-target detector on the WIDE camera
   acoustic       mic-array bearing, scored as a bearing (angular gate)
+  PCL            passive radar bearing, scored angularly like acoustic
+  RANGED         the track carries a MEASURED slant range this frame - only
+                 PCL supplies it, and it is what an effector hand-off needs
   TELE           6 deg telephoto + point-target detector (separate flight)
   ANY            per-frame OR of every channel on the wide clip
   TRACKED        the fused tracker holds it (coasts through blinks, so this
@@ -74,12 +77,13 @@ def per_bin_rates(clip: Path, conf: float):
     labels = [json.loads(l) for l in open(clip / "labels.jsonl")]
     meta = json.loads((clip / "meta.json").read_text())
     fx = float(meta.get("fx", 1108.77))
-    streams = {n: load(clip, n) for n in SENSORS + ("acoustic",)}
+    streams = {n: load(clip, n)
+               for n in SENSORS + ("acoustic", "pcl")}
 
     # tracked: replay the fused passive pipeline once, exactly as deployed
     tracker = CentroidTracker(class_consistent=True,
                               suppress_spawn_near_coasting=True)
-    tracked = set()
+    tracked, ranged = set(), set()
     for rec in labels:
         f = rec["frame"]
         rgb = [Detection(*d["xyxy"], confidence=d["conf"],
@@ -91,11 +95,24 @@ def per_bin_rates(clip: Path, conf: float):
                 for d in (streams["motion"] or {}).get(f, [])
                 if d["conf"] >= 0.10]
         dets, _ = fuse_measurements(merge_close(rgb), aux)
-        for tr in tracker.update(dets, timestamp=rec["t"]):
+        live = tracker.update(dets, timestamp=rec["t"])
+        # predict -> camera update -> bearing update is the required order
+        cues = [((d["xyxy"][0] + d["xyxy"][2]) / 2,
+                 max(4.0, fx * math.tan(math.radians(
+                     d.get("bearing_sigma_deg", 3.0)))),
+                 d.get("range_m", 0.0), d.get("sigma_range_m", 20.0))
+                for d in (streams["pcl"] or {}).get(f, [])]
+        if cues:
+            tracker.fuse_pcl(cues)
+        for tr in live:
             if rec.get("visible") and is_hit(tr.box, rec):
                 tracked.add(f)
+                if tr.range_m is not None and tr.range_age == 0:
+                    ranged.add(f)
 
-    rows = {b: {k: 0 for k in SENSORS + ("acoustic", "n", "any", "tracked")}
+    rows = {b: {k: 0 for k in
+                SENSORS + ("acoustic", "pcl", "n", "any",
+                           "tracked", "ranged")}
             for b in BINS}
     for rec in labels:
         if not rec.get("visible") or rec.get("range_m") is None:
@@ -115,6 +132,13 @@ def per_bin_rates(clip: Path, conf: float):
                       for d in st.get(rec["frame"], []))
             row[name] += hit
             seen = seen or hit
+        if streams["pcl"]:
+            cx = (rec["bbox"][0] + rec["bbox"][2]) / 2
+            tol = fx * math.tan(math.radians(7.0))
+            hit = any(abs((d["xyxy"][0] + d["xyxy"][2]) / 2 - cx) <= tol
+                      for d in streams["pcl"].get(rec["frame"], []))
+            row["pcl"] += hit
+            seen = seen or hit
         if streams["acoustic"]:
             # a bearing is an ANGLE; gating it in pixels silently changes the
             # tolerance by 11x between the wide and telephoto lenses
@@ -126,7 +150,9 @@ def per_bin_rates(clip: Path, conf: float):
             seen = seen or hit
         row["any"] += seen
         row["tracked"] += rec["frame"] in tracked
-    return rows, [n for n in SENSORS + ("acoustic",) if streams[n]]
+        row["ranged"] += rec["frame"] in ranged
+    return rows, [n for n in SENSORS + ("acoustic", "pcl")
+                  if streams[n]]
 
 
 def main():
@@ -151,7 +177,8 @@ def main():
               f"   (separate flight, combined per range bin)")
     hdr = (f"{'range':>12} {'frames':>7} {'wideRGB':>8} {'tiled':>7} "
            f"{'thermal':>8} {'motion':>7} {'point':>6} {'acoustic':>9} "
-           f"{'ANY':>5} {'TRACKED':>8} {'TELE':>6} {'SYSTEM':>7}")
+           f"{'PCL':>5} {'ANY':>5} {'TRACKED':>8} {'RANGED':>7} "
+           f"{'TELE':>6} {'SYSTEM':>7}")
     print("\n" + hdr)
     print("-" * len(hdr))
     for b in BINS:
@@ -167,8 +194,9 @@ def main():
         best = max(row["tracked"] / n if n else 0.0, t[0] if t else 0.0)
         print(f"{f'{b[0]}-{b[1]} m':>12} {n if n else (t[1] if t else 0):>7} "
               f"{pc('full'):>8} {pc('sahi'):>7} {pc('ir'):>8} {pc('motion'):>7} "
-              f"{pc('point'):>6} {pc('acoustic'):>9} {pc('any'):>5} "
-              f"{pc('tracked'):>8} {tp:>6} {100 * best:>6.0f}%")
+              f"{pc('point'):>6} {pc('acoustic'):>9} {pc('pcl'):>5} "
+              f"{pc('any'):>5} {pc('tracked'):>8} {pc('ranged'):>7} "
+              f"{tp:>6} {100 * best:>6.0f}%")
     print("\nSYSTEM = max(TRACKED, TELE): the telephoto flew a different "
           "sortie, so its\nbin rate is combined conservatively rather than "
           "OR-ed frame by frame.")
