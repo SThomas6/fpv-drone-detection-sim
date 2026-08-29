@@ -65,12 +65,33 @@ def profile_waypoints(name: str, rng: random.Random):
         # the drone is sub-pixel to the wide camera and inaudible to the
         # array, so this leg is what actually measures where each sensor
         # stops working rather than assuming it.
-        pts = [(20, 0, 8, 6, 3), (60, 5, 14, 10, 0), (120, -8, 18, 12, 0),
-               (200, 6, 24, 14, 2), (320, -10, 30, 16, 0),
-               (480, 8, 38, 18, 0), (650, -6, 46, 20, 2),
-               (820, 5, 54, 20, 0), (1000, 0, 60, 20, 3),
-               (700, -8, 48, 20, 0), (400, 6, 34, 18, 0),
-               (150, -4, 20, 12, 0), (40, 0, 10, 7, 2)]
+        # Altitudes climb steeply with range: the terrain heightmap is 800 m
+        # across with peaks tens of metres high, and a shallow climb puts the
+        # far legs BEHIND the ridge - measured, 448 of 600 frames came back
+        # occluded on the first attempt. A real surveillance drone at 1 km is
+        # high anyway. Lateral offsets stay small so it holds the 60 deg FOV.
+        pts = [(20, 0, 10, 5, 3), (60, 3, 22, 8, 2), (120, -4, 38, 10, 2),
+               (200, 4, 55, 11, 2), (320, -5, 75, 12, 2),
+               (480, 5, 95, 13, 2), (650, -4, 115, 14, 2),
+               (820, 4, 135, 14, 2), (1000, 0, 155, 14, 4),
+               (700, -4, 120, 14, 0), (400, 4, 85, 12, 0),
+               (150, -3, 45, 10, 0), (40, 0, 14, 6, 2)]
+    elif name == "telesweep":
+        # 300 m to 1.35 km along the TELEPHOTO's boresight: the cued-optics
+        # profile. A 6 deg lens sees a 3.4 deg vertical band, so a fly-out
+        # that climbs at any other angle leaves the frame within seconds and
+        # measures nothing. The station camera sits 2.5 m up pitched 8.6 deg
+        # (0.15 rad) nose-up, so holding z = 2.5 + tan(0.15)*x keeps the
+        # target on boresight - which is exactly what a pan-tilt mount does
+        # once it is slewed onto a track. Lateral offset is scaled to range
+        # (~0.7 deg) so the target still crosses the frame and the motion
+        # channel has something to work with, without falling out the side.
+        pts = [(300, 0, 48, 12, 2), (420, 5, 66, 13, 0), (540, -6, 84, 13, 0),
+               (660, 8, 102, 14, 0), (780, -9, 120, 14, 0),
+               (900, 11, 138, 14, 2), (1050, -12, 161, 14, 0),
+               (1200, 14, 184, 14, 0), (1350, -16, 206, 14, 2),
+               (1200, 14, 184, 14, 0), (1000, -12, 154, 14, 0),
+               (800, 9, 123, 14, 0), (600, -7, 93, 13, 0), (400, 0, 63, 12, 2)]
     else:
         raise SystemExit(f"unknown profile {name}")
     # jitter waypoints a little so seeds differ
@@ -170,7 +191,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--world", default="detection_world_terrain")
     ap.add_argument("--profile", default="mission",
-                    choices=["mission", "canopy", "sweep", "longsweep", "none"])
+                    choices=["mission", "canopy", "sweep", "longsweep",
+                             "telesweep", "none"])
     ap.add_argument("--birds", type=int, default=0)
     ap.add_argument("--bird-seed", type=int, default=7)
     ap.add_argument("--seed", type=int, default=0)

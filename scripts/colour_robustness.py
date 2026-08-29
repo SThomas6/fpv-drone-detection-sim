@@ -92,6 +92,9 @@ def repaint(patch: np.ndarray, mask: np.ndarray, mode: str,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--clip", required=True)
+    ap.add_argument("--weights", default=None,
+                    help="evaluate a candidate checkpoint instead of the "
+                         "deployed weights (no install required)")
     ap.add_argument("--conf", type=float, default=0.10)
     ap.add_argument("--limit", type=int, default=150)
     ap.add_argument("--modes", nargs="+",
@@ -102,7 +105,7 @@ def main():
     clip = Path(args.clip)
     labels = [json.loads(l) for l in open(clip / "labels.jsonl")
               if json.loads(l).get("visible")][:args.limit]
-    det = DroneDetector(conf=0.03)
+    det = DroneDetector(weights=args.weights, conf=0.03)
     det.warmup()
     rng = np.random.default_rng(3)
 

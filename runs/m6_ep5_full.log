@@ -1,0 +1,22 @@
+======== eval_birds : m6 epoch5 (all modes) ========
+
+eval_birds: 400 drone-visible frames, deployed detector, conf 0.1
+   repaint   recall  named drone  med conf
+  original    0.983        0.799     0.454
+     black    0.998        0.677     0.439
+     white    0.907        0.490     0.251
+   midgrey    0.998        0.627     0.361
+      camo    0.998        0.682     0.413
+  skymatch    0.430        0.017     0.176
+    invert    1.000        0.675     0.415
+======== terrain_ir_canopy : m6 epoch5 (all modes) ========
+
+terrain_ir_canopy: 400 drone-visible frames, deployed detector, conf 0.1
+   repaint   recall  named drone  med conf
+  original    0.345        0.812     0.199
+     black    0.310        0.734     0.198
+     white    0.300        0.275     0.177
+   midgrey    0.323        0.473     0.146
+      camo    0.315        0.548     0.187
+  skymatch    0.087        0.457     0.119
+    invert    0.307        0.610     0.184

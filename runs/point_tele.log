@@ -1,0 +1,11 @@
+
+range_tele: point-target detector, k=6.0 sigma, bg [9, 21] px, polarity dark
+       range  frames  target px  detected  false/frame  note
+   300-450 m      78     11.57p      88%          0.0  
+   450-550 m      42      8.71p      95%          0.0  
+   550-700 m      92      7.16p      47%          0.0  
+   700-850 m      89      5.88p       0%          0.0  
+  850-1000 m      93      5.03p       0%          0.1  
+ 1000-1150 m      90      4.47p       0%          0.0  
+ 1150-1300 m      85      3.95p       0%          0.4  
+ 1300-1500 m      31      3.53p       0%          0.6  

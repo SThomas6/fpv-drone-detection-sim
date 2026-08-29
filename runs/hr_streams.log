@@ -1,0 +1,265 @@
+######## full ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=4106
+  50/4106  (20 ms/frame)
+  100/4106  (20 ms/frame)
+  150/4106  (20 ms/frame)
+  200/4106  (21 ms/frame)
+  250/4106  (23 ms/frame)
+  300/4106  (23 ms/frame)
+  350/4106  (23 ms/frame)
+  400/4106  (23 ms/frame)
+  450/4106  (23 ms/frame)
+  500/4106  (23 ms/frame)
+  550/4106  (23 ms/frame)
+  600/4106  (23 ms/frame)
+  650/4106  (23 ms/frame)
+  700/4106  (23 ms/frame)
+  750/4106  (23 ms/frame)
+  800/4106  (23 ms/frame)
+  850/4106  (23 ms/frame)
+  900/4106  (23 ms/frame)
+  950/4106  (23 ms/frame)
+  1000/4106  (23 ms/frame)
+  1050/4106  (23 ms/frame)
+  1100/4106  (23 ms/frame)
+  1150/4106  (23 ms/frame)
+  1200/4106  (23 ms/frame)
+  1250/4106  (23 ms/frame)
+  1300/4106  (23 ms/frame)
+  1350/4106  (23 ms/frame)
+  1400/4106  (23 ms/frame)
+  1450/4106  (23 ms/frame)
+  1500/4106  (23 ms/frame)
+  1550/4106  (23 ms/frame)
+  1600/4106  (23 ms/frame)
+  1650/4106  (23 ms/frame)
+  1700/4106  (23 ms/frame)
+  1750/4106  (23 ms/frame)
+  1800/4106  (23 ms/frame)
+  1850/4106  (23 ms/frame)
+  1900/4106  (23 ms/frame)
+  1950/4106  (23 ms/frame)
+  2000/4106  (23 ms/frame)
+  2050/4106  (23 ms/frame)
+  2100/4106  (23 ms/frame)
+  2150/4106  (23 ms/frame)
+  2200/4106  (23 ms/frame)
+  2250/4106  (23 ms/frame)
+  2300/4106  (23 ms/frame)
+  2350/4106  (23 ms/frame)
+  2400/4106  (23 ms/frame)
+  2450/4106  (23 ms/frame)
+  2500/4106  (23 ms/frame)
+  2550/4106  (23 ms/frame)
+  2600/4106  (23 ms/frame)
+  2650/4106  (23 ms/frame)
+  2700/4106  (23 ms/frame)
+  2750/4106  (23 ms/frame)
+  2800/4106  (23 ms/frame)
+  2850/4106  (23 ms/frame)
+  2900/4106  (23 ms/frame)
+  2950/4106  (23 ms/frame)
+  3000/4106  (23 ms/frame)
+  3050/4106  (23 ms/frame)
+  3100/4106  (23 ms/frame)
+  3150/4106  (23 ms/frame)
+  3200/4106  (23 ms/frame)
+  3250/4106  (23 ms/frame)
+  3300/4106  (23 ms/frame)
+  3350/4106  (23 ms/frame)
+  3400/4106  (23 ms/frame)
+  3450/4106  (23 ms/frame)
+  3500/4106  (23 ms/frame)
+  3550/4106  (23 ms/frame)
+  3600/4106  (23 ms/frame)
+  3650/4106  (23 ms/frame)
+  3700/4106  (23 ms/frame)
+  3750/4106  (22 ms/frame)
+  3800/4106  (22 ms/frame)
+  3850/4106  (22 ms/frame)
+  3900/4106  (22 ms/frame)
+  3950/4106  (22 ms/frame)
+  4000/4106  (22 ms/frame)
+  4050/4106  (22 ms/frame)
+  4100/4106  (22 ms/frame)
+
+wrote data\clips\range_1km_hr\detections_full.jsonl
+latency: median 22.1 ms -> 45.3 FPS
+######## ir ########
+intrinsics from range_1km_hr/meta.json: RGB fx=1108.8, IR fx=1505.4
+  100 frames
+  200 frames
+  300 frames
+  400 frames
+  500 frames
+  600 frames
+  700 frames
+  800 frames
+  900 frames
+  1000 frames
+  1100 frames
+  1200 frames
+  1300 frames
+  1400 frames
+  1500 frames
+  1600 frames
+  1700 frames
+  1800 frames
+  1900 frames
+  2000 frames
+  2100 frames
+  2200 frames
+  2300 frames
+  2400 frames
+  2500 frames
+  2600 frames
+  2700 frames
+  2800 frames
+  2900 frames
+  3000 frames
+  3100 frames
+  3200 frames
+  3300 frames
+  3400 frames
+  3500 frames
+  3600 frames
+  3700 frames
+  3800 frames
+  3900 frames
+  4000 frames
+  4100 frames
+wrote data\clips\range_1km_hr\detections_ir.jsonl (4106 frames)
+######## motion ########
+  100 frames
+  200 frames
+  300 frames
+  400 frames
+  500 frames
+  600 frames
+  700 frames
+  800 frames
+  900 frames
+  1000 frames
+  1100 frames
+  1200 frames
+  1300 frames
+  1400 frames
+  1500 frames
+  1600 frames
+  1700 frames
+  1800 frames
+  1900 frames
+  2000 frames
+  2100 frames
+  2200 frames
+  2300 frames
+  2400 frames
+  2500 frames
+  2600 frames
+  2700 frames
+  2800 frames
+  2900 frames
+  3000 frames
+  3100 frames
+  3200 frames
+  3300 frames
+  3400 frames
+  3500 frames
+  3600 frames
+  3700 frames
+  3800 frames
+  3900 frames
+  4000 frames
+  4100 frames
+wrote data\clips\range_1km_hr\detections_motion.jsonl (4106 frames)
+######## acoustic ########
+wrote data\clips\range_1km_hr\detections_acoustic.jsonl [still: reference: light air, rural night] (4106 frames, 948 cues; drone heard in 948/4106 = 23.1% of visible frames; ~0 non-drone cues; wind=0.2)
+######## sahi ########
+WARNING: SAHI fell back to cuda:0, not cuda
+mode=sahi device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=4106
+  50/4106  (170 ms/frame)
+  100/4106  (170 ms/frame)
+  150/4106  (170 ms/frame)
+  200/4106  (169 ms/frame)
+  250/4106  (169 ms/frame)
+  300/4106  (168 ms/frame)
+  350/4106  (169 ms/frame)
+  400/4106  (171 ms/frame)
+  450/4106  (173 ms/frame)
+  500/4106  (173 ms/frame)
+  550/4106  (174 ms/frame)
+  600/4106  (176 ms/frame)
+  650/4106  (178 ms/frame)
+  700/4106  (180 ms/frame)
+  750/4106  (182 ms/frame)
+  800/4106  (182 ms/frame)
+  850/4106  (184 ms/frame)
+  900/4106  (185 ms/frame)
+  950/4106  (186 ms/frame)
+  1000/4106  (187 ms/frame)
+  1050/4106  (187 ms/frame)
+  1100/4106  (187 ms/frame)
+  1150/4106  (186 ms/frame)
+  1200/4106  (185 ms/frame)
+  1250/4106  (184 ms/frame)
+  1300/4106  (183 ms/frame)
+  1350/4106  (183 ms/frame)
+  1400/4106  (182 ms/frame)
+  1450/4106  (181 ms/frame)
+  1500/4106  (180 ms/frame)
+  1550/4106  (180 ms/frame)
+  1600/4106  (180 ms/frame)
+  1650/4106  (179 ms/frame)
+  1700/4106  (179 ms/frame)
+  1750/4106  (179 ms/frame)
+  1800/4106  (178 ms/frame)
+  1850/4106  (178 ms/frame)
+  1900/4106  (178 ms/frame)
+  1950/4106  (178 ms/frame)
+  2000/4106  (177 ms/frame)
+  2050/4106  (177 ms/frame)
+  2100/4106  (177 ms/frame)
+  2150/4106  (177 ms/frame)
+  2200/4106  (177 ms/frame)
+  2250/4106  (177 ms/frame)
+  2300/4106  (177 ms/frame)
+  2350/4106  (176 ms/frame)
+  2400/4106  (176 ms/frame)
+  2450/4106  (176 ms/frame)
+  2500/4106  (176 ms/frame)
+  2550/4106  (176 ms/frame)
+  2600/4106  (176 ms/frame)
+  2650/4106  (176 ms/frame)
+  2700/4106  (176 ms/frame)
+  2750/4106  (176 ms/frame)
+  2800/4106  (175 ms/frame)
+  2850/4106  (175 ms/frame)
+  2900/4106  (175 ms/frame)
+  2950/4106  (176 ms/frame)
+  3000/4106  (176 ms/frame)
+  3050/4106  (176 ms/frame)
+  3100/4106  (176 ms/frame)
+  3150/4106  (176 ms/frame)
+  3200/4106  (176 ms/frame)
+  3250/4106  (175 ms/frame)
+  3300/4106  (175 ms/frame)
+  3350/4106  (175 ms/frame)
+  3400/4106  (175 ms/frame)
+  3450/4106  (175 ms/frame)
+  3500/4106  (175 ms/frame)
+  3550/4106  (175 ms/frame)
+  3600/4106  (175 ms/frame)
+  3650/4106  (175 ms/frame)
+  3700/4106  (175 ms/frame)
+  3750/4106  (175 ms/frame)
+  3800/4106  (175 ms/frame)
+  3850/4106  (175 ms/frame)
+  3900/4106  (175 ms/frame)
+  3950/4106  (175 ms/frame)
+  4000/4106  (175 ms/frame)
+  4050/4106  (176 ms/frame)
+  4100/4106  (176 ms/frame)
+
+wrote data\clips\range_1km_hr\detections_sahi.jsonl
+latency: median 175.6 ms -> 5.7 FPS
+######## HR STREAMS DONE ########

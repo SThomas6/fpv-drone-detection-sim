@@ -1,0 +1,78 @@
+######## detector pass: range_tele ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (26 ms/frame)
+  100/600  (26 ms/frame)
+  150/600  (26 ms/frame)
+  200/600  (26 ms/frame)
+  250/600  (27 ms/frame)
+  300/600  (27 ms/frame)
+  350/600  (27 ms/frame)
+  400/600  (26 ms/frame)
+  450/600  (27 ms/frame)
+  500/600  (27 ms/frame)
+  550/600  (27 ms/frame)
+  600/600  (26 ms/frame)
+
+wrote data\clips\range_tele\detections_full.jsonl
+latency: median 26.4 ms -> 37.9 FPS
+intrinsics from range_tele/meta.json: RGB fx=12211.9, IR fx=1505.4
+  100 frames
+  200 frames
+  300 frames
+  400 frames
+  500 frames
+  600 frames
+wrote data\clips\range_tele\detections_ir.jsonl (600 frames)
+######## detector pass: range_tele_wide ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=599
+  50/599  (23 ms/frame)
+  100/599  (23 ms/frame)
+  150/599  (25 ms/frame)
+  200/599  (26 ms/frame)
+  250/599  (26 ms/frame)
+  300/599  (27 ms/frame)
+  350/599  (26 ms/frame)
+  400/599  (26 ms/frame)
+  450/599  (26 ms/frame)
+  500/599  (26 ms/frame)
+  550/599  (26 ms/frame)
+
+wrote data\clips\range_tele_wide\detections_full.jsonl
+latency: median 26.3 ms -> 38.0 FPS
+intrinsics from range_tele_wide/meta.json: RGB fx=1108.8, IR fx=1505.4
+  100 frames
+  200 frames
+  300 frames
+  400 frames
+  500 frames
+wrote data\clips\range_tele_wide\detections_ir.jsonl (598 frames)
+######## RANGE TABLE: range_tele ########
+
+range_tele: streams present = full, ir
+
+       range  frames  wideRGB   tiled  thermal  motion  acoustic  radar*    ANY  TRACKED
+----------------------------------------------------------------------------------------
+   300-400 m      45      36%      0%       0%      0%        0%      0%    36%     100%
+   400-550 m      75      27%      0%       0%      0%        0%      0%    27%      89%
+   550-700 m      92       4%      0%       0%      0%        0%      0%     4%      23%
+   700-850 m      89       0%      0%       0%      0%        0%      0%     0%       0%
+  850-1000 m      93       0%      0%       0%      0%        0%      0%     0%       0%
+ 1000-1150 m      90       0%      0%       0%      0%        0%      0%     0%       0%
+ 1150-1300 m      85       0%      0%       0%      0%        0%      0%     0%       0%
+ 1300-1500 m      31       0%      0%       0%      0%        0%      0%     0%       0%
+
+*radar is CUED in the deployed design, not scanning: that column is what it would see if pointed there, not a free-running rate.
+######## RANGE TABLE: range_tele_wide ########
+
+range_tele_wide: streams present = full, ir
+
+       range  frames  wideRGB   tiled  thermal  motion  acoustic  radar*    ANY  TRACKED
+----------------------------------------------------------------------------------------
+   550-700 m      84       0%      0%       0%      0%        0%      0%     0%       0%
+   700-850 m      70       0%      0%       0%      0%        0%      0%     0%       0%
+  850-1000 m      82       0%      0%       0%      0%        0%      0%     0%       0%
+ 1000-1150 m     115       0%      0%       0%      0%        0%      0%     0%      15%
+ 1150-1300 m     162       0%      0%       0%      0%        0%      0%     0%       2%
+ 1300-1500 m      86       0%      0%       0%      0%        0%      0%     0%       0%
+
+*radar is CUED in the deployed design, not scanning: that column is what it would see if pointed there, not a free-running rate.

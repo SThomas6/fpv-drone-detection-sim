@@ -69,6 +69,229 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
+## LONG-RANGE OPTICS + 15 Hz + m6 INSTALL (2026-08-29, CURRENT)
+
+Four user questions drove this session: how passive radar would work and how
+big it is; implement the telephoto; why not just raise the frame rate; is the
+colour retrain done. All four are now measured rather than argued.
+
+### The far-clip wall — check this before trusting ANY long-range number
+
+`detection_world_terrain_ir.sdf` set both cameras' `<clip><far>` to **1000 m**.
+Nothing beyond the far plane is rendered at all, so every past >1 km
+measurement in this project was capped by the renderer, not by optics or by
+the detector. Two new worlds move it to 2000 m and change nothing else:
+
+- `simulator/worlds/detection_world_terrain_far.sdf` — 60 deg lens, far 2000
+- `simulator/worlds/detection_world_terrain_tele.sdf` — **6 deg lens**, far 2000
+
+Both keep world NAME `detection_world_terrain`, so the existing
+`terrain_manifest.json` + `terrain_assets/heightmap.npy` still apply and the
+terrain is byte-identical to the benchmark world. Captures MUST export
+`STATION_HFOV` to match the SDF (0.10472 for the telephoto) or every
+projected label is wrong.
+
+### The telephoto works; the trained detector could not use it
+
+`scripts/drive_scene.py --profile telesweep` flies 300 m → 1.35 km along the
+camera's boresight (z = 2.5 + tan(0.15)·x), which is what a pan-tilt mount
+does once cued. New clips, same flight, same seed, ONLY the lens differing:
+
+| clip | lens | range | median target |
+|---|---|---|---|
+| `range_tele` | 6 deg | 303–1366 m | **5.50 px** |
+| `range_tele_wide` | 60 deg | 555–1366 m | **0.40 px** |
+| `range_tele_hr` | 6 deg, 15 Hz | as above | for TBD |
+| `range_1km_hr` | 60 deg, 15 Hz | **19–1011 m**, 4106 vis | full-range primary |
+
+Signal against local clutter (target dip ÷ background texture; >1 = stands out):
+
+| range | 6 deg telephoto | 60 deg wide |
+|---|---|---|
+| 550–700 m | **4.51** | 0.08 |
+| 700–850 m | **1.98** | 0.04 |
+| 1000–1150 m | **1.40** | 0.04 |
+| 1300–1400 m | **1.31** | 0.01 |
+
+The telephoto holds the target above the clutter to 1400 m; the wide camera
+has it 10–100x BELOW. A second, less obvious win: magnification also
+*resolves the clutter* — terrain texture measured 8.7–9.5 DN in the telephoto
+against 62–64 DN in the wide camera, because each rock feature is spread over
+~11x11 px instead of sitting inside one pixel.
+
+Despite that, the deployed YOLO scored **0% past 700 m** on the telephoto
+clip. That is a training-data problem, not a sensor problem: the model has
+never seen 6 deg imagery, so a 4 px blob on 11x-magnified rock is out of
+distribution. **`scripts/point_target_detect.py`** is the right detector for
+this channel — a point target has no shape to learn, so it uses the same
+local-contrast logic the thermal channel already uses:
+
+| range | YOLO | point detector | false alarms |
+|---|---|---|---|
+| 300–450 m | 32% | **88%** | 0.0/frame |
+| 450–550 m | 26% | **95%** | 0.0/frame |
+| 550–700 m | 4% | **46%** | 0.0/frame |
+| >700 m | 0% | 0% | ≤0.6/frame |
+
+Caveat to keep attached to these numbers: the telesweep line of sight grazes
+the terrain, so the drone is against magnified **rock**, not sky. That is the
+hard background (and realistic for a terrain-hugging FPV drone), but it is
+not the easy case and should not be quoted as one.
+
+### WHOLE-SYSTEM DETECTION RATE vs RANGE (the headline number)
+
+`scripts/system_range_table.py --clip data/clips/range_1km_hr --tele-clip
+data/clips/range_tele`. Primary clip is the 15 Hz longsweep (19-1011 m,
+4106 drone-visible frames, every passive stream rebuilt on m6 epoch5).
+
+| range | wideRGB | tiled | thermal | motion | acoustic | ANY | TRACKED | TELE | **SYSTEM** |
+|---|---|---|---|---|---|---|---|---|---|
+| 0-30 m | 100% | 100% | 39% | 100% | 92% | 100% | 100% | - | **100%** |
+| 30-60 m | 100% | 100% | 100% | 90% | 87% | 100% | 100% | - | **100%** |
+| 60-100 m | 77% | 100% | 99% | 91% | 88% | 100% | 100% | - | **100%** |
+| 100-150 m | 14% | 96% | 61% | 79% | 67% | 100% | 99% | - | **99%** |
+| 150-200 m | 0% | 92% | 25% | 90% | 57% | 100% | 97% | - | **97%** |
+| 200-300 m | 0% | 50% | 9% | 66% | 23% | 82% | 95% | - | **95%** |
+| 300-400 m | 0% | 15% | 2% | 25% | 0% | 33% | 65% | 80% | **80%** |
+| 400-550 m | 0% | 7% | 1% | 5% | 0% | 11% | 20% | 97% | **97%** |
+| 550-700 m | 0% | 1% | 2% | 0% | 0% | 3% | 11% | 47% | **47%** |
+| 700-850 m | 0% | 1% | 1% | 0% | 0% | 1% | 3% | 0% | **3%** |
+| >850 m | 0% | 0% | 0% | 0% | 0% | 0% | 0% | 0% | **0%** |
+
+Read it as: **essentially perfect to 200 m, 95% to 300 m, 80-97% from
+300-550 m on the telephoto, half the time at 550-700 m, blind past 850 m.**
+
+Five caveats that must travel with this table:
+1. **The telephoto flew a separate sortie** (different lens = different
+   camera), so TELE is merged per range bin with max(), not OR-ed per frame.
+   Conservative where they overlap.
+2. **The telephoto is CUED and nothing can cue it past ~300 m.** Acoustic
+   dies ~320 m, thermal ~200 m, wide RGB ~150 m, tiling ~300 m. Beyond that
+   the 6 deg channel is a soda straw with nothing to aim it. Cueing, not
+   sensitivity, is now the binding constraint — the PCL-shaped hole.
+3. Background is magnified **rock**, the hard case, not sky.
+4. No atmospheric attenuation is modelled; real long-range will be worse.
+5. `thermal 39% at 0-30 m` is a FOV artefact, not a failure: the LWIR camera
+   is 24 deg against the RGB's 60 deg, so a close high-elevation target falls
+   outside the thermal frame entirely.
+
+### m6 epoch5 regression A/B (cached m5 pass vs new, bare `fuse_eval` defaults)
+
+| clip | coverage m5 -> ep5 | alarms/min m5 -> ep5 | clutter tracks |
+|---|---|---|---|
+| terrain_ir_canopy | 410 -> 364 /600 | 217.2 -> **188.4** | 954 -> 644 |
+| terrain_ir_sweep | 359 -> 358 /400 | 22.8 -> **12.0** | 76 -> 40 |
+| terrain_ir_birds | 492 -> 466 /573 | 122.4 -> **78.4** | 505 -> 330 |
+| eval_birds | 361 -> 354 /504 | 77.0 -> **75.8** | 148 -> 181 |
+
+epoch5 trades a few points of raw coverage for a large cut in false alarms
+and clutter tracks (sweep -47%, birds -36%). Canopy detector-only recall at
+equal frame counts (limit 400): m5 0.393 -> ep5 0.345 original, 0.370 ->
+0.315 camo, white flat, camo NAMING 0.331 -> 0.548. **Still owed: the same
+A/B under the full deployed config** (tiling + motion classifier + clutter
+map + bearing fusion + zoom-confirm), which is where the >=90% headline
+numbers come from. These bare-default numbers do not settle it.
+
+### Trap: a "detection rate" measured with the alarm cap full is not one
+
+Running the same point detector on the WIDE camera gave 0% at 550–700 m and
+then **100% at 850–1000 m** — a rate RISING with range, which is impossible.
+Cause: at 0.4 px the target is below the clutter, the 30-detection cap fills
+with terrain texture, and one alarm lands inside the `is_hit` tolerance by
+coincidence. `point_target_detect.py` now flags any bin above
+`--alarm-budget` (default 3/frame) as CLUTTER-SATURATED and refuses to let it
+be read as signal. `data/clips/range_1km/detections_point.jsonl` was deleted
+for this reason; the point channel is **telephoto-only**.
+
+### Bug fixed: `ir_detector.py` hardcoded the RGB focal length
+
+`RGB_FX = 1108.5` was a module constant, but `ir_to_rgb` re-projects thermal
+blobs into the visible frame by focal-length ratio. On a telephoto clip the
+true fx is 12212, so every hot spot would have landed ~11x too close to the
+principal point — silently, with no error. It now reads the clip's own
+`meta.json` (`_adopt_clip_intrinsics`) and prints what it adopted.
+
+### Frame rate: yes, just raise it — and it is a bigger lever than expected
+
+The 15 Hz machinery already existed from the wingbeat campaign; the
+long-range clip had simply never been captured that way. Beyond the
+manoeuvre argument there is a harder one: measured image motion in the
+telephoto clip is **8.5 px/frame at 2 Hz**. A velocity-bank search scales as
+the square of per-frame motion, so 2 Hz needs ~961 hypotheses (3.5 GB,
+unaffordable) where 15 Hz needs ~25. Raising the rate makes TBD roughly
+**38x cheaper** as well as valid.
+
+`scripts/tbd_detect.py --method dp` adds a Barniv-style dynamic program that
+maximises over PATHS instead of assuming one constant velocity:
+`I_k(x,v) = r_k(x) + max_{v' adj v} I_{k-1}(x-v, v')`. It handles manoeuvre
+and represents sub-pixel speeds by alternating between neighbouring integer
+velocities. The velocity-neighbour maximum is a separable 3x3 max over the
+velocity grid, so each frame costs a few whole-array passes.
+
+This matters because past 700 m the telephoto leaves the target at 1.4–2.0x
+the background — just under the single-frame bar, where stacking ~16 frames
+buys ~4x. That is the next experiment, on `range_tele_hr`.
+
+### m6 colour retrain: install epoch 5, NOT best.pt
+
+Training finished all 12 epochs. `best.pt` (= epoch 11/12) overtrained on the
+repainted tiles: naming improved but recall fell. The checkpoint sweep found
+epoch 5 dominates it (`eval_birds`, 400 frames):
+
+| | m5 (was deployed) | **m6 epoch5 (installed)** | best.pt |
+|---|---|---|---|
+| original recall | 0.968 | **0.983** | 0.935 |
+| white recall | 0.910 | 0.907 | 0.860 |
+| **white named 'drone'** | **0.060** | **0.490** | 0.605 |
+| skymatch recall | 0.370 | **0.430** | — |
+| camo named 'drone' | 0.478 | **0.682** | — |
+
+Installed 2026-08-29: `camera/weights/drone_bird_v1.pt` = m6 epoch5, md5
+**f0df4f1703c0**. Previous m5 saved as `camera/weights/m5_backup_pre_m6ep5.pt`
+(md5 7b7a0173278d). **Every untagged `detections_*.jsonl` predating the swap
+is stale** — the sixth measurement error in this project. `range_1km` and
+`range_tele` were rebuilt; anything else must be re-run before comparison.
+
+Open item: on `terrain_ir_canopy` epoch5 measured 0.345 original recall at
+limit 400 versus m5's 0.520 at limit 150 — **different frame counts, not
+comparable**. Re-run both at the same limit before drawing any conclusion
+about a canopy regression.
+
+### Passive detection beyond 550 m — assessment
+
+Ranked, after research and the measurements above:
+
+1. **Passive coherent location (PCL)** — the real answer. Receives a
+   third-party transmitter (DVB-T / LTE / 5G), emits nothing, and works
+   against fibre-optic drones because it does not need the target to
+   transmit. Antenna size is set by wavelength: FM needs a 12 m array,
+   DVB-T ~2 m, **LTE1800 0.67 m, 5G n78 0.34 m** — and the higher bands also
+   give far better range resolution (1.5–7.5 m vs 1000 m for FM). No access
+   to the towers is required; it is a receiver. Honest caveat: the radar
+   equation predicts >10 km, but the direct signal arrives **95 dB stronger
+   than the echo**, and suppressing that — not thermal noise — sets real
+   performance. Plan for 1–2 km on a micro-UAV, not the 2–8 km often quoted.
+2. **The 6 deg telephoto** — built and measured above. Cheapest real range
+   extension, but it is a soda straw and must be cued.
+3. **TBD at 15 Hz** — free, unproven, next experiment.
+4. Cooled MWIR with large optics; polarisation imaging (immature).
+
+**The architectural gap this exposes:** the telephoto reaches ~550–700 m but
+nothing else sees past ~300 m to point it (acoustic dies ~320 m, thermal
+~200 m, wide RGB ~150 m). Cueing, not sensitivity, is now the binding
+constraint — which is exactly the hole PCL fills.
+
+### New files this session
+
+- `scripts/point_target_detect.py` — local-contrast point detector + saturation guard
+- `scripts/system_range_table.py` — whole-system detection rate vs range
+- `scripts/run_telephoto_clips.sh`, `scripts/run_telephoto_hr_clip.sh` — captures
+- `simulator/worlds/detection_world_terrain_{far,tele}.sdf`
+- `scripts/drive_scene.py` — `telesweep` profile
+- `scripts/tbd_detect.py` — `--method dp`
+- `camera/ir_detector.py` — `_adopt_clip_intrinsics`
+- `scripts/colour_robustness.py` — `--weights` for candidate checkpoints
+
 ## ARCHITECTURE SPEC — user's design intent, now authoritative (2026-08-29)
 
 The user corrected the sensor employment model. This section OVERRIDES any
@@ -91,7 +314,7 @@ The constantly-on radar rows measured below remain valid as an UPPER BOUND
 on what radar information can do; the cued-confirm implementation is the
 operationally meaningful one.
 
-## ROBUSTNESS AUDIT + BEARING FUSION (2026-08-29, CURRENT)
+## ROBUSTNESS AUDIT + BEARING FUSION (2026-08-29, earlier)
 
 Four questions the user asked, all now measured rather than assumed.
 

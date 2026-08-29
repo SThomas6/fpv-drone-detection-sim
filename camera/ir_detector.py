@@ -128,10 +128,36 @@ def detect(kelvin: np.ndarray, ambient=AMBIENT_K, delta_t=2.5,
     return dets
 
 
+def _adopt_clip_intrinsics(clip: Path) -> None:
+    """Take the RGB/IR focal lengths from the CLIP, not from constants.
+
+    ir_to_rgb re-projects a thermal blob into the visible camera's pixel
+    frame, and that mapping is pure focal-length ratio. The module defaults
+    describe the 60 deg station lens; on a telephoto clip the true RGB fx is
+    12212 px, so keeping 1108.5 would place every hot spot ~11x too close to
+    the principal point - silently, with no error, and every fused number
+    downstream would be wrong. Each clip records its own intrinsics in
+    meta.json, so read them.
+    """
+    global RGB_W, RGB_H, RGB_FX, IR_FX
+    meta_path = clip / "meta.json"
+    if not meta_path.exists():
+        return
+    meta = json.loads(meta_path.read_text())
+    RGB_W = int(meta.get("width", RGB_W))
+    RGB_H = int(meta.get("height", RGB_H))
+    RGB_FX = float(meta.get("fx", RGB_FX))
+    th = meta.get("thermal") or {}
+    IR_FX = float(th.get("fx", IR_FX))
+
+
 def run(clip: Path, delta_t: float, seed=0):
     ir_dir = clip / "frames_ir"
     if not ir_dir.exists():
         raise SystemExit(f"{ir_dir} missing — capture with --thermal")
+    _adopt_clip_intrinsics(clip)
+    print(f"intrinsics from {clip.name}/meta.json: "
+          f"RGB fx={RGB_FX:.1f}, IR fx={IR_FX:.1f}", flush=True)
     rng = np.random.default_rng(seed)
     out_path = clip / "detections_ir.jsonl"
     n = 0

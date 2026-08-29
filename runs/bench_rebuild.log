@@ -1,0 +1,115 @@
+######## terrain_ir_canopy full ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (20 ms/frame)
+  100/600  (20 ms/frame)
+  150/600  (20 ms/frame)
+  200/600  (19 ms/frame)
+  250/600  (19 ms/frame)
+  300/600  (19 ms/frame)
+  350/600  (19 ms/frame)
+  400/600  (19 ms/frame)
+  450/600  (19 ms/frame)
+  500/600  (19 ms/frame)
+  550/600  (20 ms/frame)
+  600/600  (20 ms/frame)
+
+wrote data\clips\terrain_ir_canopy\detections_full.jsonl
+latency: median 19.7 ms -> 50.9 FPS
+######## terrain_ir_canopy sahi ########
+WARNING: SAHI fell back to cuda:0, not cuda
+mode=sahi device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (196 ms/frame)
+  100/600  (194 ms/frame)
+  150/600  (194 ms/frame)
+  200/600  (194 ms/frame)
+  250/600  (194 ms/frame)
+  300/600  (194 ms/frame)
+  350/600  (194 ms/frame)
+  400/600  (193 ms/frame)
+  450/600  (193 ms/frame)
+  500/600  (193 ms/frame)
+  550/600  (192 ms/frame)
+  600/600  (192 ms/frame)
+
+wrote data\clips\terrain_ir_canopy\detections_sahi.jsonl
+latency: median 191.9 ms -> 5.2 FPS
+######## terrain_ir_sweep full ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=400
+  50/400  (19 ms/frame)
+  100/400  (20 ms/frame)
+  150/400  (19 ms/frame)
+  200/400  (19 ms/frame)
+  250/400  (19 ms/frame)
+  300/400  (19 ms/frame)
+  350/400  (19 ms/frame)
+  400/400  (19 ms/frame)
+
+wrote data\clips\terrain_ir_sweep\detections_full.jsonl
+latency: median 19.0 ms -> 52.6 FPS
+######## terrain_ir_sweep sahi ########
+WARNING: SAHI fell back to cuda:0, not cuda
+mode=sahi device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=400
+  50/400  (190 ms/frame)
+  100/400  (190 ms/frame)
+  150/400  (190 ms/frame)
+  200/400  (190 ms/frame)
+  250/400  (190 ms/frame)
+  300/400  (189 ms/frame)
+  350/400  (189 ms/frame)
+  400/400  (189 ms/frame)
+
+wrote data\clips\terrain_ir_sweep\detections_sahi.jsonl
+latency: median 189.2 ms -> 5.3 FPS
+######## terrain_ir_birds full ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (19 ms/frame)
+  100/600  (19 ms/frame)
+  150/600  (19 ms/frame)
+  200/600  (19 ms/frame)
+  250/600  (19 ms/frame)
+  300/600  (19 ms/frame)
+  350/600  (19 ms/frame)
+  400/600  (19 ms/frame)
+  450/600  (19 ms/frame)
+  500/600  (19 ms/frame)
+  550/600  (20 ms/frame)
+  600/600  (20 ms/frame)
+
+wrote data\clips\terrain_ir_birds\detections_full.jsonl
+latency: median 19.8 ms -> 50.5 FPS
+######## terrain_ir_birds sahi ########
+WARNING: SAHI fell back to cuda:0, not cuda
+mode=sahi device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (195 ms/frame)
+  100/600  (193 ms/frame)
+  150/600  (193 ms/frame)
+  200/600  (192 ms/frame)
+  250/600  (192 ms/frame)
+  300/600  (193 ms/frame)
+  350/600  (192 ms/frame)
+  400/600  (192 ms/frame)
+  450/600  (192 ms/frame)
+  500/600  (191 ms/frame)
+  550/600  (191 ms/frame)
+  600/600  (191 ms/frame)
+
+wrote data\clips\terrain_ir_birds\detections_sahi.jsonl
+latency: median 191.4 ms -> 5.2 FPS
+######## eval_birds full ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (19 ms/frame)
+  100/600  (18 ms/frame)
+  150/600  (18 ms/frame)
+  200/600  (18 ms/frame)
+  250/600  (18 ms/frame)
+  300/600  (18 ms/frame)
+  350/600  (18 ms/frame)
+  400/600  (18 ms/frame)
+  450/600  (18 ms/frame)
+  500/600  (18 ms/frame)
+  550/600  (18 ms/frame)
+  600/600  (18 ms/frame)
+
+wrote data\clips\eval_birds\detections_full.jsonl
+latency: median 18.1 ms -> 55.1 FPS
+######## BENCH STREAMS REBUILT ########

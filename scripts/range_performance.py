@@ -42,7 +42,8 @@ from camera.fuse_eval import fuse_measurements  # noqa: E402
 from camera.tracking import CentroidTracker  # noqa: E402
 
 BINS = [(0, 30), (30, 60), (60, 100), (100, 150), (150, 200), (200, 300),
-        (300, 400), (400, 550), (550, 700), (700, 850), (850, 1100)]
+        (300, 400), (400, 550), (550, 700), (700, 850), (850, 1000),
+        (1000, 1150), (1150, 1300), (1300, 1500)]
 
 
 def load(clip: Path, name: str):

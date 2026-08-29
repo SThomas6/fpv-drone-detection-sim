@@ -78,6 +78,58 @@ def integrate(residuals, vx, vy):
     return acc
 
 
+def dp_integrate(residuals, vmax: int = 2):
+    """Dynamic-programming TBD over (position, velocity) states.
+
+    The velocity-filter bank above assumes ONE constant velocity across the
+    whole stack, and pays for it twice. At 2 Hz a 16-frame stack spans 8 s,
+    over which a real drone manoeuvres and the coherent sum smears - the
+    measured 11.5% past 550 m. At 15 Hz the span is fine (~1 s) but a new
+    problem appears: per-frame motion falls to ~1.5 px, so an integer-shift
+    bank quantises the hypothesis by up to 0.5 px per frame, which
+    accumulates to ~8 px across the stack and again smears the peak. Making
+    the bank sub-pixel is possible but the grid has to be finer than 1/N
+    px/frame, which is thousands of hypotheses - brute force stops being
+    affordable exactly when the data gets good.
+
+    The standard fix (Barniv-style DP / Viterbi TBD, as used in IRST) drops
+    the single-velocity assumption and maximises over PATHS instead:
+
+        I_k(x, v) = r_k(x) + max_{v' adjacent to v} I_{k-1}(x - v, v')
+
+    A path may change velocity by one step per frame, so it tracks a
+    manoeuvring target AND represents sub-pixel speeds by alternating
+    between neighbouring integer velocities - both failure modes solved by
+    the same recursion. Cost is O(frames x pixels x |V|) rather than
+    O(hypotheses x frames x pixels): the velocity-neighbour maximum is a
+    separable 3x3 max over the velocity grid, so each frame costs a handful
+    of whole-array passes.
+    """
+    n = 2 * vmax + 1
+    vs = np.arange(-vmax, vmax + 1)
+    h, w = residuals[0].shape
+    # state[ivy, ivx] = best path score ending here with that velocity
+    state = np.repeat(residuals[0][None, None], n, 0).repeat(n, 1).astype(np.float32)
+    for r in residuals[1:]:
+        a = state
+        b = a.copy()
+        b[1:] = np.maximum(b[1:], a[:-1])          # max over adjacent vy
+        b[:-1] = np.maximum(b[:-1], a[1:])
+        a2 = b
+        b = a2.copy()
+        b[:, 1:] = np.maximum(b[:, 1:], a2[:, :-1])   # ... and adjacent vx
+        b[:, :-1] = np.maximum(b[:, :-1], a2[:, 1:])
+        for iy in range(n):
+            for ix in range(n):
+                # a target now at x with velocity v was at x - v last frame
+                state[iy, ix] = r + np.roll(
+                    np.roll(b[iy, ix], int(vs[iy]), axis=0),
+                    int(vs[ix]), axis=1)
+    k = int(np.argmax(state))
+    _, _, y, x = np.unravel_index(k, state.shape)
+    return float(state.flat[k]), (int(x), int(y))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--clip", required=True)
@@ -89,6 +141,13 @@ def main():
     ap.add_argument("--max-v", type=float, default=6.0,
                     help="max target speed to search, px/frame")
     ap.add_argument("--v-step", type=float, default=1.0)
+    ap.add_argument("--method", default="bank", choices=["bank", "dp"],
+                    help="bank = constant-velocity filter bank (cheap, "
+                         "assumes no manoeuvre); dp = path-maximising "
+                         "dynamic program (handles manoeuvre and sub-pixel "
+                         "speeds, the right choice for high-rate clips)")
+    ap.add_argument("--dp-vmax", type=int, default=2,
+                    help="dp: max |velocity| in px/frame per axis")
     ap.add_argument("--min-range", type=float, default=0.0,
                     help="only score frames beyond this range (the regime "
                          "single-frame detection has already lost)")
@@ -126,9 +185,11 @@ def main():
     idx = idx[:args.limit]
     if not idx:
         raise SystemExit("no frames beyond --min-range")
+    detail = (f"velocity bank={len(velocity_bank(args.max_v, args.v_step))}"
+              if args.method == "bank"
+              else f"dp states={(2 * args.dp_vmax + 1) ** 2} velocities")
     print(f"{clip.name}: {len(idx)} frames beyond {args.min_range:.0f} m, "
-          f"band={args.band}, N={args.frames}, "
-          f"velocity bank={len(velocity_bank(args.max_v, args.v_step))}")
+          f"band={args.band}, N={args.frames}, method={args.method}, {detail}")
 
     bank = velocity_bank(args.max_v, args.v_step)
     hits = tot = 0
@@ -140,13 +201,16 @@ def main():
         imgs = [np.array(Image.open(clip / sub / recs[i]["frame"]))
                 for i in window]
         res = residual_stack(imgs)
-        best_val, best_xy = -1e18, None
-        for vx, vy in bank:
-            acc = integrate(res, vx, vy)
-            k = int(np.argmax(acc))
-            y, x = divmod(k, acc.shape[1])
-            if acc[y, x] > best_val:
-                best_val, best_xy = float(acc[y, x]), (x, y)
+        if args.method == "dp":
+            best_val, best_xy = dp_integrate(res, args.dp_vmax)
+        else:
+            best_val, best_xy = -1e18, None
+            for vx, vy in bank:
+                acc = integrate(res, vx, vy)
+                k = int(np.argmax(acc))
+                y, x = divmod(k, acc.shape[1])
+                if acc[y, x] > best_val:
+                    best_val, best_xy = float(acc[y, x]), (x, y)
         rec = recs[window[-1]]
         gx, gy = to_band((rec["bbox"][0] + rec["bbox"][2]) / 2,
                          (rec["bbox"][1] + rec["bbox"][3]) / 2)

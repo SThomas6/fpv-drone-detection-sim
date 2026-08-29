@@ -1,0 +1,44 @@
+############ eval_birds : DEPLOYED (m5) ############
+
+eval_birds: 150 drone-visible frames, deployed detector, conf 0.1
+   repaint   recall  named drone  med conf
+  original    0.980        0.830     0.520
+     black    0.993        0.611     0.399
+     white    0.900        0.059     0.255
+   midgrey    0.993        0.436     0.290
+      camo    0.993        0.477     0.297
+  skymatch    0.300        0.044     0.149
+    invert    0.987        0.581     0.363
+############ eval_birds : m6 COLOUR ############
+
+eval_birds: 150 drone-visible frames, deployed detector, conf 0.1
+   repaint   recall  named drone  med conf
+  original    0.987        0.845     0.433
+     black    1.000        0.700     0.405
+     white    0.813        0.246     0.207
+   midgrey    1.000        0.607     0.329
+      camo    1.000        0.640     0.365
+  skymatch    0.180        0.037     0.151
+    invert    1.000        0.687     0.382
+############ terrain_ir_canopy : DEPLOYED (m5) ############
+
+terrain_ir_canopy: 150 drone-visible frames, deployed detector, conf 0.1
+   repaint   recall  named drone  med conf
+  original    0.520        0.936     0.149
+     black    0.360        0.667     0.146
+     white    0.380        0.281     0.187
+   midgrey    0.393        0.237     0.187
+      camo    0.427        0.375     0.156
+  skymatch    0.213        0.656     0.122
+    invert    0.393        0.390     0.138
+############ terrain_ir_canopy : m6 COLOUR ############
+
+terrain_ir_canopy: 150 drone-visible frames, deployed detector, conf 0.1
+   repaint   recall  named drone  med conf
+  original    0.473        0.930     0.185
+     black    0.353        0.849     0.177
+     white    0.333        0.260     0.169
+   midgrey    0.367        0.527     0.140
+      camo    0.387        0.724     0.150
+  skymatch    0.173        0.692     0.117
+    invert    0.340        0.725     0.168

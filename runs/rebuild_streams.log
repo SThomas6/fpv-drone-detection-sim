@@ -1,0 +1,103 @@
+######## range_1km : full ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (19 ms/frame)
+  100/600  (19 ms/frame)
+  150/600  (19 ms/frame)
+  200/600  (20 ms/frame)
+  250/600  (20 ms/frame)
+  300/600  (20 ms/frame)
+  350/600  (20 ms/frame)
+  400/600  (21 ms/frame)
+  450/600  (22 ms/frame)
+  500/600  (23 ms/frame)
+  550/600  (23 ms/frame)
+  600/600  (23 ms/frame)
+
+wrote data\clips\range_1km\detections_full.jsonl
+latency: median 23.1 ms -> 43.2 FPS
+######## range_1km : sahi ########
+WARNING: SAHI fell back to cuda:0, not cuda
+mode=sahi device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (177 ms/frame)
+  100/600  (177 ms/frame)
+  150/600  (176 ms/frame)
+  200/600  (176 ms/frame)
+  250/600  (176 ms/frame)
+  300/600  (176 ms/frame)
+  350/600  (176 ms/frame)
+  400/600  (176 ms/frame)
+  450/600  (176 ms/frame)
+  500/600  (175 ms/frame)
+  550/600  (174 ms/frame)
+  600/600  (174 ms/frame)
+
+wrote data\clips\range_1km\detections_sahi.jsonl
+latency: median 173.9 ms -> 5.8 FPS
+######## range_tele : full ########
+mode=full device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (19 ms/frame)
+  100/600  (19 ms/frame)
+  150/600  (19 ms/frame)
+  200/600  (19 ms/frame)
+  250/600  (19 ms/frame)
+  300/600  (19 ms/frame)
+  350/600  (19 ms/frame)
+  400/600  (19 ms/frame)
+  450/600  (20 ms/frame)
+  500/600  (20 ms/frame)
+  550/600  (20 ms/frame)
+  600/600  (20 ms/frame)
+
+wrote data\clips\range_tele\detections_full.jsonl
+latency: median 20.1 ms -> 49.8 FPS
+######## range_tele : sahi ########
+WARNING: SAHI fell back to cuda:0, not cuda
+mode=sahi device=None weights=drone_bird_v1.pt classes={0: 'drone', 1: 'bird'} frames=600
+  50/600  (187 ms/frame)
+  100/600  (184 ms/frame)
+  150/600  (185 ms/frame)
+  200/600  (185 ms/frame)
+  250/600  (185 ms/frame)
+  300/600  (185 ms/frame)
+  350/600  (185 ms/frame)
+  400/600  (185 ms/frame)
+  450/600  (185 ms/frame)
+  500/600  (185 ms/frame)
+  550/600  (185 ms/frame)
+  600/600  (186 ms/frame)
+
+wrote data\clips\range_tele\detections_sahi.jsonl
+latency: median 185.5 ms -> 5.4 FPS
+######## range_tele : motion ########
+  100 frames
+  200 frames
+  300 frames
+  400 frames
+  500 frames
+  600 frames
+wrote data\clips\range_tele\detections_motion.jsonl (600 frames)
+######## range_tele : acoustic ########
+wrote data\clips\range_tele\detections_acoustic.jsonl [still: reference: light air, rural night] (600 frames, 4 cues; drone heard in 4/600 = 0.7% of visible frames; ~0 non-drone cues; wind=0.2)
+######## range_tele : radar ########
+wrote data\clips\range_tele\detections_radar.jsonl (600 frames, 410 radar detections)
+######## point-target streams ########
+
+range_tele: point-target detector, k=6.0 sigma, bg 9px, polarity dark
+       range  frames  target px  detected  false/frame
+   300-450 m      78     11.57p      88%          0.0
+   450-550 m      42      8.71p      95%          0.0
+   550-700 m      92      7.16p      46%          0.0
+   700-850 m      89      5.88p       0%          0.0
+  850-1000 m      93      5.03p       0%          0.2
+ 1000-1150 m      90      4.47p       0%          0.1
+ 1150-1300 m      85      3.95p       0%          0.4
+ 1300-1500 m      31      3.53p       0%          0.6
+
+range_1km: point-target detector, k=6.0 sigma, bg 9px, polarity dark
+       range  frames  target px  detected  false/frame
+   300-450 m     124      1.12p      76%         29.2
+   450-550 m      95      0.82p      42%         29.6
+   550-700 m     119      0.63p       0%         30.0
+   700-850 m     119      0.49p      70%         29.0
+  850-1000 m      33      0.43p     100%         28.1
+######## ALL STREAMS REBUILT ########
