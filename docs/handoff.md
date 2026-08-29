@@ -91,7 +91,36 @@ The constantly-on radar rows measured below remain valid as an UPPER BOUND
 on what radar information can do; the cued-confirm implementation is the
 operationally meaningful one.
 
-## ALARM-PRICE ARC: research → wingbeat (marginal) → RADAR upper bound (2026-08-29)
+## CUED-RADAR RESULTS — the architecture working (2026-08-29, CURRENT)
+
+`fuse_eval --radar cued` implements the spec above. Two-tier output:
+
+| Tier | Sky | Canopy | Radar duty |
+|---|---|---|---|
+| Passive (silent, internal) | 95.4% @ 141/min | 91.2% @ 177/min | 0% |
+| **Radar-confirmed (operator alert)** | **73.0% @ 0.5/min (0 ev)** | **82.0% @ 26.6/min (10.2 ev)** | 16.3% / 30.5% |
+| Canopy long-dwell variant (3 s) | — | 87.0% @ 30.4/min (10.6 ev) | 53% |
+
+Confirm chain: passive declaration → dwell must RETURN (no echo = spurious,
+never re-cue) → micro-Doppler 'bird' verdict = permanent deny → else
+CONFIRMED, sticky for the track's lifetime. Cue gate = full passive opinion
+(camera-named birds are not cued); young fragments may cue under the
+young-tracks policy (without this, sky sat 20 pts lower).
+
+**The two binding items, measured across four implementation iterations:**
+1. **Confirmation cannot outlive a track id.** Fragmentation caps the
+   confirmed tier's coverage (sky 73%, canopy 82-87% vs passive 95/91) and
+   burns dwells (each fragment re-cues). CONFIRMATION INHERITANCE across
+   fragments (successor track within gate of a dead confirmed track inherits
+   its verdict) is the single highest-value integration task left.
+2. **Duty cycle needs the acoustic layer.** Most dwells are first-checks on
+   birds. Phase 3 (microphone array) sits BEFORE radar in the user's
+   phasing precisely so the passive stack thins the bird population before
+   anything emits. Build the acoustic sensor model next
+   (multirotor harmonic comb vs bird; ~150-300 m envelope; bearing-only) the
+   same way ir_detector/radar_sim were built.
+
+## ALARM-PRICE ARC: research → wingbeat (marginal) → RADAR upper bound (2026-08-29, history)
 
 The user flagged canopy's 177 and sky's 141 alarm-frames/min. Three moves:
 
