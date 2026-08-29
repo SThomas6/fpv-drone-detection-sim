@@ -147,6 +147,12 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
     if mv_path.exists():
         mv = {r["frame"]: r["detections"] for r in
               (json.loads(l) for l in open(mv_path))}
+    ac_path = clip / "detections_acoustic.jsonl"
+    ac = {}
+    if ac_path.exists():
+        ac = {r["frame"]: [ (d["xyxy"][0]+d["xyxy"][2])/2
+                            for d in r["detections"] ]
+              for r in (json.loads(l) for l in open(ac_path))}
     rd_path = clip / "detections_radar.jsonl"
     rd = {}
     # Opt-in: a new sensor stream changes every fused row (it spawns its own
@@ -170,7 +176,9 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
         aux += [Detection(*d["xyxy"], confidence=d["conf"],
                           cls_name=d["cls"])
                 for d in rd.get(f, [])]
-        out.append((f, labels[f], merge_close(r_dets), aux))
+        gt_ = labels[f]
+        gt_["_acoustic"] = ac.get(f, [])
+        out.append((f, gt_, merge_close(r_dets), aux))
     return out
 
 
@@ -248,6 +256,13 @@ def main():
                     help="zoom: slew + settle before the look starts")
     ap.add_argument("--zoom-dwell", type=float, default=1.5,
                     help="zoom: seconds of magnified observation")
+    ap.add_argument("--acoustic", action="store_true",
+                    help="require an acoustic bearing cue (engine sound in "
+                         "the track's direction) for a track to alarm - "
+                         "birds make no such sound. Bearing-only, so a bird "
+                         "sharing the drone's azimuth is not cleared.")
+    ap.add_argument("--acoustic-band-px", type=float, default=140.0,
+                    help="how close (px column) a cue bearing must be")
     ap.add_argument("--radar-certainty", type=float, default=0.9,
                     help="passive P(drone) above which a persistently "
                          "zoom-unresolvable speck may earn ONE brief "
@@ -625,9 +640,13 @@ def main():
                     gy = (gt["bbox"][1] + gt["bbox"][3]) / 2
                     lock_err.append((f, math.hypot(
                         float(tr.mean[0]) - gx, float(tr.mean[1]) - gy)))
+                _cues = gt.get("_acoustic", [])
+                _cx = float(tr.mean[0])
                 obs.append({
                     "frame": f,
                     "track_id": tr.track_id,
+                    "acoustic": any(abs(_cx - c) <= args.acoustic_band_px
+                                    for c in _cues),
                     "coasting": tr.misses > 0,
                     "is_drone": is_drone, "on_bird": on_bird,
                     "clutter": not is_drone and not on_bird,
@@ -719,6 +738,7 @@ def main():
 
     def report(name, obs, need_ir=False, need_vote=False, bird_mute=False,
                radar_gate=False, radar_mute=False, need_return=False):
+        _acou = args.acoustic
         undecided = args.young_tracks == "pass"
         keep = [o for o in obs
                 if (o["p"] >= args.motion_thr if o["p"] is not None
@@ -732,6 +752,7 @@ def main():
                 and (not need_vote or o["vote"] >= 0.5)
                 and (not bird_mute or o["bird_vote"] is None
                      or o["bird_vote"] < 0.5 or o["med_w"] < 8.0)
+                and (not _acou or o.get("acoustic"))
                 and (not need_return
                      or o.get("rd_conf") or o.get("rd_n", 0) >= 1)
                 and (not radar_gate
