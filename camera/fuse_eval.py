@@ -281,6 +281,17 @@ def main():
                                 # for the track lifetime (the user design is
                                 # one double-check per object, not periodic
                                 # re-painting; deny still overrides)
+        # CONFIRMATION INHERITANCE - the fix for "confirmation dies with the
+        # track id". Canopy occlusion and sky crossings fragment tracks; the
+        # physical object persists. A new track born where a status-bearing
+        # track died moments ago inherits that status (denied > confirmed >
+        # spurious), so a verified drone stays verified across fragments and
+        # a radar-denied bird cannot burn a fresh dwell every fragment.
+        prev_pos = {}           # track_id -> (x, y) last frame
+        morgue = []             # (t_dead, x, y, status)
+        inherit_n = {}          # diagnostics
+        INHERIT_RADIUS = 40.0
+        INHERIT_S = 5.0
         dwell_returns = defaultdict(int)   # returns seen during current dwell
         cue_block = {}          # track_id -> no re-cue before this time
         emissions = []          # (on, off) transmit windows, for duty cycle
@@ -345,6 +356,68 @@ def main():
                     if keep_set else ([], [])
                 dets, sources = list(dets), list(sources)
             tracks = tracker.update(dets, timestamp=gt["t"])
+            if args.radar == "cued":
+                t_now2 = gt["t"]
+                cur_pos = {tr.track_id: (float(tr.mean[0]),
+                                         float(tr.mean[1]))
+                           for tr in tracker.active}
+                cur_w = {tr.track_id: max(float(tr.width), 4.0)
+                         for tr in tracker.active}
+                for tid_d, pos_d in prev_pos.items():
+                    if tid_d in cur_pos:
+                        continue
+                    st = ("denied" if tid_d in radar_denied else
+                          "confirmed" if tid_d in radar_confirmed else
+                          "spurious" if tid_d in radar_spurious else None)
+                    if st:
+                        morgue.append((t_now2, pos_d[0], pos_d[1], st))
+                morgue = [m for m in morgue if t_now2 - m[0] <= INHERIT_S]
+                for tid_n, pos_n in cur_pos.items():
+                    if tid_n in prev_pos or tid_n in radar_denied                             or tid_n in radar_confirmed                             or tid_n in radar_spurious:
+                        continue
+                    best = None
+                    for (td, mx, my, st) in morgue:
+                        d2 = (pos_n[0] - mx) ** 2 + (pos_n[1] - my) ** 2
+                        if d2 <= INHERIT_RADIUS ** 2:
+                            rank = {"denied": 0, "confirmed": 1,
+                                    "spurious": 2}[st]
+                            if best is None or rank < best[0]:
+                                best = (rank, st)
+                    if best is not None:
+                        {"denied": radar_denied,
+                         "confirmed": radar_confirmed,
+                         "spurious": radar_spurious}[best[1]].add(tid_n)
+                        inherit_n[best[1]] = inherit_n.get(best[1], 0) + 1
+                # CO-LOCATION PROPAGATION - the measured sky pathology is
+                # CONCURRENT duplicate tracks on one object (2 simultaneous
+                # long tracks + ~18 one-frame flickers on the drone), which
+                # a death-morgue cannot touch. Any track within the gate of
+                # a living status-bearing track is the same physical object:
+                # it inherits that verdict immediately. Denied wins over
+                # confirmed (a flicker beside a denied bird is that bird).
+                # CONFIRMED-only, and at same-object scale (a duplicate
+                # spawns within a few px of its twin). Denied must NOT
+                # propagate by proximity - measured: at 90 px it spread from
+                # birds to the drone flying among them and coverage
+                # collapsed to 39%. A wasted duplicate dwell costs 1.5 s of
+                # emission; a propagated deny costs the target.
+                # same-object scale = the boxes effectively overlap
+                # (merge_close geometry), NOT a fixed neighborhood: at 25 px
+                # birds brushing past the confirmed drone inherited its
+                # verdict in the canopy furball (alarms 10 -> 38 ev/min)
+                carriers = [(cur_pos[t_], cur_w[t_])
+                            for t_ in radar_confirmed if t_ in cur_pos]
+                if carriers:
+                    for tid_c, pos_c in cur_pos.items():
+                        if tid_c in radar_denied or tid_c in radar_confirmed:
+                            continue
+                        wc = cur_w.get(tid_c, 4.0)
+                        if any((pos_c[0] - cp[0]) ** 2 + (pos_c[1] - cp[1]) ** 2
+                               <= max(8.0, 1.3 * max(wc, wr)) ** 2
+                               for cp, wr in carriers):
+                            radar_confirmed.add(tid_c)
+                            inherit_n["coloc"] = inherit_n.get("coloc", 0) + 1
+                prev_pos = cur_pos
             boxmap = {tuple(round(v, 1) for v in d.xyxy): s
                       for d, s in zip(dets, sources)}
             for tr in tracks:
@@ -464,6 +537,7 @@ def main():
                 })
         results[mode] = obs
         if args.radar == "cued" and mode == "fused":
+            print(f"[cued radar] inheritance events: {inherit_n}")
             iv = sorted(emissions)
             merged_iv = []
             for a_, b_ in iv:
