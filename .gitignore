@@ -36,6 +36,7 @@ data/finetune_real/
 data/finetune_hardneg/
 data/finetune_birdfix/
 data/finetune_sahi2x/
+data/finetune_realblur/
 data/external/
 weights/
 data/finetune/dataset_mixed*.yaml
