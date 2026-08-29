@@ -46,15 +46,51 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-# small-quad acoustics, low wind (see module docstring for provenance)
+# small-quad acoustics in STILL, QUIET air (see docstring for provenance)
 RANGE_FULL_M = 180.0     # Pd ~ high inside this
 RANGE_MAX_M = 320.0      # essentially inaudible beyond
 BEARING_SIGMA_DEG = 3.0  # at good SNR; scales up with range
 ELEV_BAND_PX = 220.0     # elevation is poorly constrained by a ground array
 FALSE_CUE_PER_MIN = 0.3  # non-drone acoustic cues in quiet conditions
 
+# ---------------------------------------------------------------- environment
+#
+# The honest reason this table exists: the first version of this model had a
+# single `wind` scalar and NOTHING else, so "is the microphone tested against
+# wind, rain, leaves, general noise?" had to be answered "no". Each row is a
+# distinct noise environment with its own effect, because they degrade the
+# array differently and a single knob cannot represent that:
+#
+#   range_mult  - how far the drone stays audible (noise floor eats SNR)
+#   bearing_mult- extra bearing error (turbulence at the mics, wet diaphragms,
+#                 and decorrelated wind noise all smear the cross-correlation)
+#   false_mult  - extra spurious cues per minute
+#   band_note   - WHY, in spectral terms; wind/foliage energy is mostly low
+#                 frequency and partly separable from the 100-300 Hz blade
+#                 comb, rain is broadband and is not.
+ENVIRONMENTS = {
+    "still":       (1.00, 1.0, 1.0, "reference: light air, rural night"),
+    "breeze":      (0.80, 1.2, 1.8, "5-15 km/h; low-freq wind noise at the "
+                                    "mics, partly filtered below the comb"),
+    "windy":       (0.50, 1.8, 4.0, "25-40 km/h; turbulence dominates, "
+                                    "windshields saturate"),
+    "leaves":      (0.72, 1.4, 3.0, "wind THROUGH foliage: broadband hiss "
+                                    "plus incoherent point sources that mimic "
+                                    "a moving emitter - the worst bearing "
+                                    "case for its noise level"),
+    "light_rain":  (0.65, 1.5, 2.5, "broadband splash noise overlapping the "
+                                    "blade comb; drips on the housing"),
+    "heavy_rain":  (0.35, 2.4, 5.0, "broadband floor swamps the comb; also "
+                                    "the drone itself flies less"),
+    "traffic":     (0.60, 1.3, 6.0, "engine harmonics are the ONE false "
+                                    "source that genuinely looks like a "
+                                    "multirotor to a harmonic detector"),
+    "urban":       (0.55, 1.6, 7.0, "traffic + HVAC + reflections off "
+                                    "buildings (multipath bearing error)"),
+}
 
-def run(clip: Path, seed: int, wind: float):
+
+def run(clip: Path, seed: int, wind: float, env: str = "still"):
     labels = [json.loads(l) for l in open(clip / "labels.jsonl")]
     meta = json.loads((clip / "meta.json").read_text())
     fx = meta.get("fx", 1108.77)
@@ -63,10 +99,11 @@ def run(clip: Path, seed: int, wind: float):
     interval = meta.get("interval_s", 0.5)
     rng = random.Random(seed)
 
-    # wind scales range down and false-cue rate up
-    range_full = RANGE_FULL_M / (1.0 + 0.6 * wind)
-    range_max = RANGE_MAX_M / (1.0 + 0.6 * wind)
-    false_rate = FALSE_CUE_PER_MIN * (1.0 + 2.0 * wind)
+    rmult, bmult, fmult, note = ENVIRONMENTS[env]
+    # `wind` remains as a continuous extra on top of the named environment
+    range_full = RANGE_FULL_M * rmult / (1.0 + 0.6 * wind)
+    range_max = RANGE_MAX_M * rmult / (1.0 + 0.6 * wind)
+    false_rate = FALSE_CUE_PER_MIN * fmult * (1.0 + 2.0 * wind)
 
     def pd_at(r):
         if r <= range_full:
@@ -83,7 +120,8 @@ def run(clip: Path, seed: int, wind: float):
             if rng.random() < pd_at(r):
                 # bearing sigma grows as SNR falls with range
                 snr = max(0.0, min(1.0, (range_max - r) / range_max))
-                sig_deg = BEARING_SIGMA_DEG * (1.0 + 2.5 * (1.0 - snr))
+                sig_deg = (BEARING_SIGMA_DEG * bmult
+                           * (1.0 + 2.5 * (1.0 - snr)))
                 # true azimuth from the drone's image column
                 cx = (rec["bbox"][0] + rec["bbox"][2]) / 2
                 az_true = math.atan2(cx - W / 2, fx)
@@ -124,9 +162,10 @@ def run(clip: Path, seed: int, wind: float):
               if rec.get("visible") and any(
                   d["cls"] == "acoustic" for d in r_["detections"]))
     vis = sum(1 for rec in labels if rec.get("visible"))
-    print(f"wrote {dst} ({len(out)} frames, {n} cues; "
-          f"drone heard in {hit}/{vis} = {hit / max(vis, 1):.1%} of "
-          f"visible frames, wind={wind})")
+    false_n = n - hit
+    print(f"wrote {dst} [{env}: {note}] ({len(out)} frames, {n} cues; "
+          f"drone heard in {hit}/{vis} = {hit / max(vis, 1):.1%} of visible "
+          f"frames; ~{false_n} non-drone cues; wind={wind})")
 
 
 def main():
@@ -134,11 +173,13 @@ def main():
     ap.add_argument("stage", choices=["run"])
     ap.add_argument("--clip", required=True)
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--env", default="still", choices=sorted(ENVIRONMENTS),
+                    help="named noise environment (see ENVIRONMENTS)")
     ap.add_argument("--wind", type=float, default=0.2,
                     help="0 = still, 1 = strong; scales range down, "
                          "false-cue rate up")
     args = ap.parse_args()
-    run(Path(args.clip), args.seed, args.wind)
+    run(Path(args.clip), args.seed, args.wind, args.env)
 
 
 if __name__ == "__main__":

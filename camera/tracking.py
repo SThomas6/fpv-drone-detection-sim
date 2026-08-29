@@ -133,6 +133,57 @@ class CentroidTracker:
         return f @ mean, f @ cov @ f.T + q
 
     @staticmethod
+    def _update_bearing(mean, cov, meas_x, meas_var):
+        """Kalman update from a BEARING-ONLY measurement.
+
+        A microphone array measures direction, not position: it pins the
+        image COLUMN and says nothing about the row. Feeding that in as a
+        fake wide box would (a) drag the track's elevation toward the box
+        centre and (b) claim a position certainty the sensor never had.
+        The correct form is a 1-D observation, H = [1 0 0 0], so the filter
+        sharpens x, leaves y alone, and - because the cross-covariance is
+        respected - lets a confident azimuth also inform x-velocity.
+        """
+        h = np.zeros((1, 4))
+        h[0, 0] = 1.0
+        r = np.array([[meas_var]], dtype=float)
+        s = h @ cov @ h.T + r
+        k = cov @ h.T @ np.linalg.inv(s)
+        y = np.array([meas_x], dtype=float) - h @ mean
+        return mean + (k @ y).ravel(), (np.eye(4) - k @ h) @ cov
+
+    def fuse_bearings(self, bearings, gate_px: float = 160.0):
+        """Fold acoustic bearings into the live tracks.
+
+        Call AFTER update() for the same frame: predict -> camera update ->
+        bearing update is the correct sequential order. Each bearing is
+        (column_px, sigma_px). A bearing is matched to the track whose
+        predicted column is nearest within `gate_px`; unmatched bearings are
+        NOT spawned as tracks (a direction alone cannot start a track - it
+        has no elevation), they are returned so a caller can slew a camera.
+
+        Returns (matched_track_ids, unmatched_bearings) - the unmatched list
+        is the cueing signal: something is out there that nothing is tracking.
+        """
+        matched, used = {}, set()
+        for tr in sorted(self._tracks, key=lambda t: (-t.hits, t.misses)):
+            best, best_d = None, None
+            for i, (col, sig) in enumerate(bearings):
+                if i in used:
+                    continue
+                d = abs(col - float(tr.mean[0]))
+                if d <= gate_px and (best_d is None or d < best_d):
+                    best, best_d = i, d
+            if best is not None:
+                used.add(best)
+                col, sig = bearings[best]
+                tr.mean, tr.cov = self._update_bearing(
+                    tr.mean, tr.cov, float(col), float(max(sig, 1.0)) ** 2)
+                matched[tr.track_id] = float(sig)
+        unmatched = [b for i, b in enumerate(bearings) if i not in used]
+        return matched, unmatched
+
+    @staticmethod
     def _update_state(mean, cov, meas, meas_var):
         h = np.zeros((2, 4))
         h[0, 0] = h[1, 1] = 1.0

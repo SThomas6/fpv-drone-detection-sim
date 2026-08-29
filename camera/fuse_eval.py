@@ -150,8 +150,11 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
     ac_path = clip / "detections_acoustic.jsonl"
     ac = {}
     if ac_path.exists():
-        ac = {r["frame"]: [ (d["xyxy"][0]+d["xyxy"][2])/2
-                            for d in r["detections"] ]
+        _fx = json.loads((clip / "meta.json").read_text()).get("fx", 1108.77)
+        ac = {r["frame"]: [((d["xyxy"][0] + d["xyxy"][2]) / 2,
+                            max(4.0, _fx * math.tan(math.radians(
+                                d.get("bearing_sigma_deg", 3.0)))))
+                           for d in r["detections"]]
               for r in (json.loads(l) for l in open(ac_path))}
     rd_path = clip / "detections_radar.jsonl"
     rd = {}
@@ -261,6 +264,10 @@ def main():
                          "the track's direction) for a track to alarm - "
                          "birds make no such sound. Bearing-only, so a bird "
                          "sharing the drone's azimuth is not cleared.")
+    ap.add_argument("--acoustic-frac", type=float, default=0.15,
+                    help="fraction of a track's recent frames that must carry "
+                         "an acoustic bearing match for it to count as "
+                         "engine-corroborated")
     ap.add_argument("--acoustic-band-px", type=float, default=140.0,
                     help="how close (px column) a cue bearing must be")
     ap.add_argument("--radar-certainty", type=float, default=0.9,
@@ -341,6 +348,8 @@ def main():
         dwell_until = {}        # rare certainty-dwell (see --radar-certainty)
         zoom_looks = [0, 0.0]   # count, busy seconds
         lock_err = []           # (frame, px error) of locked track vs GT
+        acoustic_cues = [0]     # bearings matching nothing tracked (slew cue)
+        ac_seen = defaultdict(lambda: deque(maxlen=60))
         coloc_streak = {}       # track_id -> consecutive co-located frames
         INHERIT_RADIUS = 40.0
         INHERIT_S = 5.0
@@ -410,6 +419,18 @@ def main():
                     if keep_set else ([], [])
                 dets, sources = list(dets), list(sources)
             tracks = tracker.update(dets, timestamp=gt["t"])
+            # Acoustic bearings are folded in as a PROPER measurement here:
+            # predict -> camera update -> bearing update. They sharpen the
+            # azimuth of tracks the cameras already hold (including ones
+            # coasting through a miss) and never invent a track, because a
+            # direction carries no elevation. Unmatched bearings are the
+            # cue-to-slew signal.
+            acoustic_hits = {}
+            if args.acoustic and gt.get("_acoustic"):
+                acoustic_hits, unmatched_bearings = tracker.fuse_bearings(
+                    gt["_acoustic"], gate_px=args.acoustic_band_px)
+                if unmatched_bearings:
+                    acoustic_cues[0] += len(unmatched_bearings)
             if args.radar == "cued":
                 t_now2 = gt["t"]
                 cur_pos = {tr.track_id: (float(tr.mean[0]),
@@ -640,13 +661,21 @@ def main():
                     gy = (gt["bbox"][1] + gt["bbox"][3]) / 2
                     lock_err.append((f, math.hypot(
                         float(tr.mean[0]) - gx, float(tr.mean[1]) - gy)))
-                _cues = gt.get("_acoustic", [])
-                _cx = float(tr.mean[0])
+                if args.acoustic and tr.misses == 0:
+                    ac_seen[tr.track_id].append(
+                        tr.track_id in acoustic_hits)
+                _acq = ac_seen[tr.track_id]
                 obs.append({
                     "frame": f,
                     "track_id": tr.track_id,
-                    "acoustic": any(abs(_cx - c) <= args.acoustic_band_px
-                                    for c in _cues),
+                    # PERSISTENT acoustic support, not a per-frame match: one
+                    # bearing can only be assigned to one track per frame, so
+                    # a per-frame requirement starves a target the array is
+                    # plainly hearing (measured: sky coverage fell to 42%).
+                    # Engine sound is a property of the object over seconds.
+                    "acoustic": ((sum(_acq) / len(_acq)) >= args.acoustic_frac
+                                 if _acq else False),
+                    "ac_frac": (sum(_acq) / len(_acq)) if _acq else 0.0,
                     "coasting": tr.misses > 0,
                     "is_drone": is_drone, "on_bird": on_bird,
                     "clutter": not is_drone and not on_bird,
@@ -691,6 +720,9 @@ def main():
             if args.zoom_confirm:
                 print(f"[zoom] {zoom_looks[0]} silent looks, "
                       f"{zoom_looks[1]:.1f}s of zoom-camera time")
+            if args.acoustic:
+                print(f"[acoustic] {acoustic_cues[0]} bearings matched no "
+                      f"tracked object (slew cues)")
             if lock_err:
                 best = {}
                 for f_, e_ in lock_err:
