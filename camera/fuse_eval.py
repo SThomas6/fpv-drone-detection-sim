@@ -248,6 +248,14 @@ def main():
                     help="zoom: slew + settle before the look starts")
     ap.add_argument("--zoom-dwell", type=float, default=1.5,
                     help="zoom: seconds of magnified observation")
+    ap.add_argument("--radar-certainty", type=float, default=0.9,
+                    help="passive P(drone) above which a persistently "
+                         "zoom-unresolvable speck may earn ONE brief "
+                         "identification dwell (the user exception: very "
+                         "certain, but limit emissions)")
+    ap.add_argument("--zoom-relook-s", type=float, default=5.0,
+                    help="speck cadence: how often the zoom re-checks an "
+                         "unresolved suspect it is silently tracking")
     ap.add_argument("--zoom-see-px", type=float, default=3.0,
                     help="wide-camera target width above which the zoomed "
                          "view resolves reliably (measured: the zoom sweep "
@@ -313,8 +321,11 @@ def main():
         zoom_rng = _random.Random(11)
         zoom_start = {}         # track_id -> look start (after slew)
         zoom_busy_until = 0.0
-        zoom_done = set()       # zoom came back unknown: radar may take over
+        zoom_next = {}          # speck cadence: earliest next silent re-look
+        zoom_fails = defaultdict(int)   # unresolved looks per track
+        dwell_until = {}        # rare certainty-dwell (see --radar-certainty)
         zoom_looks = [0, 0.0]   # count, busy seconds
+        lock_err = []           # (frame, px error) of locked track vs GT
         coloc_streak = {}       # track_id -> consecutive co-located frames
         INHERIT_RADIUS = 40.0
         INHERIT_S = 5.0
@@ -355,7 +366,9 @@ def main():
             if args.radar == "cued":
                 t_now = gt["t"]
                 live = {tid: st for tid, st in cue_start.items()
-                        if st <= t_now <= st + args.radar_dwell}
+                        if tid in radar_confirmed}
+                live.update({t_: 0.0 for t_, u_ in dwell_until.items()
+                             if t_now <= u_})
                 radar_aux = [d for d in ir_dets
                              if d.cls_name.startswith("radar_")]
                 other_aux = [d for d in ir_dets
@@ -518,7 +531,8 @@ def main():
                                 if zoom_rng.random() < 0.95:
                                     radar_spurious.add(tid)
                                 else:
-                                    zoom_done.add(tid)
+                                    zoom_next[tid] = (gt["t"]
+                                                      + args.zoom_relook_s)
                             elif resolves:
                                 correct = zoom_rng.random() < 0.99
                                 if truth_d == correct:
@@ -526,7 +540,11 @@ def main():
                                 else:
                                     radar_denied.add(tid)
                             else:
-                                zoom_done.add(tid)     # speck even zoomed
+                                # still a speck even zoomed: keep it under
+                                # SILENT zoom surveillance on a cadence
+                                zoom_fails[tid] += 1
+                                zoom_next[tid] = (gt["t"]
+                                                  + args.zoom_relook_s)
                             del zoom_start[tid]
                     # REVOCATION - no verdict outlives contradicting
                     # evidence. A confirmed track the wide camera keeps
@@ -543,53 +561,70 @@ def main():
                     if (tid in radar_confirmed and bird_vote_ is not None
                             and bird_vote_ >= 0.8 and med_w_ >= 10.0):
                         radar_confirmed.discard(tid)
-                        zoom_done.discard(tid)
+                        zoom_next.pop(tid, None)
                         inherit_n["revoked"] = inherit_n.get("revoked", 0) + 1
                     if (tid in radar_denied and bird_vote_ is not None
                             and bird_vote_ < 0.05 and med_w_ >= 10.0):
                         radar_denied.discard(tid)
-                        zoom_done.discard(tid)
+                        zoom_next.pop(tid, None)
                         inherit_n["undenied"] = inherit_n.get("undenied", 0) + 1
                     zoom_eligible = (args.zoom_confirm
-                                     and tid not in zoom_done
-                                     and tid not in zoom_start)
+                                     and tid not in zoom_start
+                                     and gt["t"] >= zoom_next.get(tid, 0.0))
+                    # verdicts from any radar returns (lock upkeep, or the
+                    # rare certainty-dwell below)
                     rets = [v for v in rd_seen[tid] if v is not None]
                     if rets and (sum(1 for v in rets if v == "radar_bird")
                                  / len(rets)) >= args.radar_bird_thr:
                         radar_denied.add(tid)
-                    if rets and tid not in radar_denied:
+                    elif rets:
                         radar_confirmed.add(tid)
                     radar_confirmed -= radar_denied
                     confirmed_now = tid in radar_confirmed
-                    if tid in cue_start:
-                        dwell_returns[tid] += sum(
-                            1 for v in list(rd_seen[tid])[-1:]
-                            if v is not None)
-                        if gt["t"] > cue_start[tid] + args.radar_dwell:
-                            if dwell_returns[tid] == 0:
-                                radar_spurious.add(tid)
-                            del cue_start[tid]
-                            dwell_returns[tid] = 0
+                    if confirmed_now and tr.misses == 0:
+                        # FIRE-CONTROL LOCK: a confirmed drone is painted
+                        # CONTINUOUSLY - its position must be laser-holding
+                        # grade at every instant. This is the only
+                        # circumstance in which the system ever transmits;
+                        # the moment the track is lost, the radar goes dark.
+                        interval_ = 0.5
+                        emissions.append((gt["t"], gt["t"] + interval_))
+                        cue_start[tid] = gt["t"]     # marks the lock live
                     elif (passive_ok and not confirmed_now
                             and tid not in radar_denied
                             and tid not in radar_spurious):
-                        if zoom_eligible:
-                            # silent look first; radar untouched
-                            if gt["t"] >= zoom_busy_until:
-                                zoom_start[tid] = gt["t"] + args.zoom_latency
-                                zoom_busy_until = (zoom_start[tid]
-                                                   + args.zoom_dwell)
-                                zoom_looks[0] += 1
-                                zoom_looks[1] += (args.zoom_latency
-                                                  + args.zoom_dwell)
-                        elif ((not args.zoom_confirm or tid in zoom_done)
-                                and tid not in cue_start
+                        if zoom_eligible and gt["t"] >= zoom_busy_until:
+                            # silent zoom look - the DEFAULT identification
+                            # path; the radar stays dark
+                            zoom_start[tid] = gt["t"] + args.zoom_latency
+                            zoom_busy_until = (zoom_start[tid]
+                                               + args.zoom_dwell)
+                            zoom_looks[0] += 1
+                            zoom_looks[1] += (args.zoom_latency
+                                              + args.zoom_dwell)
+                        elif (p_now is not None
+                                and p_now >= args.radar_certainty
+                                and zoom_fails.get(tid, 0) >= 2
+                                and tid not in dwell_until
                                 and gt["t"] >= cue_block.get(tid, 0.0)):
+                            # CERTAINTY DWELL - the user's exception: the
+                            # passive stack is very sure this speck is a
+                            # drone but the zoom cannot resolve it. One
+                            # brief emission is allowed to settle it.
                             on = gt["t"] + args.radar_cue_latency
-                            cue_start[tid] = on
-                            cue_block[tid] = (on + args.radar_dwell
+                            dwell_until[tid] = on + args.radar_dwell
+                            cue_block[tid] = (dwell_until[tid]
                                               + args.radar_recue_s)
-                            emissions.append((on, on + args.radar_dwell))
+                            emissions.append((on, dwell_until[tid]))
+                    if tid in dwell_until and gt["t"] > dwell_until[tid]:
+                        del dwell_until[tid]
+                if (args.radar == "cued" and gt.get("visible")
+                        and tr.track_id in radar_confirmed
+                        and is_hit(tr.box, gt)):
+                    gx = (gt["bbox"][0] + gt["bbox"][2]) / 2
+                    gy = (gt["bbox"][1] + gt["bbox"][3]) / 2
+                    lock_err.append((f, math.hypot(
+                        float(tr.mean[0]) - gx, float(tr.mean[1]) - gy)))
                 obs.append({
                     "frame": f,
                     "track_id": tr.track_id,
@@ -637,6 +672,19 @@ def main():
             if args.zoom_confirm:
                 print(f"[zoom] {zoom_looks[0]} silent looks, "
                       f"{zoom_looks[1]:.1f}s of zoom-camera time")
+            if lock_err:
+                best = {}
+                for f_, e_ in lock_err:
+                    best[f_] = min(best.get(f_, 1e9), e_)
+                errs = sorted(best.values())
+                n_vis = sum(1 for l in open(clip / "labels.jsonl")
+                            if json.loads(l)["visible"])
+                within = sum(1 for e_ in errs if e_ <= 25.0)
+                print(f"[laser-lock] locked {len(best)}/{n_vis} "
+                      f"drone-frames ({100 * len(best) / max(n_vis, 1):.1f}%); "
+                      f"aim error px: p50 {errs[len(errs) // 2]:.1f}, "
+                      f"p90 {errs[int(len(errs) * 0.9)]:.1f}; "
+                      f"within 25 px: {100 * within / len(errs):.1f}%")
             print(f"[cued radar] inheritance events: {inherit_n}")
             iv = sorted(emissions)
             merged_iv = []
