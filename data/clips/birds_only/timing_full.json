@@ -1,7 +1,7 @@
 {
   "mode": "full",
   "device": null,
-  "median_ms": 19.9,
-  "p90_ms": 24.2,
-  "fps": 50.4
+  "median_ms": 17.8,
+  "p90_ms": 19.0,
+  "fps": 56.3
 }
