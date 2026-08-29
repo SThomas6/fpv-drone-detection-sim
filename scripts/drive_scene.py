@@ -60,6 +60,17 @@ def profile_waypoints(name: str, rng: random.Random):
     elif name == "sweep":
         pts = [(30, 0, 14, 8, 2), (120, 10, 18, 11, 0), (250, -10, 22, 12, 3),
                (150, 5, 16, 11, 0), (60, -5, 12, 8, 0), (35, 0, 10, 6, 2)]
+    elif name == "longsweep":
+        # 20 m to 1 km and back: the range-performance profile. Beyond ~300 m
+        # the drone is sub-pixel to the wide camera and inaudible to the
+        # array, so this leg is what actually measures where each sensor
+        # stops working rather than assuming it.
+        pts = [(20, 0, 8, 6, 3), (60, 5, 14, 10, 0), (120, -8, 18, 12, 0),
+               (200, 6, 24, 14, 2), (320, -10, 30, 16, 0),
+               (480, 8, 38, 18, 0), (650, -6, 46, 20, 2),
+               (820, 5, 54, 20, 0), (1000, 0, 60, 20, 3),
+               (700, -8, 48, 20, 0), (400, 6, 34, 18, 0),
+               (150, -4, 20, 12, 0), (40, 0, 10, 7, 2)]
     else:
         raise SystemExit(f"unknown profile {name}")
     # jitter waypoints a little so seeds differ
@@ -159,7 +170,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--world", default="detection_world_terrain")
     ap.add_argument("--profile", default="mission",
-                    choices=["mission", "canopy", "sweep", "none"])
+                    choices=["mission", "canopy", "sweep", "longsweep", "none"])
     ap.add_argument("--birds", type=int, default=0)
     ap.add_argument("--bird-seed", type=int, default=7)
     ap.add_argument("--seed", type=int, default=0)

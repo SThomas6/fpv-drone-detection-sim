@@ -37,6 +37,7 @@ data/finetune_hardneg/
 data/finetune_birdfix/
 data/finetune_sahi2x/
 data/finetune_realblur/
+data/finetune_colour/
 data/external/
 weights/
 data/finetune/dataset_mixed*.yaml
@@ -49,3 +50,5 @@ data/finetune/images/*.cache
 runs/m4_*.log
 runs/m5_*.log
 data/clips/eval_birds_broken_cloud/
+data/clips/terrain_ir_canopy_cloud/
+data/clips/range_1km/

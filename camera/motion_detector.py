@@ -35,15 +35,63 @@ NOISE_DN = 2.0           # injected sensor noise, digital numbers
 DIFF_THRESH = 14.0       # background difference threshold, DN
 MIN_AREA = 2             # pixels
 MAX_AREA = 2500          # larger movers = camera bump / scene change, drop
+MAX_CANDIDATES = 40      # per frame; above this the scene model has failed
 
 
-def detect_stream(frames, thresh=DIFF_THRESH, rng=None):
-    """Yield per-frame candidate lists from an iterable of RGB arrays."""
+def _global_shift(a, b):
+    """Whole-frame translation (dx, dy) from a to b, by phase correlation.
+
+    Cheap, robust to the low-contrast structure of cloud, and does not need
+    features. Used to keep the background model registered to a MOVING sky.
+    """
+    h, w = a.shape
+    win = np.outer(np.hanning(h), np.hanning(w))
+    fa = np.fft.rfft2((a - a.mean()) * win)
+    fb = np.fft.rfft2((b - b.mean()) * win)
+    cross = fa.conj() * fb
+    mag = np.abs(cross)
+    mag[mag < 1e-12] = 1e-12
+    corr = np.fft.irfft2(cross / mag, s=a.shape)
+    peak = int(np.argmax(corr))
+    py, px = divmod(peak, w)
+    if py > h // 2:
+        py -= h
+    if px > w // 2:
+        px -= w
+    return float(px), float(py)
+
+
+def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
+                  scene_motion=True, flood_limit=MAX_CANDIDATES):
+    """Yield per-frame candidate lists from an iterable of RGB arrays.
+
+    scene_motion: register the background model to whole-frame motion before
+    differencing. A rolling-median background assumes a STATIC scene; drifting
+    cloud violates that and every cloud edge becomes "a mover" - measured,
+    8,055 alarms/min on a broken-cloud clip, which made the channel unusable
+    in exactly the weather where the cameras need help most.
+
+    flood_limit: if a frame still yields more candidates than this, the scene
+    model is not describing the scene (fast cloud, camera bump, rain streaks).
+    Emitting hundreds of movers is worse than emitting none, so the frame is
+    reported EMPTY and flagged. Silence is an honest answer; a flood is not.
+    """
     rng = rng or np.random.default_rng(0)
     window: deque = deque(maxlen=BG_WINDOW)
+    prev = None
     for frame in frames:
         grey = frame.astype(np.float32).mean(axis=2)
         grey += rng.normal(0.0, NOISE_DN, grey.shape).astype(np.float32)
+        if scene_motion and prev is not None and window:
+            dx, dy = _global_shift(prev, grey)
+            if abs(dx) >= 1.0 or abs(dy) >= 1.0:
+                # roll the whole background history into the new frame's
+                # reference so the median is compared like-for-like
+                for i in range(len(window)):
+                    window[i] = np.roll(np.roll(window[i], int(round(dy)),
+                                                axis=0),
+                                        int(round(dx)), axis=1)
+        prev = grey
         dets = []
         if len(window) >= BG_WINDOW // 2 + 1:
             bg = np.median(np.stack(window), axis=0)
@@ -90,10 +138,14 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None):
                         "area_px": len(blob),
                     })
         window.append(grey)
+        if len(dets) > flood_limit:
+            # scene model has lost the scene - say nothing rather than flood
+            dets = []
         yield dets
 
 
-def run(clip: Path, thresh: float):
+def run(clip: Path, thresh: float, scene_motion: bool = True,
+        flood_limit: int = MAX_CANDIDATES):
     frames_dir = clip / "frames"
     files = sorted(frames_dir.glob("*.png"))
     out = clip / "detections_motion.jsonl"
@@ -102,7 +154,9 @@ def run(clip: Path, thresh: float):
         for f in files:
             yield np.array(Image.open(f).convert("RGB"))
     with open(out, "w") as fh:
-        for f, dets in zip(files, detect_stream(frame_iter(), thresh)):
+        for f, dets in zip(files, detect_stream(frame_iter(), thresh,
+                                                scene_motion=scene_motion,
+                                                flood_limit=flood_limit)):
             fh.write(json.dumps({"frame": f.name, "detections": dets}) + "\n")
             n += 1
             if n % 100 == 0:
@@ -115,8 +169,13 @@ def main():
     ap.add_argument("stage", choices=["run"])
     ap.add_argument("--clip", required=True)
     ap.add_argument("--thresh", type=float, default=DIFF_THRESH)
+    ap.add_argument("--no-scene-motion", dest="scene_motion",
+                    action="store_false",
+                    help="disable global-motion registration of the "
+                         "background model (the pre-2026-08-29 behaviour)")
+    ap.add_argument("--flood-limit", type=int, default=MAX_CANDIDATES)
     args = ap.parse_args()
-    run(Path(args.clip), args.thresh)
+    run(Path(args.clip), args.thresh, args.scene_motion, args.flood_limit)
 
 
 if __name__ == "__main__":
