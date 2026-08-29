@@ -69,7 +69,29 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
-## ALARM-PRICE ARC: research → wingbeat (marginal) → RADAR (the answer) (2026-08-29, CURRENT)
+## ARCHITECTURE SPEC — user's design intent, now authoritative (2026-08-29)
+
+The user corrected the sensor employment model. This section OVERRIDES any
+earlier assumption of a constantly-scanning radar:
+
+1. **Passive-first.** The declaration chain is EO camera + IR camera +
+   microphone array (Phase 3, still unbuilt), fused. The system must not
+   emit while searching — it is meant to be undetectable/unlocatable.
+2. **Radar is a CUED CONFIRMER only.** It turns on briefly, aimed at a
+   track, ONLY after the passive stack is already confident it is a drone —
+   a short dwell to double-check, then off. Emission time (duty cycle) is a
+   first-class metric to report, not an afterthought.
+3. **The threat is FIBRE-OPTIC drones: RF control-link sensing is USELESS**
+   for this system. Do not propose or build RF sensing.
+4. Phasing stands: camera (done) → microphone array (Phase 3, NEXT sensor
+   to model) → radar (Phase 4, exists as scripts/radar_sim.py but must be
+   employed cued, never continuous).
+
+The constantly-on radar rows measured below remain valid as an UPPER BOUND
+on what radar information can do; the cued-confirm implementation is the
+operationally meaningful one.
+
+## ALARM-PRICE ARC: research → wingbeat (marginal) → RADAR upper bound (2026-08-29)
 
 The user flagged canopy's 177 and sky's 141 alarm-frames/min. Three moves:
 
