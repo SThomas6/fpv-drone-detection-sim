@@ -138,6 +138,50 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### RASTER SCAN: the telephoto can find its own targets (`scripts/raster_scan.py`)
+
+Once the telephoto measured 100% to 1366 m against sky, the open question
+stopped being sensitivity and became SCHEDULING: a 6 deg beam sees 1% of the
+wide field, so it finds a target only if it happens to be pointed there while
+the target is in range. That is revisit time against closing speed, and it is
+simulated directly - raster the beam over a search volume, check whether the
+target was inside the footprint at that instant, roll against the MEASURED Pd
+curve (sky and rock both interpolated from real clips, never assumed).
+
+Baseline scan: 6 deg beam, 60 deg/s slew, 0.1 s settle, 0.2 s dwell (the
+point detector needs one frame), 10% overlap, elevation 0-24 deg. Target
+closes at 14 m/s from 1600 m, random bearing, unsynchronised scan phase,
+400 trials.
+
+| search sector | pointings | revisit | detected | median range | beyond 700 m |
+|---|---|---|---|---|---|
+| 60 deg | 88 | 34 s | **99.8%** | **978 m** | 99.8% |
+| 90 deg | 136 | 53 s | 100% | 818 m | 66% |
+| **120 deg (x3 = 360)** | 176 | 69 s | **99.5%** | **748 m** | 56% |
+| 180 deg | 264 | 103 s | 79% | 609 m | 32% |
+| 360 deg, one gimbal | 536 | 209 s | **39%** | 650 m | 19% |
+
+Against ROCK the same 60 deg scan gives median 420 m and 0% beyond 700 m -
+the camera is background-limited and no amount of scanning fixes that.
+
+**Verdict on PCL vs raster.** For a known threat corridor the raster scan
+makes PCL redundant for CUEING: 99.8% at a median of 978 m, using a gimbal
+the design already needs. One gimbal trying to cover 360 deg fails (39%);
+doubling slew and halving dwell only reaches 76%. THREE gimbals at 120 deg
+each restore it (99.5%, median 748 m) for far less than a passive-radar
+receiver chain. PCL's remaining, real value is what no camera can do:
+all-weather (cloud/fog/night without thermal), simultaneous all-round
+coverage with no revisit gap, and RANGE - the camera gives bearing only.
+Decide PCL on those three, not on range extension.
+
+**Trap:** clip-replay mode is only valid when the clip samples faster than
+the dwell. The 2 Hz sky clip scored 0.2% detected against 99.8% for the same
+scanner in the approach model, because a 0.2 s look opens and closes between
+two 0.5 s frames. `run_clip` now warns when `interval_s > dwell`. Frame
+coverage is anyway the wrong figure of merit for a scanning sensor (a beam
+on 1 of 88 cells at 51% duty is in-beam 0.6% of frames by construction);
+time-to-detection is the right one.
+
 ### SKY BACKGROUND CHANGES EVERYTHING (2026-08-29, later)
 
 The user pushed back on the rock-background caveat: at a kilometre a drone is
