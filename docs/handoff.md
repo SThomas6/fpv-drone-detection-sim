@@ -91,7 +91,47 @@ The constantly-on radar rows measured below remain valid as an UPPER BOUND
 on what radar information can do; the cued-confirm implementation is the
 operationally meaningful one.
 
-## CUED-RADAR RESULTS — the architecture working (2026-08-29, CURRENT)
+## USER CLARIFICATIONS + INHERITANCE RESULTS (2026-08-29, CURRENT)
+
+**Two user questions answered, recorded so the framing never regresses:**
+
+1. **"Does this include the zoom mechanism?" — NO, and it must be built.**
+   What exists: the detector is TRAINED on zoom-lens imagery and a zoom eval
+   clip exists; the slew-to-cue concept was endorsed in the docs. What does
+   NOT exist: an actual zoom-confirm stage. Per the user's passive-first
+   architecture it belongs BEFORE radar in the confirm chain: passive
+   suspicion → slew the zoom camera (silent) → detector on the zoomed view
+   (a 6 px speck becomes ~30 px where naming is excellent — use OUR OWN
+   measured naming-by-size stats to model it, methodology of radar_sim) →
+   radar dwell only for zoom-ambiguous cases. This is the top build item.
+2. **"73% is way too low" — that number is NOT the detection rate.** The
+   passive tier detects/tracks the sky drone in 95.4% of frames regardless.
+   73% is confirmed-track FRAME coverage, and the gap is bookkeeping
+   (coasting frames + transient duplicate tracks), not missed drones:
+   measured, the sky drone lives on ~4 long tracks, each confirmed ~2 s
+   after birth — the OBJECT is verified for essentially its whole presence.
+   Report per-frame AND object-level; never present the frame number alone.
+
+**Verdict inheritance built** (death-morgue 40 px/5 s + confirmed-only
+co-location at box-overlap scale). Two rules paid for with measurements:
+denied NEVER propagates by proximity (at 90 px it spread bird-denials to
+the drone: coverage 39%); propagation radius must be same-object scale (at
+25 px canopy birds inherited the drone's confirmation: alarms 10→38 ev/min).
+
+**Confirmed-tier frontier now (dwell 1.5 s, recue 20 s):**
+
+| | Coverage (frames) | Alarms | Duty |
+|---|---|---|---|
+| Canopy, propagation ON | **90.8%** | 84/min (30.4 ev) | 25.5% |
+| Canopy, propagation OFF | 82.0% | **26.6/min (10.2 ev)** | 30.5% |
+| Sky | 73.0% frames (≈whole object) | **2.0/min (1.0 ev)** | 15.0% |
+
+**Build queue:** (1) zoom-confirm stage (passive; lifts sky confirmed
+coverage + slashes duty), (2) Phase 3 mic-array model (thins birds before
+any cue), (3) only then radar as the final tiebreak — exactly the user's
+original sensor ladder.
+
+## CUED-RADAR RESULTS (2026-08-29, earlier — superseded numbers)
 
 `fuse_eval --radar cued` implements the spec above. Two-tier output:
 
