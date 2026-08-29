@@ -55,7 +55,7 @@ capture() { # name world sdf profile tseed birds bseed thermal(0/1) manifest hei
   local ready=0
   for _ in $(seq 1 60); do
     sleep 4
-    if gz topic -l 2>/dev/null | grep -q "station_camera"; then ready=1; break; fi
+    if gz topic -l 2>/dev/null | grep -q "detection_station/camera"; then ready=1; break; fi
   done
   if [ "$ready" -ne 1 ]; then
     echo "world never became ready; gz log tail:" >&2
