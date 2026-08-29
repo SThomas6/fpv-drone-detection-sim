@@ -39,7 +39,15 @@ capture() { # name world sdf profile tseed birds bseed thermal(0/1) manifest hei
   gz sim -s -r --headless-rendering "$sdf" > "/tmp/gz_${name}.log" 2>&1 &
   local gzpid=$!
   local drpid=""
-  cleanup() { [ -n "$drpid" ] && kill "$drpid" 2>/dev/null || true; kill "$gzpid" 2>/dev/null || true; }
+  cleanup() {
+    [ -n "$drpid" ] && kill "$drpid" 2>/dev/null || true
+    # gz spawns server children the wrapper PID does not own - kill the tree,
+    # or the NEXT capture finds a zombie server on the same topics and every
+    # spawn fails (hit once: two zombie servers, drive_scene spawn FAILED)
+    kill "$gzpid" 2>/dev/null || true
+    pkill -9 -f "gz sim" 2>/dev/null || true
+    sleep 2
+  }
   trap cleanup RETURN
   sleep 25
   local thermal_flag=""
