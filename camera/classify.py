@@ -250,10 +250,76 @@ def features_v4_from_history(history) -> np.ndarray | None:
     return feats
 
 
+# ---------------------------------------------------------------- feature set wb
+#
+# v4 plus optical WINGBEAT features - the camera-side analog of the radar
+# micro-Doppler discrimination every fielded counter-UAS radar uses for the
+# bird/false-alarm problem. The sim's birds roll-oscillate at 2.5-7.0 Hz
+# (simulator/birds.py flap_hz), which modulates their projected width;
+# a multirotor's projected size carries no such periodicity. The historic
+# 0.5 s capture interval put that entire band beyond Nyquist, which is why
+# no earlier classifier could use it; the 15 Hz clips (Nyquist 7.5 Hz)
+# resolve it.
+#
+# Estimation: detrended width and vertical-position series over the track's
+# history window, magnitude spectrum via FFT at the track's own median dt.
+# Degrades to EXACTLY ZERO evidence when the band is unobservable (slow
+# sampling, short history, irregular dt) - the same absence-is-not-evidence
+# convention as the vote features, so 2 Hz tracks are unaffected.
+FEATURE_NAMES_WB = FEATURE_NAMES_V4 + [
+    "wing_w_power",      # fraction of width-series AC power in 2-7.5 Hz
+    "wing_y_power",      # same for vertical position
+    "wing_peaked",       # 1 if the width spectrum has a dominant in-band peak
+]
+
+WING_BAND = (2.0, 7.5)
+
+
+def _band_features(series, dt):
+    x = np.asarray(series, dtype=float)
+    x = x - x.mean()
+    if len(x) < 16 or float(np.abs(x).max()) < 1e-6:
+        return 0.0, 0.0
+    spec = np.abs(np.fft.rfft(x * np.hanning(len(x)))) ** 2
+    freqs = np.fft.rfftfreq(len(x), d=dt)
+    ac = spec[1:]
+    fr = freqs[1:]
+    tot = float(ac.sum())
+    if tot <= 0:
+        return 0.0, 0.0
+    band = (fr >= WING_BAND[0]) & (fr <= WING_BAND[1])
+    if not band.any():
+        return 0.0, 0.0
+    frac = float(ac[band].sum() / tot)
+    peak = 1.0 if (ac.argmax() < len(fr) and band[ac.argmax()]
+                   and ac.max() > 4.0 * np.median(ac)) else 0.0
+    return frac, peak
+
+
+def features_wb_from_history(history) -> np.ndarray | None:
+    base = features_v4_from_history(history)
+    if base is None:
+        return None
+    arr = np.asarray([(h[0], h[2], h[3]) for h in history], dtype=float)
+    t, y, w = arr[:, 0], arr[:, 1], arr[:, 2]
+    dts = np.diff(t)
+    good = dts > 1e-6
+    wingw = wingy = peaked = 0.0
+    if good.sum() >= 15:
+        dt = float(np.median(dts[good]))
+        # the band must be observable and the sampling regular enough that
+        # the FFT frequencies mean anything
+        if dt <= 1.0 / (2 * WING_BAND[0] + 1e-9) and                 float(np.std(dts[good]) / dt) < 0.35 and dt <= 0.25:
+            wingw, peaked = _band_features(w, dt)
+            wingy, _ = _band_features(y, dt)
+    return np.concatenate([base, [wingw, wingy, peaked]])
+
+
 FEATURE_SETS = {
     "v1": (FEATURE_NAMES, features_from_history),
     "v3": (FEATURE_NAMES_V3, features_v3_from_history),
     "v4": (FEATURE_NAMES_V4, features_v4_from_history),
+    "wb": (FEATURE_NAMES_WB, features_wb_from_history),
 }
 
 
