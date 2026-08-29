@@ -218,9 +218,23 @@ def main():
                          "classifier to have an opinion (<8 samples). 'drop' "
                          "is the original alarm-discipline choice; 'pass' "
                          "declares it, which is what a coverage target wants")
-    ap.add_argument("--radar", action="store_true",
-                    help="fuse the micro-Doppler radar stream "
-                         "(detections_radar.jsonl) - see scripts/radar_sim.py")
+    ap.add_argument("--radar", nargs="?", const="on", default="off",
+                    choices=["off", "on", "cued"],
+                    help="off (default): stream ignored, benchmarks exact. "
+                         "on: constant scan - an UPPER BOUND, not the "
+                         "architecture. cued: the user design - radar off "
+                         "while searching; a passive-confident track cues a "
+                         "brief aimed dwell, emissions are accounted, and "
+                         "only dwell returns exist")
+    ap.add_argument("--radar-dwell", type=float, default=3.0,
+                    help="cued: seconds the beam stays on a cued track")
+    ap.add_argument("--radar-cue-latency", type=float, default=0.5,
+                    help="cued: slew/spin-up delay before returns start")
+    ap.add_argument("--radar-beam-px", type=float, default=120.0,
+                    help="cued: beam association radius around the cued track")
+    ap.add_argument("--radar-recue-s", type=float, default=10.0,
+                    help="cued: cooldown before an unconfirmed track may cue "
+                         "again (bounds emissions)")
     ap.add_argument("--radar-persist", type=float, default=0.3,
                     help="radar-gate: min fraction of track samples the "
                          "radar classified 'drone'")
@@ -258,6 +272,18 @@ def main():
                                   suppress_spawn_near_coasting=True)
         ir_seen = defaultdict(lambda: deque(maxlen=90))
         rd_seen = defaultdict(lambda: deque(maxlen=90))
+        # cued-radar state: per-track dwell windows and global emissions
+        cue_start = {}          # track_id -> dwell start (after latency)
+        radar_denied = set()    # micro-Doppler said bird: never re-cue
+        radar_spurious = set()  # dwell completed with ZERO returns: no
+                                # airframe there - never re-cue
+        radar_confirmed = set() # returned + not bird: confirmation is STICKY
+                                # for the track lifetime (the user design is
+                                # one double-check per object, not periodic
+                                # re-painting; deny still overrides)
+        dwell_returns = defaultdict(int)   # returns seen during current dwell
+        cue_block = {}          # track_id -> no re-cue before this time
+        emissions = []          # (on, off) transmit windows, for duty cycle
         obs = []
         supp = (StaticClutterSuppressor(
             radius=args.clutter_radius, window_s=args.clutter_window,
@@ -287,8 +313,27 @@ def main():
             return False
 
         rows = load_clip(clip, args.rgb_conf, args.ir_conf, args.rgb_mode,
-                         args.rgb_tag, args.radar)
+                         args.rgb_tag, args.radar != "off")
         for f, gt, rgb_dets, ir_dets in rows:
+            if args.radar == "cued":
+                t_now = gt["t"]
+                live = {tid: st for tid, st in cue_start.items()
+                        if st <= t_now <= st + args.radar_dwell}
+                radar_aux = [d for d in ir_dets
+                             if d.cls_name.startswith("radar_")]
+                other_aux = [d for d in ir_dets
+                             if not d.cls_name.startswith("radar_")]
+                kept_radar = []
+                if live:
+                    pos = {tr.track_id: (float(tr.mean[0]), float(tr.mean[1]))
+                           for tr in tracker.active}
+                    for d in radar_aux:
+                        cx, cy = d.centre
+                        if any(tid in pos and math.hypot(
+                                cx - pos[tid][0], cy - pos[tid][1])
+                                <= args.radar_beam_px for tid in live):
+                            kept_radar.append(d)
+                ir_dets = other_aux + kept_radar
             rd, id_ = select(rgb_dets, ir_dets)
             dets, sources = fuse_measurements(rd, id_)
             if supp is not None:
@@ -321,6 +366,60 @@ def main():
                 ys = [h[2] for h in tr.history]
                 travel = (math.hypot(max(xs) - min(xs), max(ys) - min(ys))
                           if len(xs) >= 2 else 0.0)
+                rgbh_ = [h for h in tr.history
+                         if len(h) < 6 or (h[5] not in ("hotspot", "mover")
+                                           and not h[5].startswith("radar_"))]
+                bird_vote_ = ((sum(1 for h in rgbh_
+                                   if len(h) > 5 and h[5] == "bird")
+                               / len(rgbh_)) if rgbh_ else None)
+                med_w_ = (float(np.median([h[3] for h in rgbh_]))
+                          if rgbh_ else 0.0)
+                if args.radar == "cued":
+                    p_now = (clf.probability(feats)
+                             if feats is not None else None)
+                    # cue only what the FULL passive stack would declare:
+                    # motion-classifier pass + travelled + detected-now +
+                    # not something the camera itself keeps calling a bird
+                    # (bird-mute logic) - emissions are precious
+                    cam_bird = (bird_vote_ is not None and bird_vote_ >= 0.5
+                                and med_w_ >= 8.0)
+                    # young (unjudged) tracks may cue when the young policy
+                    # declares them - otherwise every track fragment sits
+                    # unconfirmed until it grows old enough, which is where
+                    # the sky coverage went
+                    p_ok = (p_now >= args.motion_thr if p_now is not None
+                            else args.young_tracks == "pass")
+                    passive_ok = (p_ok
+                                  and travel >= args.min_travel
+                                  and tr.misses == 0
+                                  and not cam_bird)
+                    tid = tr.track_id
+                    rets = [v for v in rd_seen[tid] if v is not None]
+                    if rets and (sum(1 for v in rets if v == "radar_bird")
+                                 / len(rets)) >= args.radar_bird_thr:
+                        radar_denied.add(tid)
+                    if rets and tid not in radar_denied:
+                        radar_confirmed.add(tid)
+                    radar_confirmed -= radar_denied
+                    confirmed_now = tid in radar_confirmed
+                    if tid in cue_start:
+                        dwell_returns[tid] += sum(
+                            1 for v in list(rd_seen[tid])[-1:]
+                            if v is not None)
+                        if gt["t"] > cue_start[tid] + args.radar_dwell:
+                            if dwell_returns[tid] == 0:
+                                radar_spurious.add(tid)
+                            del cue_start[tid]
+                            dwell_returns[tid] = 0
+                    elif (passive_ok and not confirmed_now
+                            and tid not in radar_denied
+                            and tid not in radar_spurious
+                            and gt["t"] >= cue_block.get(tid, 0.0)):
+                        on = gt["t"] + args.radar_cue_latency
+                        cue_start[tid] = on
+                        cue_block[tid] = (on + args.radar_dwell
+                                          + args.radar_recue_s)
+                        emissions.append((on, on + args.radar_dwell))
                 obs.append({
                     "frame": f,
                     "track_id": tr.track_id,
@@ -346,16 +445,40 @@ def main():
                         [h[3] for h in tr.history
                          if len(h) < 6 or h[5] not in ("hotspot", "mover")]),
                     "ir_frac": (sum(seen) / len(seen)) if seen else 0.0,
-                    "rd_drone": (lambda q: (sum(1 for v in q if v == "radar_drone")
+                    # fractions among actual radar RETURNS; a None entry
+                    # means the radar was silent that frame (off, beam
+                    # elsewhere, or a miss) and is not evidence either way
+                    "rd_drone": (lambda q: (sum(1 for v in q
+                                                if v == "radar_drone")
                                             / len(q)) if q else 0.0)(
-                        rd_seen[tr.track_id]),
-                    "rd_bird": (lambda q: (sum(1 for v in q if v == "radar_bird")
+                        [v for v in rd_seen[tr.track_id] if v is not None]),
+                    "rd_bird": (lambda q: (sum(1 for v in q
+                                               if v == "radar_bird")
                                            / len(q)) if q else 0.0)(
-                        rd_seen[tr.track_id]),
-                    "rd_n": len(rd_seen[tr.track_id]),
+                        [v for v in rd_seen[tr.track_id] if v is not None]),
+                    "rd_n": sum(1 for v in rd_seen[tr.track_id]
+                                if v is not None),
+                    "rd_conf": (args.radar == "cued"
+                                and tr.track_id in radar_confirmed),
                     "travel_px": travel,
                 })
         results[mode] = obs
+        if args.radar == "cued" and mode == "fused":
+            iv = sorted(emissions)
+            merged_iv = []
+            for a_, b_ in iv:
+                if merged_iv and a_ <= merged_iv[-1][1]:
+                    merged_iv[-1] = (merged_iv[-1][0],
+                                     max(merged_iv[-1][1], b_))
+                else:
+                    merged_iv.append((a_, b_))
+            on_s = sum(b_ - a_ for a_, b_ in merged_iv)
+            clip_s = sum(1 for _ in open(clip / "labels.jsonl")) * \
+                json.loads((clip / "meta.json").read_text()).get(
+                    "interval_s", 0.5)
+            print(f"[cued radar] {len(iv)} dwells, transmitting "
+                  f"{on_s:.1f}s of {clip_s:.0f}s = "
+                  f"{100 * on_s / max(clip_s, 1e-9):.1f}% duty cycle")
         if supp is not None:
             print(f"[{mode}] clutter map suppressed {n_supp} measurements")
 
@@ -373,7 +496,7 @@ def main():
           f"{'on birds':>9} {'clutter':>8} {'events/min':>11}")
 
     def report(name, obs, need_ir=False, need_vote=False, bird_mute=False,
-               radar_gate=False, radar_mute=False):
+               radar_gate=False, radar_mute=False, need_return=False):
         undecided = args.young_tracks == "pass"
         keep = [o for o in obs
                 if (o["p"] >= args.motion_thr if o["p"] is not None
@@ -387,6 +510,8 @@ def main():
                 and (not need_vote or o["vote"] >= 0.5)
                 and (not bird_mute or o["bird_vote"] is None
                      or o["bird_vote"] < 0.5 or o["med_w"] < 8.0)
+                and (not need_return
+                     or o.get("rd_conf") or o.get("rd_n", 0) >= 1)
                 and (not radar_gate
                      or o.get("rd_drone", 0.0) >= args.radar_persist)
                 and (not radar_mute
@@ -436,11 +561,19 @@ def main():
     # micro-Doppler rows (rows print only when a radar stream exists):
     # radar-mute keeps everything except tracks the radar persistently calls
     # bird; radar-gate additionally demands persistent radar drone opinion.
-    if any(o.get("rd_drone") or o.get("rd_bird") for o in results["fused"]):
+    if any(o.get("rd_drone") or o.get("rd_bird") or o.get("rd_n")
+           for o in results["fused"]):
         report("radar-mute", results["fused"], radar_mute=True)
         report("rdr+mute", results["fused"], radar_mute=True, bird_mute=True)
         report("radar-gate", results["fused"], radar_gate=True,
                radar_mute=True)
+    if args.radar == "cued":
+        # The user architecture row: passive declaration, then the brief
+        # dwell must (a) RETURN something - a passive track with no radar
+        # echo during its dwell is not a physical airframe - and (b) not be
+        # classified bird by micro-Doppler.
+        report("cued-confirm", results["fused"], radar_mute=True,
+               need_return=True)
 
 
 if __name__ == "__main__":
