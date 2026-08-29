@@ -83,7 +83,7 @@ capture() { # name world sdf profile tseed birds bseed thermal(0/1) manifest hei
 }
 
 # Eval pair - benchmark worlds, fresh seeds.
-capture hr_eval_canopy detection_world_terrain_ir \
+capture hr_eval_canopy detection_world_terrain \
   "$REPO/simulator/worlds/detection_world_terrain_ir.sdf" canopy 31 6 313 1 \
   "$REPO/simulator/worlds/terrain_manifest.json" \
   "$REPO/simulator/worlds/terrain_assets/heightmap.npy"
