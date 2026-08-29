@@ -86,24 +86,42 @@ def per_bin_rates(clip: Path, conf: float):
     tracked, ranged = set(), set()
     for rec in labels:
         f = rec["frame"]
+        # EVERY stream present feeds the tracker. An earlier version fed it
+        # only full+ir+motion while still SCORING tiled, point and acoustic
+        # as columns, so TRACKED could sit below a sensor's own column - the
+        # table said a channel saw the drone and the system did not use it.
         rgb = [Detection(*d["xyxy"], confidence=d["conf"],
                          cls_name=d.get("cls", "drone"))
                for d in (streams["full"] or {}).get(f, []) if d["conf"] >= 0.05]
+        # tiled is a second pass over the SAME camera: union then dedupe,
+        # exactly what fuse_eval --rgb-mode both does
+        rgb += [Detection(*d["xyxy"], confidence=d["conf"],
+                          cls_name=d.get("cls", "drone"))
+                for d in (streams["sahi"] or {}).get(f, []) if d["conf"] >= 0.05]
         aux = [Detection(*d["xyxy"], confidence=d["conf"], cls_name="hotspot")
                for d in (streams["ir"] or {}).get(f, []) if d["conf"] >= 0.2]
         aux += [Detection(*d["xyxy"], confidence=d["conf"], cls_name="mover")
                 for d in (streams["motion"] or {}).get(f, [])
                 if d["conf"] >= 0.10]
+        aux += [Detection(*d["xyxy"], confidence=d["conf"], cls_name="point")
+                for d in (streams["point"] or {}).get(f, [])]
         dets, _ = fuse_measurements(merge_close(rgb), aux)
         live = tracker.update(dets, timestamp=rec["t"])
-        # predict -> camera update -> bearing update is the required order
+        # predict -> camera update -> bearing updates, in that order
+        if streams["acoustic"]:
+            tracker.fuse_bearings(
+                [((d["xyxy"][0] + d["xyxy"][2]) / 2,
+                  max(4.0, fx * math.tan(math.radians(
+                      d.get("bearing_sigma_deg", 3.0)))))
+                 for d in streams["acoustic"].get(f, [])],
+                gate_px=fx * math.tan(math.radians(7.0)))
         cues = [((d["xyxy"][0] + d["xyxy"][2]) / 2,
                  max(4.0, fx * math.tan(math.radians(
                      d.get("bearing_sigma_deg", 3.0)))),
                  d.get("range_m", 0.0), d.get("sigma_range_m", 20.0))
                 for d in (streams["pcl"] or {}).get(f, [])]
         if cues:
-            tracker.fuse_pcl(cues)
+            tracker.fuse_pcl(cues, gate_px=fx * math.tan(math.radians(7.0)))
         for tr in live:
             if rec.get("visible") and is_hit(tr.box, rec):
                 tracked.add(f)

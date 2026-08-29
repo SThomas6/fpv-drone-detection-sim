@@ -83,6 +83,14 @@ def main():
     ap.add_argument("--no-target", action="store_true",
                     help="record a target-free clip (background/FP mining); "
                          "all frames are labelled visible=False")
+    ap.add_argument("--zoom", action="store_true",
+                    help="also record the 6 deg telephoto on "
+                         "/detection_station/zoom/image into frames_zoom/. "
+                         "Needs the dual-camera world. Labels stay in the "
+                         "PRIMARY camera's pixels; telephoto pixel positions "
+                         "are derived afterwards from each record's 3D pos, "
+                         "which is exact and avoids a second projection path "
+                         "that could silently disagree with the first")
     ap.add_argument("--thermal", action="store_true",
                     help="also record the station thermal camera "
                          "(L16 Kelvin/0.01 frames into frames_ir/)")
@@ -117,6 +125,13 @@ def main():
                 _latest["ir"] = np.frombuffer(msg.data, dtype=np.uint16).reshape(
                     msg.height, msg.width).copy()
         node.subscribe(Image, "/detection_station/thermal/image", ir_cb)
+    if args.zoom:
+        def zoom_cb(msg: Image):
+            with _lock:
+                _latest["zoom"] = np.frombuffer(
+                    msg.data, dtype=np.uint8).reshape(
+                        msg.height, msg.width, 3).copy()
+        node.subscribe(Image, "/detection_station/zoom/image", zoom_cb)
 
     deadline = time.time() + 20
     while time.time() < deadline:
@@ -178,6 +193,12 @@ def main():
                     (out / "frames_ir").mkdir(exist_ok=True)
                     PILImage.fromarray(ir, mode="I;16").save(
                         out / "frames_ir" / name)
+            if args.zoom:
+                with _lock:
+                    zm = _latest.get("zoom")
+                if zm is not None:
+                    (out / "frames_zoom").mkdir(exist_ok=True)
+                    PILImage.fromarray(zm).save(out / "frames_zoom" / name)
             gt = ground_truth_bbox(pos, quat) if pos is not None else None
             rec = {
                 "frame": name,
@@ -252,6 +273,9 @@ def main():
         "interval_s": args.interval, "frames": kept,
         "visible_frames": visible_n, "buckets": buckets, "note": args.note,
         "stale_frames_skipped": stale_skipped,
+        "zoom": ({"width": 1280, "height": 720, "hfov": 0.10472,
+                  "fx": round(640 / np.tan(0.10472 / 2), 1)}
+                 if args.zoom else None),
         "thermal": ({"width": 640, "height": 512, "hfov": 0.4189,
                      "fx": round(320 / np.tan(0.4189 / 2), 1),
                      "kelvin_per_count": 0.01} if args.thermal else None),

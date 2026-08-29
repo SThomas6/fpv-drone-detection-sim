@@ -156,6 +156,22 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
                                 d.get("bearing_sigma_deg", 3.0)))))
                            for d in r["detections"]]
               for r in (json.loads(l) for l in open(ac_path))}
+    pt_path = clip / "detections_point.jsonl"
+    pt = {}
+    if pt_path.exists():
+        pt = {r["frame"]: r["detections"] for r in
+              (json.loads(l) for l in open(pt_path))}
+    pcl_path = clip / "detections_pcl.jsonl"
+    pcl = {}
+    if pcl_path.exists():
+        _fx2 = json.loads((clip / "meta.json").read_text()).get("fx", 1108.77)
+        pcl = {r["frame"]: [((d["xyxy"][0] + d["xyxy"][2]) / 2,
+                             max(4.0, _fx2 * math.tan(math.radians(
+                                 d.get("bearing_sigma_deg", 3.0)))),
+                             d.get("range_m", 0.0),
+                             d.get("sigma_range_m", 20.0))
+                            for d in r["detections"]]
+               for r in (json.loads(l) for l in open(pcl_path))}
     rd_path = clip / "detections_radar.jsonl"
     rd = {}
     # Opt-in: a new sensor stream changes every fused row (it spawns its own
@@ -165,7 +181,9 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
         rd = {r["frame"]: r["detections"] for r in
               (json.loads(l) for l in open(rd_path))}
     print(f"streams: rgb[{rgb_mode}]{' + ir' if ir else ''}"
-          f"{' + motion' if mv else ''}{' + radar' if rd else ''}")
+          f"{' + motion' if mv else ''}{' + point' if pt else ''}"
+          f"{' + acoustic' if ac else ''}{' + pcl' if pcl else ''}"
+          f"{' + radar' if rd else ''}")
     frames = sorted(rgb.keys())
     out = []
     for f in frames:
@@ -179,8 +197,13 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
         aux += [Detection(*d["xyxy"], confidence=d["conf"],
                           cls_name=d["cls"])
                 for d in rd.get(f, [])]
+        # the telephoto's point-target channel: a real detection with a box,
+        # so it fuses as a measurement rather than as a bearing
+        aux += [Detection(*d["xyxy"], confidence=d["conf"], cls_name="point")
+                for d in pt.get(f, [])]
         gt_ = labels[f]
         gt_["_acoustic"] = ac.get(f, [])
+        gt_["_pcl"] = pcl.get(f, [])
         out.append((f, gt_, merge_close(r_dets), aux))
     return out
 
@@ -259,6 +282,11 @@ def main():
                     help="zoom: slew + settle before the look starts")
     ap.add_argument("--zoom-dwell", type=float, default=1.5,
                     help="zoom: seconds of magnified observation")
+    ap.add_argument("--pcl", action="store_true",
+                    help="fuse passive-radar cues: bearing through the same "
+                         "1-D Kalman update as acoustic, plus a MEASURED "
+                         "range attached to the track. Opt-in like --radar "
+                         "because a new stream changes every fused row")
     ap.add_argument("--acoustic", action="store_true",
                     help="require an acoustic bearing cue (engine sound in "
                          "the track's direction) for a track to alarm - "
@@ -425,6 +453,10 @@ def main():
             # coasting through a miss) and never invent a track, because a
             # direction carries no elevation. Unmatched bearings are the
             # cue-to-slew signal.
+            if args.pcl and gt.get("_pcl"):
+                # bearing through the same Kalman path, range attached to the
+                # track: predict -> camera update -> bearing updates
+                tracker.fuse_pcl(gt["_pcl"], gate_px=args.acoustic_band_px)
             acoustic_hits = {}
             if args.acoustic and gt.get("_acoustic"):
                 acoustic_hits, unmatched_bearings = tracker.fuse_bearings(
