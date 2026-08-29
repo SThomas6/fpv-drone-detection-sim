@@ -117,7 +117,8 @@ def profile_waypoints(name: str, rng: random.Random):
 class Trajectory:
     """Dense accel-capped path through waypoints, sampled by sim time."""
 
-    def __init__(self, waypoints, rng: random.Random, dt=0.02):
+    def __init__(self, waypoints, rng: random.Random, dt=0.02,
+                 accel: float = ACCEL_CAP):
         self.dt = dt
         pos = []
         p = np.array(waypoints[0][:3], dtype=float)
@@ -130,8 +131,8 @@ class Trajectory:
             s = 0.0
             while s < dist:
                 # trapezoidal speed: accel-capped ramp up/down
-                v = min(speed, v + ACCEL_CAP * dt,
-                        math.sqrt(max(0.5, 2 * ACCEL_CAP * (dist - s))))
+                v = min(speed, v + accel * dt,
+                        math.sqrt(max(0.5, 2 * accel * (dist - s))))
                 s += v * dt
                 pos.append(p + u * min(s, dist))
             p = q
@@ -211,6 +212,13 @@ def main():
     ap.add_argument("--birds", type=int, default=0)
     ap.add_argument("--bird-seed", type=int, default=7)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--speed-scale", type=float, default=1.0,
+                    help="multiply every waypoint speed. 3.0 turns the 14 m/s "
+                         "profiles into ~150 kph, the threat speed this "
+                         "system has to hold track on")
+    ap.add_argument("--accel", type=float, default=ACCEL_CAP,
+                    help="accel cap m/s^2; the 4.0 default needs 217 m to "
+                         "reach 42 m/s, so a fast profile must raise it")
     ap.add_argument("--seconds", type=float, default=0.0, help="0 = forever")
     ap.add_argument("--thermal", action="store_true",
                     help="give birds their honest LWIR surface temperature "
@@ -223,7 +231,10 @@ def main():
     # Spawn BEFORE any subscription exists (see SimClock docstring).
     traj = None
     if args.profile != "none":
-        traj = Trajectory(profile_waypoints(args.profile, rng), rng)
+        wps = [(x, y, z, s_ * args.speed_scale, h)
+               for x, y, z, s_, h in
+               profile_waypoints(args.profile, rng)]
+        traj = Trajectory(wps, rng, accel=args.accel)
         spawn(node, args.world, "target_drone", MODEL_SDF.read_text(),
               traj.pose_at(0.0)[0])
     birds = []

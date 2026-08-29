@@ -138,6 +138,52 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### 150 kph TARGET: tracker and motion blur both hold (2026-08-29, latest)
+
+User requirement: the threat flies 150 kph (41.7 m/s). New clip
+`data/clips/range_fast_sky` - skysweep at `--speed-scale 3.0 --accel 15.0`
+(verified max 42.0 m/s = 151 kph), 15 Hz, 4435 visible frames, 308-1386 m.
+
+**Detection is unaffected**: the point detector holds 100% in every range bin
+to 1386 m at 150 kph, identical to the 14 m/s clip. Detection is per-frame,
+so speed cannot hurt it - only blur and tracking can.
+
+**Tracking holds at 15 Hz** (`scripts/tracker_speed_test.py`): 99.8% held,
+**6 handovers** across 4435 frames. The 2 Hz 14 m/s clip managed 18 handovers
+in 600 frames - so CAPTURE RATE dominates target speed for track continuity,
+which is the same lesson the TBD work produced.
+
+The gate does strain where image motion is large. `base_gate_px=30` holds
+only 40-50% in the 15-60 px/frame bins and 0% above 60; `base_gate_px=60`
+recovers 30-120 px/frame. Worst case is a pure CROSSING target: 41.7 m/s at
+500 m through the 6 deg lens is 1018 px/s = 68 px/frame at 15 Hz. The
+skysweep is mostly radial (median 1.5 px/frame), so this clip under-stresses
+the gate - a dedicated crossing profile would be the honest test.
+
+Widening the gate is close to free, and helps clutter:
+
+| clip | gate 30 | gate 60 |
+|---|---|---|
+| terrain_ir_canopy | held 94.2%, 13 clutter/min | held 91.2%, **9 clutter/min** |
+| eval_birds | held 81.7%, 11 clutter/min | held **82.7%**, **7 clutter/min** |
+
+A wider gate lets an existing track absorb a detection instead of spawning a
+rival, so clutter tracks FALL. Recommend `base_gate_px=60`; canopy hold costs
+3 points, everything else improves.
+
+**Motion blur is a non-issue above 1/125 s** (`scripts/motion_blur.py`).
+blur_px = (v/range) * focal * exposure; at 500 m through the telephoto that
+is 17 px at 1/60 s and 1.0 px at 1/1000 s. Measured peak contrast falls
+188 -> 116 -> 56 DN across 1/125 -> 1/60 -> 1/30. But detection stayed 100%
+at every exposure, because **the rendered sky has noise sigma 0.00** - a flat
+colour, so even a badly smeared target clears a 6-sigma threshold. Adding
+realistic sensor noise is what makes the test mean anything: at sigma 6 DN,
+1/60 s finally drops to 84% while 1/125 s and faster stay at 100%.
+
+So: shoot 1/125 s or faster in daylight and blur never matters. At night the
+exposure budget and the blur requirement collide - that is the real
+constraint, and it is unmeasured.
+
 ### RASTER SCAN: the telephoto can find its own targets (`scripts/raster_scan.py`)
 
 Once the telephoto measured 100% to 1366 m against sky, the open question
