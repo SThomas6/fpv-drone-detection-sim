@@ -91,7 +91,33 @@ The constantly-on radar rows measured below remain valid as an UPPER BOUND
 on what radar information can do; the cued-confirm implementation is the
 operationally meaningful one.
 
-## USER CLARIFICATIONS + INHERITANCE RESULTS (2026-08-29, CURRENT)
+## FULL CONFIRM CHAIN COMPLETE: zoom → radar tiebreak (2026-08-29, CURRENT)
+
+The user's architecture is now implemented end to end:
+**passive watch (EO+IR+motion, silent) → zoom look (silent, ~2.5 s) →
+radar dwell (1.5 s, ONLY for zoom-unresolvable specks)**. Zoom verdict
+stats measured from our own zoom clips (687/687 + 141/141 correct when
+resolved; modelled 0.99). Verdict lifecycle: sticky per object, inherits
+across duplicates (sustained-overlap gate), revoked only on overwhelming
+camera contradiction (0.8 gate — 0.5 crushed canopy, measured).
+
+| Scenario | Passive (spotted) | Verified tier | False alerts (events) | Radar on-air |
+|---|---|---|---|---|
+| Sky | 95.4% | 84.9% | **~0/min** | **3 s per 4 min (1.2%)** |
+| Long-range | 93.75% | **92.25%** | 4.5/min | 1.5 s per 3.3 min (0.8%) |
+| Terrain+birds | 93.5% | 88.5% | 7/min | 9 s per 5 min (3.0%) |
+| Canopy (quiet) | 91.2% | 77.0% | 10/min | 12 s per 5 min (4.0%) |
+| Canopy (thorough, no revocation) | 91.2% | 89.2% | 36/min | 2.5% |
+
+Run flags for the chain: `--radar cued --radar-dwell 1.5 --radar-recue-s 20
+--zoom-confirm` on top of each scenario's per-scenario config.
+
+**Queue:** Phase 3 mic-array model (thins bird cues before the zoom is even
+busy — the zoom camera is the new scarce resource at 50-60 looks/clip);
+canopy verified-tier gap (its wide-camera votes are too noisy for clean
+revocation — more naming work or acoustic disambiguation).
+
+## USER CLARIFICATIONS + INHERITANCE (2026-08-29, earlier)
 
 **Two user questions answered, recorded so the framing never regresses:**
 
