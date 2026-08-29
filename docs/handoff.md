@@ -91,7 +91,39 @@ The constantly-on radar rows measured below remain valid as an UPPER BOUND
 on what radar information can do; the cued-confirm implementation is the
 operationally meaningful one.
 
-## FULL CONFIRM CHAIN COMPLETE: zoom → radar tiebreak (2026-08-29, CURRENT)
+## COMPLETE SENSOR CHAIN — the user's full architecture (2026-08-29, CURRENT)
+
+All four phases now exist as honest sensor models + fusion:
+
+**HEAR → WATCH → LOOK CLOSER → LOCK**
+1. **Acoustic (Phase 3, `scripts/acoustic_sim.py`)** — passive mic array,
+   hears the multirotor harmonic comb, reports a BEARING. No bird problem
+   (birds are silent). ~180 m range, cues where to look. `--acoustic` gates
+   alarms on engine-sound corroboration: sky vote-gated 141 → 2.8/min.
+   Clears 74-79% of camera false tracks. Bearing-only limit recorded.
+2. **Wide EO + IR + motion (Phase 2, deployed m5+v10)** — detect & track,
+   ≥90% every scenario, fully silent.
+3. **Zoom camera (`--zoom-confirm`)** — silent look-closer; the ONLY
+   identifier. Specks it can't resolve are re-looked on a cadence, NEVER
+   handed to radar.
+4. **Radar as FIRE-CONTROL (`--radar cued`)** — off until a drone is
+   CONFIRMED, then paints it continuously (laser-hold: aim error p50 0.7-5
+   px, ~100% within 25 px). **0% emission when no drone present (verified
+   on birds_only).** `--radar-certainty 0.9`: a persistently unresolvable
+   speck the passive stack is ≥90% sure of earns ONE brief ID dwell.
+
+Full-chain flags: `--acoustic --zoom-confirm --radar cued` on top of each
+scenario's per-scenario passive config.
+
+**Remaining build/polish queue** (nothing blocks the architecture):
+- Acoustic as a soft cue (early-warning slew + FP filter) rather than a hard
+  coverage gate — wire it to LOWER other sensors' thresholds in its bearing
+  and to mute no-engine-sound tracks, instead of gating coverage.
+- Fuse acoustic bearing into the tracker as a real measurement (tighten the
+  elevation band with array geometry if a 2nd mic node is modelled).
+- Capture 15 Hz + acoustic on the same clips for a true multi-phase eval.
+
+## FULL CONFIRM CHAIN (2026-08-29, earlier — superseded by the chain above)
 
 The user's architecture is now implemented end to end:
 **passive watch (EO+IR+motion, silent) → zoom look (silent, ~2.5 s) →
