@@ -60,7 +60,11 @@ def fuse_measurements(rgb, aux):
     of absence.
     """
     def tag(d):
-        return "ir" if d.cls_name == "hotspot" else "mv"
+        if d.cls_name == "hotspot":
+            return "ir"
+        if d.cls_name.startswith("radar_"):
+            return d.cls_name          # radar_drone / radar_bird / radar_unknown
+        return "mv"
     dets, sources = [], []
     used = set()
     for d in rgb:
@@ -96,7 +100,8 @@ def _load_dets(path: Path) -> dict:
 
 
 def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
-              rgb_mode: str = "full", rgb_tag: str | None = None):
+              rgb_mode: str = "full", rgb_tag: str | None = None,
+              use_radar: bool = False):
     """Cached streams for one clip.
 
     rgb_mode picks which detector pass feeds the RGB stream:
@@ -142,8 +147,16 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
     if mv_path.exists():
         mv = {r["frame"]: r["detections"] for r in
               (json.loads(l) for l in open(mv_path))}
+    rd_path = clip / "detections_radar.jsonl"
+    rd = {}
+    # Opt-in: a new sensor stream changes every fused row (it spawns its own
+    # tracks - measured: the sweep's and-confirm fell 377->302 just from the
+    # file existing), so benchmarks stay exact unless --radar is passed.
+    if use_radar and rd_path.exists():
+        rd = {r["frame"]: r["detections"] for r in
+              (json.loads(l) for l in open(rd_path))}
     print(f"streams: rgb[{rgb_mode}]{' + ir' if ir else ''}"
-          f"{' + motion' if mv else ''}")
+          f"{' + motion' if mv else ''}{' + radar' if rd else ''}")
     frames = sorted(rgb.keys())
     out = []
     for f in frames:
@@ -154,6 +167,9 @@ def load_clip(clip: Path, rgb_conf: float, ir_conf: float,
                for d in ir.get(f, []) if d["conf"] >= ir_conf]
         aux += [Detection(*d["xyxy"], confidence=d["conf"], cls_name="mover")
                 for d in mv.get(f, []) if d["conf"] >= 0.10]
+        aux += [Detection(*d["xyxy"], confidence=d["conf"],
+                          cls_name=d["cls"])
+                for d in rd.get(f, [])]
         out.append((f, labels[f], merge_close(r_dets), aux))
     return out
 
@@ -202,6 +218,14 @@ def main():
                          "classifier to have an opinion (<8 samples). 'drop' "
                          "is the original alarm-discipline choice; 'pass' "
                          "declares it, which is what a coverage target wants")
+    ap.add_argument("--radar", action="store_true",
+                    help="fuse the micro-Doppler radar stream "
+                         "(detections_radar.jsonl) - see scripts/radar_sim.py")
+    ap.add_argument("--radar-persist", type=float, default=0.3,
+                    help="radar-gate: min fraction of track samples the "
+                         "radar classified 'drone'")
+    ap.add_argument("--radar-bird-thr", type=float, default=0.5,
+                    help="radar-mute: min 'bird' fraction that mutes")
     ap.add_argument("--classifier", default=None,
                     help="motion-classifier JSON to use (default: the "
                          "installed camera/motion_classifier.json)")
@@ -233,6 +257,7 @@ def main():
         tracker = CentroidTracker(class_consistent=args.class_consistent,
                                   suppress_spawn_near_coasting=True)
         ir_seen = defaultdict(lambda: deque(maxlen=90))
+        rd_seen = defaultdict(lambda: deque(maxlen=90))
         obs = []
         supp = (StaticClutterSuppressor(
             radius=args.clutter_radius, window_s=args.clutter_window,
@@ -262,7 +287,7 @@ def main():
             return False
 
         rows = load_clip(clip, args.rgb_conf, args.ir_conf, args.rgb_mode,
-                         args.rgb_tag)
+                         args.rgb_tag, args.radar)
         for f, gt, rgb_dets, ir_dets in rows:
             rd, id_ = select(rgb_dets, ir_dets)
             dets, sources = fuse_measurements(rd, id_)
@@ -281,6 +306,9 @@ def main():
                 src = boxmap.get(tuple(round(v, 1) for v in tr.box))
                 if tr.misses == 0 and src is not None:
                     ir_seen[tr.track_id].append("ir" in src)
+                    rd_seen[tr.track_id].append(
+                        "radar_drone" if "radar_drone" in src else
+                        "radar_bird" if "radar_bird" in src else None)
                 is_drone = bool(gt["visible"] and is_hit(tr.box, gt))
                 on_bird = any(hits_object(tr.box, b)
                               for b in (gt.get("birds") or []))
@@ -302,7 +330,8 @@ def main():
                     "p": clf.probability(feats) if feats is not None else None,
                     "vote": drone_vote_fraction(
                         [h for h in tr.history
-                         if len(h) < 6 or h[5] not in ("hotspot", "mover")]),
+                         if len(h) < 6 or (h[5] not in ("hotspot", "mover")
+                                           and not h[5].startswith("radar_"))]),
                     # bird-mute evidence: share of RGB entries the detector
                     # called bird; aux-only tracks have no opinion (None).
                     # med_w gates trust: below ~8 px the class votes are known
@@ -317,6 +346,13 @@ def main():
                         [h[3] for h in tr.history
                          if len(h) < 6 or h[5] not in ("hotspot", "mover")]),
                     "ir_frac": (sum(seen) / len(seen)) if seen else 0.0,
+                    "rd_drone": (lambda q: (sum(1 for v in q if v == "radar_drone")
+                                            / len(q)) if q else 0.0)(
+                        rd_seen[tr.track_id]),
+                    "rd_bird": (lambda q: (sum(1 for v in q if v == "radar_bird")
+                                           / len(q)) if q else 0.0)(
+                        rd_seen[tr.track_id]),
+                    "rd_n": len(rd_seen[tr.track_id]),
                     "travel_px": travel,
                 })
         results[mode] = obs
@@ -336,7 +372,8 @@ def main():
     print(f"{'policy':>12} {'drone cover':>12} {'alarms/min':>11} "
           f"{'on birds':>9} {'clutter':>8} {'events/min':>11}")
 
-    def report(name, obs, need_ir=False, need_vote=False, bird_mute=False):
+    def report(name, obs, need_ir=False, need_vote=False, bird_mute=False,
+               radar_gate=False, radar_mute=False):
         undecided = args.young_tracks == "pass"
         keep = [o for o in obs
                 if (o["p"] >= args.motion_thr if o["p"] is not None
@@ -349,7 +386,11 @@ def main():
                 and (not need_ir or o["ir_frac"] >= args.ir_persist)
                 and (not need_vote or o["vote"] >= 0.5)
                 and (not bird_mute or o["bird_vote"] is None
-                     or o["bird_vote"] < 0.5 or o["med_w"] < 8.0)]
+                     or o["bird_vote"] < 0.5 or o["med_w"] < 8.0)
+                and (not radar_gate
+                     or o.get("rd_drone", 0.0) >= args.radar_persist)
+                and (not radar_mute
+                     or o.get("rd_bird", 0.0) < args.radar_bird_thr)]
         # Coverage is per FRAME, not per track-frame. Two tracks sitting on
         # the same drone in one frame is one frame covered, not two — counting
         # observations here inflated every fused coverage number this project
@@ -392,6 +433,14 @@ def main():
     # the clutter alarms are IR-co-located, so the two gates cut different
     # populations and stack almost losslessly
     report("and+mute", results["fused"], need_ir=True, bird_mute=True)
+    # micro-Doppler rows (rows print only when a radar stream exists):
+    # radar-mute keeps everything except tracks the radar persistently calls
+    # bird; radar-gate additionally demands persistent radar drone opinion.
+    if any(o.get("rd_drone") or o.get("rd_bird") for o in results["fused"]):
+        report("radar-mute", results["fused"], radar_mute=True)
+        report("rdr+mute", results["fused"], radar_mute=True, bird_mute=True)
+        report("radar-gate", results["fused"], radar_gate=True,
+               radar_mute=True)
 
 
 if __name__ == "__main__":
