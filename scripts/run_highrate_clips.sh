@@ -49,7 +49,20 @@ capture() { # name world sdf profile tseed birds bseed thermal(0/1) manifest hei
     sleep 2
   }
   trap cleanup RETURN
-  sleep 25
+  # Wait for the WORLD, not the clock: cold WSL + software rendering can take
+  # a heightmap+thermal world well past a fixed sleep, and firing drive_scene
+  # early makes every spawn FAIL (hit twice). Poll for the camera topic.
+  local ready=0
+  for _ in $(seq 1 60); do
+    sleep 4
+    if gz topic -l 2>/dev/null | grep -q "station_camera"; then ready=1; break; fi
+  done
+  if [ "$ready" -ne 1 ]; then
+    echo "world never became ready; gz log tail:" >&2
+    tail -5 "/tmp/gz_${name}.log" >&2
+    exit 3
+  fi
+  sleep 6
   local thermal_flag=""
   [ "$thermal" = "1" ] && thermal_flag="--thermal"
   python3 scripts/drive_scene.py --world "$world" --profile "$profile" \
