@@ -64,7 +64,7 @@ def _global_shift(a, b):
 
 def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                   scene_motion=True, flood_limit=MAX_CANDIDATES,
-                  fast_mover="auto"):
+                  fast_mover="auto", noise_k=6.0):
     """Yield per-frame candidate lists from an iterable of RGB arrays.
 
     scene_motion: register the background model to whole-frame motion before
@@ -113,6 +113,17 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
         if len(window) >= BG_WINDOW // 2 + 1:
             bg = np.median(np.stack(window), axis=0)
             diff = np.abs(grey - bg)
+            # NOISE-ADAPTIVE THRESHOLD. A fixed 14 DN threshold assumes a
+            # daylight noise floor. At night a high-gain camera's read+shot
+            # noise alone exceeds it, every pixel "changes", and the flood
+            # guard blanks the frame (measured: motion 83% day -> 5% moonlit).
+            # Scale the threshold to the frame's own measured noise instead:
+            # the median absolute difference IS the noise floor when most of
+            # the scene is static, so k*MAD keeps the false rate roughly
+            # constant across light levels. Never goes below the daylight
+            # value, so clear-day behaviour is untouched.
+            mad = float(np.median(diff))
+            eff_thresh = max(thresh, noise_k * mad)
             if fast_mover == "auto":
                 # Adaptive, because neither mode is right everywhere:
                 #   standard  - sees a HOVERING drone (measured: clear-sky
@@ -125,7 +136,7 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                 # difference is producing a candidate storm, the background
                 # model is no longer describing the scene, so trust motion
                 # speed instead of background difference.
-                storm = int((diff > thresh).sum())
+                storm = int((diff > eff_thresh).sum())
                 use_fast = storm > STORM_PIXELS
             else:
                 use_fast = bool(fast_mover)
@@ -139,7 +150,7 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                 # one. Cheap, and it needs no cloud model.
                 fast = np.abs(grey - window[-1])
                 diff = np.minimum(diff, fast)
-            mask = diff > thresh
+            mask = diff > eff_thresh
             # cv2 connected components when available: the pure-python
             # flood fill is fine on 720p sim frames and takes tens of
             # minutes per 1080p real clip. Identical semantics.
@@ -196,7 +207,8 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
 
 
 def run(clip: Path, thresh: float, scene_motion: bool = True,
-        flood_limit: int = MAX_CANDIDATES, fast_mover="auto"):
+        flood_limit: int = MAX_CANDIDATES, fast_mover="auto",
+        noise_k: float = 6.0):
     frames_dir = clip / "frames"
     files = sorted(frames_dir.glob("*.png"))
     out = clip / "detections_motion.jsonl"
@@ -208,7 +220,8 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
         for f, dets in zip(files, detect_stream(frame_iter(), thresh,
                                                 scene_motion=scene_motion,
                                                 flood_limit=flood_limit,
-                                                fast_mover=fast_mover)):
+                                                fast_mover=fast_mover,
+                                                noise_k=noise_k)):
             fh.write(json.dumps({"frame": f.name, "detections": dets}) + "\n")
             n += 1
             if n % 100 == 0:
@@ -226,12 +239,16 @@ def main():
                     help="disable global-motion registration of the "
                          "background model (the pre-2026-08-29 behaviour)")
     ap.add_argument("--flood-limit", type=int, default=MAX_CANDIDATES)
+    ap.add_argument("--noise-k", type=float, default=6.0,
+                    help="threshold = max(--thresh, k x median |difference|); "
+                         "scales the detector to the frame's own noise floor")
     ap.add_argument("--fast-mover", default="auto",
                     choices=["auto", "on", "off"],
                     help="short-baseline motion requirement. auto (default): per-frame, engaged only when the background model is storming - keeps hovering targets in calm scenes and survives drifting cloud")
     args = ap.parse_args()
     run(Path(args.clip), args.thresh, args.scene_motion, args.flood_limit,
-        {"auto": "auto", "on": True, "off": False}[args.fast_mover])
+        {"auto": "auto", "on": True, "off": False}[args.fast_mover],
+        args.noise_k)
 
 
 if __name__ == "__main__":

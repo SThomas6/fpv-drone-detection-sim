@@ -52,3 +52,4 @@ runs/m5_*.log
 data/clips/eval_birds_broken_cloud/
 data/clips/terrain_ir_canopy_cloud/
 data/clips/range_1km/
+data/clips/terrain_ir_canopy_night/
