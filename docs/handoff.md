@@ -69,7 +69,52 @@ evening. **Check `meta.json`'s `note` field before adding any clip to a
 training set**; the `train_` prefix is a convention, not a guarantee, and the
 absence of one is not proof a clip is fair game.
 
-## FINAL STATE — m5+v10 installed; loop concluded at the measured plateau (2026-08-29, CURRENT)
+## ALARM-PRICE ARC: research → wingbeat (marginal) → RADAR (the answer) (2026-08-29, CURRENT)
+
+The user flagged canopy's 177 and sky's 141 alarm-frames/min. Three moves:
+
+**1. Events currency added** (`fuse_eval` prints `events/min`): an operator
+acknowledges a track once, not per frame, and the frame currency scales with
+capture rate. 177 → 62.4 events/min, 141 → 21.75. Both currencies always
+printed; neither replaces the other.
+
+**2. Optical wingbeat: built, measured, MARGINAL — recorded.** Four 15 Hz
+clips captured (`hr_*`, seeds 31–34; `scripts/run_highrate_clips.sh` now
+documents five WSL traps it survived), feature sets wb/wb2, classifiers
+v11/v12. End-to-end A/B ≈ flat: at the ranges where alarms live, wingbeat
+width-modulation is sub-pixel against box quantization. This is WHY fielded
+systems read micro-motion with radar, not cameras.
+
+**3. Micro-Doppler radar sensor model — the fielded answer, working.**
+`scripts/radar_sim.py` (literature-parameterised, never an oracle: 0.93/0.92
+per-dwell classification, noise, clutter) + `fuse_eval --radar` (OPT-IN —
+the stream's mere presence changes every fused row; without the flag all
+benchmarks stay exact) + rows radar-mute/rdr+mute/radar-gate:
+
+| Benchmark | Before | With radar-gate |
+|---|---|---|
+| Sky | 95.4% @ 141/min (21.75 ev) | **89.9% @ 10.5/min (2.0 ev)** |
+| Canopy | 91.2% @ 177/min (67.6 ev) | **84.8% @ 46.6/min (18.0 ev)** |
+
+13× and 3.8× alarm cuts. The coverage dips under radar gating are
+ASSOCIATION PLUMBING, not physics: young track fragments hold no accumulated
+radar opinion yet (sky is 1 frame short; canopy ~5 pts). Next integration
+tasks, in order: (a) let radar detections seed/merge into fragments faster
+(tighter radar-to-track association, e.g. widen fuse merge tol for
+radar-tagged boxes or carry radar opinion across re-spawns); (b) per-scenario
+radar configs for terrain+birds/sweep (their non-gated rows flood when the
+stream is on — radar-spawned displaced bird tracks need the clutter map or
+radar-aware scoring); (c) then re-run the full matrix with --radar
+everywhere and re-install decision.
+
+**Real-world recommendation for the user** (they asked what real systems
+have that we don't): a micro-Doppler radar (Robin ELVIRA-class) or RF
+control-link sensor is the missing modality; the sim now demonstrates the
+radar's effect end-to-end with honest error modelling. RF would be the
+second sensor model to add (drones emit, birds don't; autonomous drones
+evade it — model that).
+
+## FINAL STATE — m5+v10 installed (2026-08-29, history below)
 
 **Installed:** detector = **m5** (`camera/weights/drone_bird_v1.pt`, md5
 `7b7a0173278d`; = m3 + 1320 motion-blurred real tiles, 10-epoch continuation)
