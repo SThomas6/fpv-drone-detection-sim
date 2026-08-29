@@ -315,11 +315,72 @@ def features_wb_from_history(history) -> np.ndarray | None:
     return np.concatenate([base, [wingw, wingy, peaked]])
 
 
+# wb2: what the wb A/B taught (measured on hr_eval_sky):
+#   - the dt-regularity gate zeroed the feature on 43% of bird track-frames
+#     (coasting gaps) -> interpolate over gaps instead of refusing;
+#   - band-FRACTION is the wrong statistic: 2-7.5 Hz spans 73% of the
+#     spectrum at Nyquist 7.5, so flat detector-jitter noise scores ~0.73
+#     too. A flapping bird is a narrow LINE at flap_hz; noise is flat. The
+#     discriminating statistics are peak CONCENTRATION and peak SNR;
+#   - fused histories interleave RGB/IR/motion boxes whose scales differ,
+#     so the width series must use RGB entries only.
+FEATURE_NAMES_WB2 = FEATURE_NAMES_V4 + [
+    "wing_conc",     # top-bin share of AC power, width series (RGB-only)
+    "wing_snr",      # top-bin / median AC power, log-scaled
+    "wing_inband",   # 1 if that peak lies in 1.5-7.5 Hz
+]
+
+
+def _peak_stats(x, dt):
+    x = np.asarray(x, dtype=float)
+    x = x - x.mean()
+    if len(x) < 16 or float(np.abs(x).max()) < 1e-6:
+        return 0.0, 0.0, 0.0
+    spec = np.abs(np.fft.rfft(x * np.hanning(len(x)))) ** 2
+    fr = np.fft.rfftfreq(len(x), d=dt)[1:]
+    ac = spec[1:]
+    tot = float(ac.sum())
+    if tot <= 0 or not len(ac):
+        return 0.0, 0.0, 0.0
+    k = int(ac.argmax())
+    conc = float(ac[k] / tot)
+    med = float(np.median(ac))
+    snr = float(np.log10(ac[k] / med + 1e-9) / 3.0) if med > 0 else 0.0
+    inband = 1.0 if 1.5 <= fr[k] <= 7.5 else 0.0
+    return conc, min(max(snr, 0.0), 1.0), inband
+
+
+def features_wb2_from_history(history) -> np.ndarray | None:
+    base = features_v4_from_history(history)
+    if base is None:
+        return None
+    rgb = [(h[0], h[3]) for h in history
+           if len(h) > 5 and h[5] not in AUX_CLASSES]
+    conc = snr = inband = 0.0
+    if len(rgb) >= 16:
+        t = np.array([e[0] for e in rgb], dtype=float)
+        w = np.array([e[1] for e in rgb], dtype=float)
+        dts = np.diff(t)
+        good = dts > 1e-6
+        if good.sum() >= 12:
+            dt = float(np.median(dts[good]))
+            # band observable at this rate at all?
+            if dt <= 1.0 / (2 * 1.5):
+                span = t[-1] - t[0]
+                n = int(round(span / dt)) + 1
+                if 16 <= n <= 4 * len(rgb):      # refuse absurd upsampling
+                    tu = np.linspace(t[0], t[-1], n)
+                    wu = np.interp(tu, t, w)
+                    conc, snr, inband = _peak_stats(wu, float(span / (n - 1)))
+    return np.concatenate([base, [conc * inband, snr * inband, inband]])
+
+
 FEATURE_SETS = {
     "v1": (FEATURE_NAMES, features_from_history),
     "v3": (FEATURE_NAMES_V3, features_v3_from_history),
     "v4": (FEATURE_NAMES_V4, features_v4_from_history),
     "wb": (FEATURE_NAMES_WB, features_wb_from_history),
+    "wb2": (FEATURE_NAMES_WB2, features_wb2_from_history),
 }
 
 

@@ -295,6 +295,7 @@ def main():
                           if len(xs) >= 2 else 0.0)
                 obs.append({
                     "frame": f,
+                    "track_id": tr.track_id,
                     "coasting": tr.misses > 0,
                     "is_drone": is_drone, "on_bird": on_bird,
                     "clutter": not is_drone and not on_bird,
@@ -333,7 +334,7 @@ def main():
           f"{', clutter' if args.clutter else ''}] "
           f"({n_frames} frames, {vis} drone-visible, {minutes:.1f} min) ===")
     print(f"{'policy':>12} {'drone cover':>12} {'alarms/min':>11} "
-          f"{'on birds':>9} {'clutter':>8}")
+          f"{'on birds':>9} {'clutter':>8} {'events/min':>11}")
 
     def report(name, obs, need_ir=False, need_vote=False, bird_mute=False):
         undecided = args.young_tracks == "pass"
@@ -359,8 +360,23 @@ def main():
         birds = sum(1 for o in keep if o["on_bird"])
         clutter = sum(1 for o in keep if o["clutter"])
         alarms = birds + clutter
+        # Distinct alarm EVENTS: consecutive surviving frames of one track =
+        # one event (an operator acknowledges a track once, not per frame).
+        # Frame-rate-invariant, unlike alarm track-frames, whose per-minute
+        # count scales with capture rate (7.5x between the 2 Hz and 15 Hz
+        # benchmarks). Both currencies are printed; neither replaces the other.
+        by_track = {}
+        for o in keep:
+            if o["is_drone"]:
+                continue
+            by_track.setdefault(o["track_id"], []).append(o["frame"])
+        events = 0
+        order = {f: i for i, f in enumerate(sorted({o["frame"] for o in obs}))}
+        for frames_ in by_track.values():
+            idx = sorted(order[f] for f in frames_)
+            events += 1 + sum(1 for a_, b_ in zip(idx, idx[1:]) if b_ - a_ > 3)
         print(f"{name:>12} {cover:>5}/{vis:<5} {alarms / minutes:>10.1f} "
-              f"{birds:>9} {clutter:>8}")
+              f"{birds:>9} {clutter:>8} {events / minutes:>10.2f}")
 
     report("rgb-only", results["rgb-only"])
     report("or-fusion", results["fused"])
