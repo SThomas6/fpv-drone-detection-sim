@@ -91,7 +91,60 @@ The constantly-on radar rows measured below remain valid as an UPPER BOUND
 on what radar information can do; the cued-confirm implementation is the
 operationally meaningful one.
 
-## COMPLETE SENSOR CHAIN — the user's full architecture (2026-08-29, CURRENT)
+## ROBUSTNESS AUDIT + BEARING FUSION (2026-08-29, CURRENT)
+
+Four questions the user asked, all now measured rather than assumed.
+
+**1. Microphone vs weather/noise — was NOT tested; now is.** The first model
+had one crude `wind` scalar. `scripts/acoustic_sim.py` now carries eight
+named environments with separate range / bearing-error / false-cue effects
+and a spectral rationale each. Drone heard (sweep clip): still 91%, breeze
+79%, leaves 73%, light rain 70%, traffic 66%, urban 61%, windy 53%, heavy
+rain 36%. **Traffic/urban engine harmonics are the one false source that
+genuinely mimics a multirotor** to a harmonic detector — birds never do.
+
+**2. Bearing fused as a PROPER measurement** (`CentroidTracker.fuse_bearings`
+/ `_update_bearing`): 1-D Kalman observation `H=[1 0 0 0]` — sharpens image
+column and x-velocity, leaves the row untouched, claims no certainty the
+sensor lacks. Verified (y bit-identical, x-variance shrinks). Unmatched
+bearings are returned as SLEW CUES, never spawned as tracks. Support is
+persistent per track (rolling fraction), because one bearing can only be
+assigned to one track per frame — a per-frame requirement starved the target
+(sky fell to 42%). Result: sky 446/504 @ 22.8 alarms/min (from 141),
+vote-gated 409/504 @ **1.8/min**.
+
+**3. Colour / camouflage — detection is colour-robust, NAMING is not**
+(`scripts/colour_robustness.py`, repaints the airframe, geometry untouched):
+
+| Repaint | Sky recall | named 'drone' | Canopy recall |
+|---|---|---|---|
+| original (black) | 0.983 | 0.788 | 0.517 |
+| black | 0.992 | 0.546 | 0.367 |
+| **white** | 0.892 | **0.037** | 0.417 |
+| midgrey | 0.992 | 0.361 | 0.450 |
+| camo | 0.992 | 0.395 | 0.450 |
+| **sky-matched** | **0.350** | 0.000 | 0.175 |
+
+So: it finds black, camo, grey and white drones. But a **white drone is
+called 'bird' 96% of the time** — dangerous, because bird-mute would
+suppress it. Fix = colour-augmented training tiles (repaint the airframe in
+existing tiles, same trick as the blur augmentation that produced m5).
+A deliberately **sky-matched** paint is the genuine optical weakness — and
+precisely the case thermal/acoustic/radar exist to cover.
+
+**4. Cloud — every sim number before this was measured against a
+structureless sky** (`scripts/sky_conditions.py`). Composited, temporally
+coherent, drifting: overcast 0.980 (harmless), bright_edge 0.941, stormy
+0.683, **broken cumulus 0.440 detector / 0.623 with tracking**. And the
+operational finding: **the motion channel floods under moving cloud**
+(8,055 alarms/min) because a static-camera background model treats drifting
+cloud as foreground. Disable it, or make it scene-motion-aware, in cloud.
+
+**Queue:** colour-augmented retrain (white-drone naming); global-motion
+compensation for the motion channel; thermal-equipped cloud clip to prove
+the LWIR channel's cloud immunity; acoustic as soft cue rather than hard gate.
+
+## COMPLETE SENSOR CHAIN — the user's full architecture (2026-08-29)
 
 All four phases now exist as honest sensor models + fusion:
 
