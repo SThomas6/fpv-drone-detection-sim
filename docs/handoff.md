@@ -138,6 +138,71 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### WIND BREAKS THE MOTION CHANNEL + MULTI-TARGET (2026-08-30, latest)
+
+**Every tree and bush in this project is `<static>true</static>` with no wind
+plugin, so the motion channel had never once seen moving vegetation** - the
+classic false-alarm source for a static-camera background model.
+`drive_scene.py --sway N --wind-mps X` now spawns dynamic crown proxies at
+REAL treetop positions from the terrain manifest and drives them with two
+incommensurate frequencies (Gazebo will not move a `<static>` model, hence
+proxies). `data/clips/sway_canopy` (40 crowns, 8 m/s) against
+`data/clips/nosway_canopy` - the SAME seed, profile, birds and interval,
+sway the only difference.
+
+| | movers/frame | frames blanked | drone found | false alarms/min |
+|---|---|---|---|---|
+| no wind (control) | 4.3 | 1% | **65%** | 905 |
+| wind, as shipped | 1.6 | **94%** | **2%** | 452 |
+| wind, `--flood-limit 300` | 77.2 | 1% | 70% | **22,068** |
+
+Wind produces ~77 movers/frame, 18x the control. The shipped flood guard
+(`if len(dets) > flood_limit: dets = []`, MAX_CANDIDATES=40) then discards
+the ENTIRE frame - a cliff, not a graceful degradation, so one mover past 40
+takes the output from 41 detections to zero. **The channel does not flood
+under wind; it silently switches itself off**, and the alarm rate IMPROVES
+(905 -> 452/min) while detection collapses to 2%. Nothing in the metrics
+flags it. Raising the limit restores detection (70%) at 22,068 alarms/min,
+which is unusable. So both settings fail: this needs a real vegetation fix,
+not a threshold.
+
+Ruled out along the way, each by measurement: the scene-motion guard
+(`--no-scene-motion` byte-identical output), the adaptive threshold
+(`--noise-k` 3.0/4.5/6.0 all byte-identical - the fixed DIFF_THRESH
+dominates), ego-motion (`_global_shift` returns exactly 0 on both clips), and
+occlusion by the proxies (drone contrast 46-49 in BOTH clips, label offset
+6-10 px). Four dead ends before the right one; check `dets = []` sites first
+next time.
+
+**Multi-target** (`scripts/multi_target_eval.py`, `data/clips/multi_drone`,
+three drones + birds, 954/970 frames with all three in view):
+
+| drone | detected | tracked | track ids | id switches |
+|---|---|---|---|---|
+| target_drone | 90% | 91% | 36 | 67 |
+| target_drone_2 | 96% | 96% | 39 | 69 |
+| target_drone_3 | 91% | 90% | 38 | 77 |
+| *single-drone control* | *98%* | *97%* | *46* | *94* |
+
+Detection and tracking hold at N=3. Fragmentation is NOT caused by the extra
+drones - the single-drone canopy control fragments MORE per frame (94
+switches / 600 frames = 0.157 vs ~0.073). What IS new: **one track id covered
+two different drones in 3.8% of frames.** Recall looks fine and a hand-off
+would point at the wrong aircraft.
+
+**Trap fixed:** `EntityFactory` takes the model name from the SDF TEXT, not
+from any argument, so spawning `target_drone/model.sdf` three times produced
+three "spawn ok" lines and ONE entity - the extras never appeared on the pose
+topic. Birds only work because `bird_sdf` bakes the name in. The extra drones
+now get their model name rewritten in the text. The first capture silently
+recorded a single-drone clip labelled as multi-drone.
+
+**The rig** (`simulator/worlds/detection_world_inspect.sdf` +
+`scripts/grab_inspect.py`): first ever picture of the station rather than the
+view from it. It is a 1.2 m equipment box, a thin mast, and a camera body -
+a placeholder. There is no modelled gimbal, no microphone array geometry, no
+radar antenna, and the "cameras" are sensor origins on a link.
+
 ### THE CHAIN CLOSES: cue -> slew -> track -> range (2026-08-29, latest)
 
 `data/clips/range_dual` is the first clip with TWO cameras on one mount

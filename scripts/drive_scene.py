@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import pathlib
 import random
 import sys
 import threading
@@ -200,6 +201,32 @@ class SimClock:
             return self.t + (time.time() - self.wall) * self.rtf
 
 
+def canopy_sdf(name: str, radius: float) -> str:
+    """A dynamic foliage blob, so a treetop can actually move.
+
+    The terrain trees are <static>true</static> and Gazebo will not move a
+    static model, so wind cannot be applied to them. This spawns a
+    non-static, collisionless crown proxy at the treetop instead, which the
+    pose service CAN drive.
+    """
+    return f"""<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="{name}">
+    <static>false</static>
+    <link name="link">
+      <gravity>false</gravity>
+      <visual name="crown">
+        <geometry><sphere><radius>{radius:.2f}</radius></sphere></geometry>
+        <material>
+          <ambient>0.10 0.22 0.09 1</ambient>
+          <diffuse>0.13 0.30 0.11 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>"""
+
+
 def spawn(node: Node, world: str, name: str, sdf: str, pos):
     req = EntityFactory()
     req.sdf = sdf
@@ -226,6 +253,24 @@ def main():
                     choices=["mission", "canopy", "sweep", "longsweep",
                              "telesweep", "skysweep",
                              "crosssweep", "none"])
+    ap.add_argument("--drones", type=int, default=1,
+                    help="how many target drones to fly. The tracker has only "
+                         "ever seen one at a time; extras get their own seed "
+                         "so their trajectories differ, and are named "
+                         "target_drone_2.. so the first stays THE target and "
+                         "every existing label keeps its meaning")
+    ap.add_argument("--sway", type=int, default=0,
+                    help="spawn N swaying canopy proxies at REAL treetop "
+                         "positions from the terrain manifest. Every tree in "
+                         "this project is <static>true</static> with no wind "
+                         "plugin, so the motion channel has never once seen "
+                         "moving vegetation - the classic false-alarm source "
+                         "for a static-camera background model")
+    ap.add_argument("--wind-mps", type=float, default=6.0,
+                    help="wind speed driving the sway amplitude")
+    ap.add_argument("--manifest", default=None,
+                    help="terrain manifest holding tree positions, needed "
+                         "by --sway")
     ap.add_argument("--birds", type=int, default=0)
     ap.add_argument("--bird-seed", type=int, default=7)
     ap.add_argument("--seed", type=int, default=0)
@@ -254,6 +299,46 @@ def main():
         traj = Trajectory(wps, rng, accel=args.accel)
         spawn(node, args.world, "target_drone", MODEL_SDF.read_text(),
               traj.pose_at(0.0)[0])
+    extra_trajs = []
+    for k in range(2, max(1, args.drones) + 1):
+        krng = random.Random(args.seed * 100 + k)
+        wps = [(x, y, z, s_ * args.speed_scale, h)
+               for x, y, z, s_, h in profile_waypoints(args.profile, krng)]
+        # offset the phase so they are not flying in formation
+        tr_k = Trajectory(wps, krng, accel=args.accel)
+        extra_trajs.append((f"target_drone_{k}", tr_k,
+                            krng.uniform(0.0, tr_k.total)))
+        # EntityFactory takes the model name from the SDF TEXT, not from any
+        # argument, so spawning the same file twice yields one entity and the
+        # extras silently never appear on the pose topic - which is exactly
+        # what happened: three "spawn ok" lines, one drone. Birds work only
+        # because bird_sdf bakes the name in. Rename the model in the text.
+        sdf_k = MODEL_SDF.read_text().replace(
+            '<model name="target_drone"', f'<model name="target_drone_{k}"', 1)
+        spawn(node, args.world, f"target_drone_{k}", sdf_k,
+              tr_k.pose_at(extra_trajs[-1][2])[0])
+    sway = []
+    if args.sway:
+        import json as _json
+        man = _json.loads(pathlib.Path(args.manifest).read_text())
+        trees = man.get("trees", [])
+        srng = random.Random(args.seed + 777)
+        picked = srng.sample(trees, min(args.sway, len(trees)))
+        for i, tr_ in enumerate(picked):
+            name = f"canopy_{i}"
+            # amplitude grows with height and wind, as a real crown does
+            amp = 0.06 * tr_["h"] * (args.wind_mps / 6.0)
+            sway.append({"name": name,
+                         "x": tr_["x"], "y": tr_["y"],
+                         "z": tr_["z"] + tr_["h"] * 0.82,
+                         "r": max(0.6, tr_["r"] * 0.9),
+                         "amp": amp,
+                         "w1": srng.uniform(0.7, 1.5),
+                         "w2": srng.uniform(1.7, 3.1),
+                         "ph": srng.uniform(0, 6.28),
+                         "dir": srng.uniform(0, 6.28)})
+            spawn(node, args.world, name, canopy_sdf(name, sway[-1]["r"]),
+                  (sway[-1]["x"], sway[-1]["y"], sway[-1]["z"]))
     birds = []
     if args.birds:
         brng = random.Random(args.bird_seed)
@@ -286,6 +371,19 @@ def main():
         if traj is not None:
             pos, rpy = traj.pose_at(t)
             fill_pose(req.pose.add(), "target_drone", pos, rpy)
+        for name, tr_k, phase in extra_trajs:
+            pos_k, rpy_k = tr_k.pose_at(t + phase)
+            fill_pose(req.pose.add(), name, pos_k, rpy_k)
+        for c in sway:
+            # two incommensurate frequencies so the motion never looks like a
+            # clean oscillation a background model could learn away
+            d = (c["amp"] * math.sin(c["w1"] * t + c["ph"])
+                 + 0.4 * c["amp"] * math.sin(c["w2"] * t))
+            fill_pose(req.pose.add(), c["name"],
+                      (c["x"] + d * math.cos(c["dir"]),
+                       c["y"] + d * math.sin(c["dir"]),
+                       c["z"] + 0.25 * abs(d)),
+                      (0.0, 0.0, 0.0))
         for b in birds:
             (x, y, z), (roll, pitch, yaw) = b.pose_at(t)
             fill_pose(req.pose.add(), b.name, (x, y, z), (roll, pitch, yaw))

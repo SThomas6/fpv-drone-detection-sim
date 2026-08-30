@@ -52,12 +52,20 @@ def img_cb(msg: Image):
 
 def pose_cb(msg: Pose_V):
     birds = {}
+    extra = {}
     for p in msg.pose:
         if p.name == "target_drone" or p.name.startswith("x500"):
             with _lock:
                 _latest["pos"] = (p.position.x, p.position.y, p.position.z)
                 _latest["quat"] = (p.orientation.w, p.orientation.x,
                                    p.orientation.y, p.orientation.z)
+        elif p.name.startswith("target_drone_"):
+            # Additional drones. The first stays THE target so every existing
+            # label, metric and cached stream keeps its meaning; the rest are
+            # recorded alongside, the way birds already are.
+            extra[p.name] = ((p.position.x, p.position.y, p.position.z),
+                             (p.orientation.w, p.orientation.x,
+                              p.orientation.y, p.orientation.z))
         elif p.name.startswith("bird_"):
             birds[p.name] = ((p.position.x, p.position.y, p.position.z),
                              (p.orientation.w, p.orientation.x,
@@ -65,6 +73,9 @@ def pose_cb(msg: Pose_V):
     if birds:
         with _lock:
             _latest["birds"] = birds
+    if extra:
+        with _lock:
+            _latest["drones"] = extra
 
 
 def info_cb(msg: CameraInfo):
@@ -171,6 +182,7 @@ def main():
                 frame = _latest.get("img")
                 pos, quat = _latest.get("pos"), _latest.get("quat", (1, 0, 0, 0))
                 birds = dict(_latest.get("birds", {}))
+                extra_drones = dict(_latest.get("drones", {}))
                 img_age = time.time() - _latest.get("img_t", 0)
                 seq = _latest.get("img_seq", 0)
             if frame is None or (pos is None and not args.no_target):
@@ -260,6 +272,19 @@ def main():
                         "px_width": round(bgt["px_width"], 2),
                     })
             rec["birds"] = bird_recs
+            other = []
+            for dname, (dpos, dquat) in sorted(extra_drones.items()):
+                dgt = ground_truth_bbox(dpos, dquat)
+                if dgt and dgt["visible"] and (occ is None
+                                               or not occ.occluded(dpos)):
+                    other.append({
+                        "name": dname,
+                        "bbox": [round(v, 1) for v in dgt["xyxy"]],
+                        "centre": [round(v, 1) for v in dgt["centre"]],
+                        "range_m": round(dgt["range_m"], 1),
+                        "px_width": round(dgt["px_width"], 2),
+                    })
+            rec["other_drones"] = other
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
             kept += 1

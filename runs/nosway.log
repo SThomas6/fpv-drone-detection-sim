@@ -1,0 +1,57 @@
+scripts/run_nosway_control.sh: locclusion checking: ON
+intrinsics verified against camera_info (fx=1108.8)
+  20/1000 frames
+  40/1000 frames
+  60/1000 frames
+  80/1000 frames
+  100/1000 frames
+  120/1000 frames
+  140/1000 frames
+  160/1000 frames
+  180/1000 frames
+  200/1000 frames
+  220/1000 frames
+  240/1000 frames
+  260/1000 frames
+  280/1000 frames
+  300/1000 frames
+  320/1000 frames
+  340/1000 frames
+  360/1000 frames
+  380/1000 frames
+  400/1000 frames
+  420/1000 frames
+  440/1000 frames
+  460/1000 frames
+  480/1000 frames
+  500/1000 frames
+  520/1000 frames
+  540/1000 frames
+  560/1000 frames
+  580/1000 frames
+  600/1000 frames
+  620/1000 frames
+  640/1000 frames
+  660/1000 frames
+  680/1000 frames
+  700/1000 frames
+  720/1000 frames
+  740/1000 frames
+  760/1000 frames
+  780/1000 frames
+  800/1000 frames
+  820/1000 frames
+  840/1000 frames
+  860/1000 frames
+  880/1000 frames
+  900/1000 frames
+  920/1000 frames
+  940/1000 frames
+  960/1000 frames
+  980/1000 frames
+
+saved 990 frames to data/clips/nosway_canopy/ (990 with the drone in frame)
+size buckets: {'<16px': 990}
+skipped 10 frames with a stale camera stream
+WARNING: could not verify any labels against rendered pixels
+=== multi + sway captures complete ===
