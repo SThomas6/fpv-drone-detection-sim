@@ -31,9 +31,14 @@ clutter_map.py already documents: the tracker repeatedly loses and respawns
 tracks on clutter, so no single track ever accumulates the evidence. Cells
 are small (default 24 px) so a crown and a passing drone rarely share one.
 
-The asymmetry that makes this work: a crown sits in its cell forever and
-accumulates samples; a drone crosses a cell in a few frames and never
-reaches `min_samples`, so it cannot be muted even in principle.
+Two conditions, and PERSISTENCE is the load-bearing one. A crown occupies
+its cell for the whole clip; a drone crosses a 40 px cell at ~4 px/frame in
+about ten frames. Requiring 25 samples inside a 10 s window means a
+transiting target can never qualify no matter how its straightness scores,
+while a crown qualifies within seconds. The first tuning (24 px cells, 3 s,
+6 samples) was too permissive on both counts and removed only half the wind
+flood; it also split a single crown's swing across two cells, so neither
+cell saw the full oscillation.
 
 Causal throughout - the decision for frame t uses only frames < t.
 """
@@ -73,9 +78,9 @@ class _Cell:
 class VegetationSuppressor:
     """Mute movers whose motion accumulates path but no net displacement."""
 
-    def __init__(self, cell_px: float = 24.0, window_s: float = 3.0,
-                 min_samples: int = 6, min_path_px: float = 14.0,
-                 max_straightness: float = 0.35, forget_s: float = 20.0):
+    def __init__(self, cell_px: float = 40.0, window_s: float = 10.0,
+                 min_samples: int = 25, min_path_px: float = 20.0,
+                 max_straightness: float = 0.55, forget_s: float = 30.0):
         self.cell_px = cell_px
         self.window_s = window_s
         self.min_samples = min_samples

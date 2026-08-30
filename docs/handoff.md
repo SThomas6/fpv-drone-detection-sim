@@ -138,6 +138,83 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### ACTIVE RADAR IS NOW REAL; WIND IS NOT FIXED (2026-08-30, latest)
+
+**ACTIVE RADAR - the last asserted number is now measured.**
+`scripts/radar_sim.py` asserted drone-called-drone 93% / bird-called-bird
+92% from the literature, and that single figure decides when the only
+EMITTING sensor is allowed to switch on. It has never been measured here.
+
+`scripts/run_fers_radar.sh` builds each target from several point
+scatterers so the micro-Doppler falls out of geometry rather than being
+imposed: a drone as a body plus four blade tips on circular paths at
+100 rev/s, a bird as a body plus two wings flapping at 5 Hz over a larger
+radius. FERS returns the I/Q that motion actually produces.
+`radar/microdoppler.py` pulse-compresses, builds the slow-time series,
+and classifies on Doppler spread and its steadiness.
+
+The separation is enormous and physical:
+
+| target | Doppler spread | velocity spread | steadiness (CV) |
+|---|---|---|---|
+| bird | 156-312 Hz | 2.3-4.7 m/s | 0.19-2.24 |
+| drone | 4141-9141 Hz | **62-137 m/s** | 0.01-0.45 |
+
+**62-137 m/s is the blade-tip speed** (2*pi*0.12*100 = 75 m/s), recovered
+from the returned signal. Result over 14 dwells, 100 m to 1 km:
+
+    correct   10/14
+    unknown    4/14   (echo under the noise, at 600 m+)
+    CONFUSED   0/14
+
+**100% correct on every dwell it was willing to judge, and it never once
+confused a bird for a drone.** That is better than the modelled 93/92 with
+confusion, and the failure mode is the safe one: it declines rather than
+guesses, which the cued architecture already handles by taking another
+dwell. Usable classification range at 20 kW X-band: ~450-800 m.
+
+Three processing bugs, each caught because a number was impossible:
+1. *Spread saturated at 2 MHz for bird and drone alike* - the raw stream was
+   being analysed, so the measurement was of the transmitted chirp, not the
+   target. Micro-Doppler lives in SLOW time, between pulses.
+2. *Still saturated after collapsing to slow time* - summing a pulse's raw
+   samples does not isolate the target, because the received pulse is a
+   delayed CHIRP. Matched-filtering against the transmitted chirp and taking
+   the peak range bin's complex value is what produces a usable series.
+3. *The blade line aliased* - a 0.12 m tip at 100 rev/s is 75 m/s = 5 kHz at
+   10 GHz, which folds at a 5 kHz PRF. 20 kHz PRF does not.
+A fourth guard was needed rather than a bug: once the echo is under the
+noise the spectrogram fills the whole band, so every target looks maximally
+"wide and steady" and a classifier without a noise guard confidently calls
+noise a drone. `unknown` is a real answer.
+
+**WIND: NOT FIXED. Five approaches, all measured, none beats blanking.**
+
+| approach | drone found | false/min | FUSED coverage |
+|---|---|---|---|
+| no wind (control) | 62% | 904 | 65% |
+| blank, as shipped | 2% | 452 | **65%** |
+| truncate | 64% | 11021 | 20% |
+| + clutter map (3 tunings) | 0-63% | 0-11007 | - |
+| + vegetation, straightness | 62% | 6119 | 30% |
+| + vegetation, persistence-tuned | 64% | 6469 | **33%** |
+
+The vegetation suppressor is real and does what it claims - it removes ~45%
+of the wind flood, and costs EXACTLY NOTHING in calm air (identical output
+to as-shipped) - but 6,500 false movers/min still spawn enough rival tracks
+that fused coverage halves. Retuning from straightness to persistence
+(40 px cells, 10 s window, 25 samples) changed almost nothing, which says
+the residue is not weakly-oscillating cells but crowns whose sway spans
+several cells so no single cell accumulates the evidence.
+
+**Honest state: the motion channel cannot be made useful in strong wind
+with anything tried so far.** `blank` remains correct and remains the
+default; the system degrades gracefully because camera and thermal carry
+the drone. `--vegetation` is kept, off by default, because it is free in
+calm air and would matter if the flood guard were ever relaxed. A real fix
+needs the oscillation's FREQUENCY signature per cell, not its geometry -
+that is the next thing to try and it has not been tried.
+
 ### EVERYTHING WIRED + BENCHMARK RESTORED (2026-08-30, latest)
 
 All sensors now feed fusion, and every one of them is a real detector on

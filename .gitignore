@@ -56,3 +56,4 @@ data/clips/terrain_ir_canopy_night/
 third_party/
 radar/fers_out/*.npy
 radar/fers_track/
+radar/fers_md/
