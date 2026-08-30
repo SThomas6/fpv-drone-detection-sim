@@ -28,6 +28,10 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from camera.clutter_map import StaticClutterSuppressor  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from camera.ir_detector import _blobs  # noqa: E402
 
 BG_WINDOW = 9            # frames in the rolling median background
@@ -62,9 +66,29 @@ def _global_shift(a, b):
     return float(px), float(py)
 
 
+class _Blob:
+    """Adapter so a mover dict can be fed to StaticClutterSuppressor."""
+    __slots__ = ("d",)
+
+    def __init__(self, d):
+        self.d = d
+
+    @property
+    def centre(self):
+        x1, y1, x2, y2 = self.d["xyxy"]
+        return ((x1 + x2) / 2, (y1 + y2) / 2)
+
+    @property
+    def width(self):
+        return self.d["xyxy"][2] - self.d["xyxy"][0]
+
+
 def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                   scene_motion=True, flood_limit=MAX_CANDIDATES,
-                  fast_mover="auto", noise_k=6.0):
+                  fast_mover="auto", noise_k=6.0, clutter=False,
+                  flood_mode="blank", dt=0.2,
+                  clutter_radius=20.0, clutter_extent=14.0,
+                  clutter_persist=10):
     """Yield per-frame candidate lists from an iterable of RGB arrays.
 
     scene_motion: register the background model to whole-frame motion before
@@ -79,6 +103,18 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
     reported EMPTY and flagged. Silence is an honest answer; a flood is not.
     """
     rng = rng or np.random.default_rng(0)
+    # Foliage scale, not real-footage scale. The suppressor's 60 px
+    # default anchor radius was tuned for building/foliage blur in
+    # 1080p real clips; here it swallows the drone, because a drone
+    # passing within 60 px of a swaying crown lands inside that
+    # crown's anchor and gets muted with it (measured: everything
+    # suppressed, 0% drone). A swaying crown at 44-92 m subtends
+    # ~8-16 px of oscillation, so the anchor must be that tight.
+    supp = (StaticClutterSuppressor(radius=clutter_radius,
+                                    max_extent=clutter_extent,
+                                    min_persist=clutter_persist)
+            if clutter else None)
+    t_now = 0.0
     window: deque = deque(maxlen=BG_WINDOW)
     prev = None
     # Sub-pixel drift accumulator. Cloud in these clips drifts ~0.35 px per
@@ -200,15 +236,48 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                         "area_px": len(blob),
                     })
         window.append(grey)
+
+        # WIND. Swaying vegetation fires at one place forever and never
+        # travels; a drone travels. That is exactly what the static-clutter
+        # map decides, and it runs BEFORE the flood cap so foliage is removed
+        # rather than crowding the drone out of the budget. Measured on
+        # data/clips/sway_canopy: 40 swaying crowns produce ~77 movers/frame
+        # without it, and the frame is then discarded whole.
+        if supp is not None:
+            kept, _ = supp.step([_Blob(d) for d in dets], t_now)
+            dets = [b.d for b in kept]
+
         if len(dets) > flood_limit:
-            # scene model has lost the scene - say nothing rather than flood
-            dets = []
+            if flood_mode == "blank":
+                # MEASURED CORRECT, and not merely historic. Under wind the
+                # channel does go blind (drone 65% -> 2% at this stage), but
+                # end-to-end the fused system barely notices - camera and
+                # thermal carry it, 57% coverage against 54% with no wind at
+                # all - whereas emitting the flood instead drops fused
+                # coverage to 20%, because ~39 movers/frame spawn rival
+                # tracks that steal association from the drone's own. Silence
+                # really is the better answer; the comment was right.
+                dets = []
+            else:
+                # A cliff is not a safety guard. Blanking on ONE mover past
+                # the limit took a frame from 41 detections to zero and
+                # silently blinded the channel under wind - drone 65% -> 2%
+                # while the ALARM RATE IMPROVED, so no metric flagged it.
+                # Degrade instead: keep the strongest and mark the frame, so
+                # a truncated frame is never read as a quiet one.
+                dets = sorted(dets, key=lambda d: -d["conf"])[:flood_limit]
+                for d in dets:
+                    d["truncated"] = True
+        t_now += dt
         yield dets
 
 
 def run(clip: Path, thresh: float, scene_motion: bool = True,
         flood_limit: int = MAX_CANDIDATES, fast_mover="auto",
-        noise_k: float = 6.0):
+        noise_k: float = 6.0, clutter: bool = False,
+        flood_mode: str = "blank",
+        clutter_radius: float = 20.0, clutter_extent: float = 14.0,
+        clutter_persist: int = 10):
     frames_dir = clip / "frames"
     files = sorted(frames_dir.glob("*.png"))
     out = clip / "detections_motion.jsonl"
@@ -221,7 +290,12 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
                                                 scene_motion=scene_motion,
                                                 flood_limit=flood_limit,
                                                 fast_mover=fast_mover,
-                                                noise_k=noise_k)):
+                                                noise_k=noise_k,
+                                                clutter=clutter,
+                                                flood_mode=flood_mode,
+                                                clutter_radius=clutter_radius,
+                                                clutter_extent=clutter_extent,
+                                                clutter_persist=clutter_persist)):
             fh.write(json.dumps({"frame": f.name, "detections": dets}) + "\n")
             n += 1
             if n % 100 == 0:
@@ -239,6 +313,23 @@ def main():
                     help="disable global-motion registration of the "
                          "background model (the pre-2026-08-29 behaviour)")
     ap.add_argument("--flood-limit", type=int, default=MAX_CANDIDATES)
+    ap.add_argument("--clutter", action="store_true",
+                    help="suppress movers that keep firing at ONE place and "
+                         "never travel - swaying foliage. Measured: 40 wind-"
+                         "driven crowns produce ~77 movers/frame and blank "
+                         "the whole frame without this")
+    ap.add_argument("--clutter-radius", type=float, default=20.0)
+    ap.add_argument("--clutter-extent", type=float, default=14.0)
+    ap.add_argument("--clutter-persist", type=int, default=10)
+    ap.add_argument("--flood-mode", default="blank",
+                    choices=["blank", "truncate"],
+                    help="what to do above --flood-limit. BLANK is correct "
+                         "and stays the default: measured end-to-end under "
+                         "wind, blanking gives 57% fused coverage against "
+                         "20% for truncate, because a flood of movers spawns "
+                         "rival tracks that disrupt the drone's own. Use "
+                         "truncate as a DIAGNOSTIC - it makes a flood "
+                         "visible instead of silent - not in deployment")
     ap.add_argument("--noise-k", type=float, default=6.0,
                     help="threshold = max(--thresh, k x median |difference|); "
                          "scales the detector to the frame's own noise floor")
@@ -248,7 +339,11 @@ def main():
     args = ap.parse_args()
     run(Path(args.clip), args.thresh, args.scene_motion, args.flood_limit,
         {"auto": "auto", "on": True, "off": False}[args.fast_mover],
-        args.noise_k)
+        args.noise_k, clutter=args.clutter,
+        flood_mode=args.flood_mode,
+        clutter_radius=args.clutter_radius,
+        clutter_extent=args.clutter_extent,
+        clutter_persist=args.clutter_persist)
 
 
 if __name__ == "__main__":

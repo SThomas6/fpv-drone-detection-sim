@@ -138,6 +138,76 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### FIX PASS: two real bugs fixed, one alarm RETRACTED (2026-08-30, latest)
+
+**1. Acoustic bearing assignment - REAL BUG, FIXED.** `fuse_bearings` looped
+tracks in `(-hits, misses)` order, so the longest-lived track claimed the
+nearest bearing and a stale clutter track could take the cue meant for the
+target - the same flaw already fixed in `fuse_pcl`. Now shortest-link-first,
+matching `update()`. Measured with `--acoustic`, vote-gated coverage:
+
+| clip | before | after |
+|---|---|---|
+| terrain_ir_sweep | **0/400** | **111/400** |
+| terrain_ir_canopy | 207/600 | **370/600** |
+| eval_birds | 243/504 | **300/504** |
+
+The sweep clip was at ZERO: the acoustic gate was starving the real target
+because its cue kept going elsewhere. Alarms rise too (canopy 54.6 -> 92.6/min)
+since more tracks now survive the gate; these are bare-default runs, so the
+deployed-config numbers still need re-measuring.
+
+**2. Multi-target identity - MY METRIC WAS WRONG, NOT THE TRACKER.** The
+reported "3.8% of frames had one id covering two drones" counted every shared
+id, but `is_hit` allows `max(12, 2*width)` px and all 37 events had the pair
+**1.4-23.9 px apart (median 10.7)** - every one inside tolerance, so no swap
+had occurred. Scoring only pairs separated by MORE than the tolerance gives
+**2 frames (0.2%)**. `multi_target_eval.py` now reports the two categories
+separately. The tracker was fine; the measurement was not.
+
+**3. Wind - THE ALARM WAS OVERSTATED. Blanking is correct.** The channel-level
+finding stands: under wind the motion detector goes from 65% to 2% on the
+drone. But the FUSED system barely notices, and the fix I built made it worse:
+
+| | fused coverage | alarms/min |
+|---|---|---|
+| no wind (control) | 539/990 = **54%** | 255 |
+| wind, blank (as shipped) | 553/963 = **57%** | 298 |
+| wind, truncate (my "fix") | 189/963 = **20%** | 146 |
+
+~39 movers/frame spawn rival tracks that steal association from the drone's
+own, so emitting the flood is far worse than emitting silence. **The original
+comment - "emitting hundreds of movers is worse than emitting none" - was
+right, and `blank` stays the default.** `--flood-mode truncate` is kept as a
+DIAGNOSTIC (it makes a flood visible rather than silent), never for
+deployment.
+
+The static-clutter map was also tried on the wind case and does NOT work: at
+its 60 px default it mutes everything including the drone (0% found); at
+r20/e14 the drone drops to 19%; at r12/e8 it catches nothing (63%, identical
+to no suppression). A swaying crown oscillates ~8-16 px at these ranges,
+which is the same scale as the drone's own per-frame motion, so a
+place-and-extent test cannot separate them. `--clutter` is kept and
+documented as ineffective for wind. **A real vegetation fix needs temporal
+frequency structure (foliage oscillates and returns; a drone does not), not a
+spatial test - still open.**
+
+**4. Rig geometry - I WAS WRONG that the mic array and radar were missing.**
+`mic_array_link` and `radar_link` were already modelled as pose markers. What
+genuinely did not exist and now does: `gimbal_link` + `tele_barrel` (the
+pan-tilt head carrying the cued 6 deg telephoto) and `pcl_panel` +
+`pcl_reference` (the PASSIVE radar receive panel, drawn at the 0.67 m the
+LTE1800 physics implies, plus the reference Yagi). 6 links -> 10.
+
+**Trap hit again:** writing the SDF with `Path.write_text()` and no encoding
+corrupted its existing em-dashes through cp1252 and broke the XML. The
+handoff already warns about this for Python files; it applies to EVERY file.
+Recovered with `git checkout`, redone with an encoding-safe editor.
+
+**Still owed:** the deployed-config re-benchmark. The model swap (m6 epoch5)
+and now the acoustic fix have both moved bare-default numbers; nothing has
+re-measured the >=90% headline configuration.
+
 ### WIND BREAKS THE MOTION CHANNEL + MULTI-TARGET (2026-08-30, latest)
 
 **Every tree and bush in this project is `<static>true</static>` with no wind

@@ -180,21 +180,28 @@ class CentroidTracker:
         Returns (matched_track_ids, unmatched_bearings) - the unmatched list
         is the cueing signal: something is out there that nothing is tracking.
         """
-        matched, used = {}, set()
-        for tr in sorted(self._tracks, key=lambda t: (-t.hits, t.misses)):
-            best, best_d = None, None
-            for i, (col, sig) in enumerate(bearings):
-                if i in used:
-                    continue
-                d = abs(col - float(tr.mean[0]))
-                if d <= gate_px and (best_d is None or d < best_d):
-                    best, best_d = i, d
-            if best is not None:
-                used.add(best)
-                col, sig = bearings[best]
-                tr.mean, tr.cov = self._update_bearing(
-                    tr.mean, tr.cov, float(col), float(max(sig, 1.0)) ** 2)
-                matched[tr.track_id] = float(sig)
+        # Shortest link first, matching fuse_pcl and update(). Iterating
+        # tracks in seniority order let the longest-lived track claim the
+        # nearest bearing, so a stale clutter track could take the cue meant
+        # for the real target - the same flaw that cost fuse_pcl 91 points of
+        # ranged coverage before it was found there.
+        pairs = sorted(
+            ((abs(col - float(tr.mean[0])), ti, bi)
+             for ti, tr in enumerate(self._tracks)
+             for bi, (col, _sig) in enumerate(bearings)
+             if abs(col - float(tr.mean[0])) <= gate_px),
+            key=lambda x: x[0])
+        matched, used, claimed = {}, set(), set()
+        for _, ti, bi in pairs:
+            if ti in claimed or bi in used:
+                continue
+            claimed.add(ti)
+            used.add(bi)
+            tr = self._tracks[ti]
+            col, sig = bearings[bi]
+            tr.mean, tr.cov = self._update_bearing(
+                tr.mean, tr.cov, float(col), float(max(sig, 1.0)) ** 2)
+            matched[tr.track_id] = float(sig)
         unmatched = [b for i, b in enumerate(bearings) if i not in used]
         return matched, unmatched
 
