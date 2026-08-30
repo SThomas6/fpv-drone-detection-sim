@@ -138,6 +138,62 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### ALL FOUR SCENARIOS >=90% AGAIN + WIND DIAGNOSED (2026-08-30, latest)
+
+`EXTRA="--pcl" bash scripts/benchmark.sh`, deployed per-scenario config,
+every sensor real:
+
+| scenario | coverage | alarms/min |
+|---|---|---|
+| long-range sweep | **377/400 = 94.3%** | 16.2 |
+| terrain + birds | **532/573 = 92.8%** | 66.6 |
+| canopy | **541/600 = 90.2%** | 205.0 |
+| sky | **485/504 = 96.2%** | 235.8 |
+
+**Birds recovered 89.7 -> 92.8% and it was never the model.** m6 epoch5 is
+calibrated to lower confidences than m5, so the same detections sat under
+the old `--rgb-conf 0.05`. Matching the threshold to the model (0.03) got it
+back, at 46 -> 66 alarms/min. When a model swap costs coverage, check the
+thresholds tuned around the OLD model before blaming the weights.
+
+**Terrain-masked targets: solved, by a sensor rather than an algorithm.**
+The ~550 m limit was an OPTICS limit, and passive radar does not care what
+the optical background is. On `range_tele` (the rock-background flight):
+
+| range | telephoto | PCL | either |
+|---|---|---|---|
+| 300-450 m | 88% | 78% | **97%** |
+| 550-700 m | 47% | 90% | **95%** |
+| 700-850 m | **0%** | 90% | **90%** |
+| 1000-1150 m | **0%** | 94% | **94%** |
+| 1300-1500 m | **0%** | 81% | **81%** |
+
+A terrain-hugging drone is no longer the weak case: 81-97% at every range to
+1.5 km, against 0% past 700 m on optics alone.
+
+**WIND: still not fixed, but now DIAGNOSED, which is the useful part.** A
+sixth approach - per-cell periodicity - was built and measured. The
+discriminator itself works: on synthetic series a crown scores 6.8
+peakiness at a recovered 1.22 Hz, a traversing drone scores 0.0, noise 2.1.
+On the real clip it suppresses nothing (11,012 false/min, same as none).
+
+The reason is the thing every place-based approach has been failing on, and
+it is now measured rather than guessed: over 60 frames the wind flood puts
+detections in **88 distinct 40 px cells, the median cell fires in only 13 of
+60 frames, and up to 7 different movers land in one cell in a single
+frame.** So a cell does not contain one oscillator whose trajectory can be
+analysed - it contains a transient jumble of different blobs. Extent,
+straightness, persistence and periodicity all assume a cell has a
+trajectory. It does not.
+
+**The specific next step, not yet tried:** associate the movers into clutter
+TRACKS with a second lightweight tracker, then test periodicity per track
+rather than per place. That is the first approach that would actually have a
+trajectory to measure. Until then `blank` remains correct and remains the
+default, and `--vegetation` stays off by default (it costs nothing in calm
+air and removes ~45% of the flood, but 6,500 false movers/min still halves
+fused coverage).
+
 ### ACTIVE RADAR IS NOW REAL; WIND IS NOT FIXED (2026-08-30, latest)
 
 **ACTIVE RADAR - the last asserted number is now measured.**

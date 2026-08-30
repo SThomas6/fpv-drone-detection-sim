@@ -90,7 +90,8 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                   flood_mode="blank", dt=0.2,
                   clutter_radius=20.0, clutter_extent=14.0,
                   clutter_persist=10, vegetation=False,
-                  veg_straightness=0.35, veg_cell=24.0):
+                  veg_straightness=0.55, veg_cell=40.0,
+                  veg_peakiness=3.0):
     """Yield per-frame candidate lists from an iterable of RGB arrays.
 
     scene_motion: register the background model to whole-frame motion before
@@ -117,7 +118,8 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                                     min_persist=clutter_persist)
             if clutter else None)
     veg = (VegetationSuppressor(cell_px=veg_cell,
-                                max_straightness=veg_straightness)
+                                max_straightness=veg_straightness,
+                                min_peakiness=veg_peakiness)
            if vegetation else None)
     t_now = 0.0
     window: deque = deque(maxlen=BG_WINDOW)
@@ -289,7 +291,8 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
         flood_mode: str = "blank",
         clutter_radius: float = 20.0, clutter_extent: float = 14.0,
         clutter_persist: int = 10, vegetation: bool = False,
-        veg_straightness: float = 0.35, veg_cell: float = 24.0):
+        veg_straightness: float = 0.55, veg_cell: float = 40.0,
+        veg_peakiness: float = 3.0):
     frames_dir = clip / "frames"
     files = sorted(frames_dir.glob("*.png"))
     out = clip / "detections_motion.jsonl"
@@ -310,7 +313,8 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
                                                 clutter_persist=clutter_persist,
                                                 vegetation=vegetation,
                                                 veg_straightness=veg_straightness,
-                                                veg_cell=veg_cell)):
+                                                veg_cell=veg_cell,
+                                                veg_peakiness=veg_peakiness)):
             fh.write(json.dumps({"frame": f.name, "detections": dets}) + "\n")
             n += 1
             if n % 100 == 0:
@@ -340,7 +344,10 @@ def main():
                          "where --clutter does not")
     ap.add_argument("--veg-straightness", type=float, default=0.35,
                     help="net/path below which a cell is called vegetation")
-    ap.add_argument("--veg-cell", type=float, default=24.0)
+    ap.add_argument("--veg-cell", type=float, default=40.0)
+    ap.add_argument("--veg-peakiness", type=float, default=3.0,
+                    help="spectral peakiness a cell must show to count as "
+                         "wind. 0 disables the frequency test")
     ap.add_argument("--clutter-radius", type=float, default=20.0)
     ap.add_argument("--clutter-extent", type=float, default=14.0)
     ap.add_argument("--clutter-persist", type=int, default=10)
@@ -369,7 +376,8 @@ def main():
         clutter_persist=args.clutter_persist,
         vegetation=args.vegetation,
         veg_straightness=args.veg_straightness,
-        veg_cell=args.veg_cell)
+        veg_cell=args.veg_cell,
+        veg_peakiness=args.veg_peakiness)
 
 
 if __name__ == "__main__":
