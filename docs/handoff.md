@@ -138,6 +138,82 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### EVERYTHING WIRED + BENCHMARK RESTORED (2026-08-30, latest)
+
+All sensors now feed fusion, and every one of them is a real detector on
+real data. `scripts/benchmark.sh` runs the deployed per-scenario config from
+this file, so a change can never again be judged on bare defaults.
+
+**Deployed configuration = cameras + REAL passive radar. Acoustic is a
+separate low-alarm MODE, not part of it.**
+
+| scenario | coverage | alarms/min | was (docs) |
+|---|---|---|---|
+| long-range sweep | **377/400 = 94.3%** | 16.2 | 94.25% |
+| terrain + birds | 514/573 = **89.7%** | 46.2 | 92.3% |
+| canopy | **541/600 = 90.2%** | 205.0 | 90.2% |
+| sky | **485/504 = 96.2%** | 235.8 | 93.1% |
+
+Sweep and canopy restored exactly, sky up 3.1 points, birds down 2.6 (the
+m6 epoch5 model swap). Real PCL costs no coverage and adds a measured RANGE
+to every track - the thing no camera supplies.
+
+**The acoustic gate must NOT be in the deployed config any more, and that is
+a direct consequence of making it real.** As a model it was optimistic and
+gating on it was nearly free. Measured, the detector honestly misses the
+drone at range, so `--acoustic` now cuts coverage hard while cutting alarms
+hard too:
+
+| scenario | cameras+PCL | + acoustic gate |
+|---|---|---|
+| sweep | 94.3% @ 16.2/min | **55.3%** @ **5.1**/min |
+| canopy | 90.2% @ 205/min | **71.0%** @ **54.4**/min |
+| sky | 96.2% @ 236/min | 94.2% @ **40.5**/min |
+| birds | 89.7% @ 46.2/min | **90.1%** @ **15.6**/min |
+
+So it is a 4-6x alarm reduction bought with coverage - a real operating
+choice, not a free win, and the honest form of the "acoustic as soft cue,
+not hard gate" item that has been in the queue for days.
+
+**Real passive radar, per clip** (`scripts/run_fers_track.sh` then
+`radar/caf.py --track`; 90 dwells each, FERS I/Q, five receivers at
+lambda/2, one common reference):
+
+| clip | dwells detected | range error | bearing error |
+|---|---|---|---|
+| eval_birds | 100% | 23.6 m | 14.5 deg |
+| terrain_ir_canopy | 90.0% | 25.4 m | 15.7 deg |
+| terrain_ir_birds | 83.3% | 21.5 m | 23.7 deg |
+| terrain_ir_sweep | 83.3% | 21.7 m | 4.6 deg |
+
+**Two PCL bugs, both found by a number that looked wrong.**
+
+1. *The bearing read the illuminator, not the drone* - a constant -112.3 deg
+   phase step across the array, which is exactly sin(141 deg), the
+   transmitter's azimuth. Cause: each surveillance element was correlated
+   against ITS OWN reference, so the reference's phase gradient (the
+   transmitter's direction) subtracted from the target's. A real PCL has ONE
+   reference antenna and a separate surveillance array. Fixing it took
+   bearing error from 36.4 to 4.6 deg AND range error from 71.5 to 21.7 m.
+   Pushing cancellation from 64 to 512 taps changed nothing, which is what
+   proved it was not residual direct path.
+2. *Element spacing wider than lambda/2 aliases.* The first array used
+   0.335 m at lambda = 0.5 m. Five elements at 0.25 m are unambiguous across
+   the forward hemisphere.
+
+**base_gate_px REVERTED to 30.** It was raised to 60 for the 150 kph
+requirement on the strength of a clutter-track count. The deployed benchmark
+disagrees: 60 costs 3-4 points of coverage in every scenario (canopy 90.0 ->
+85.7%, birds 89.7 -> 86.6%, sky 96.0 -> 94.8%) and the sweep is unchanged.
+The crossing test that motivated it was detection-limited, not
+association-limited - at gate 30 the tracker still holds a 150 kph target
+98% of the time GIVEN a detection. **Second time this session a change
+justified on a sub-metric lost on the real one; judge on benchmark.sh.**
+
+**Model streams preserved** as `detections_acoustic_model.jsonl` and
+`detections_pcl_model.jsonl` on every benchmark clip, so the
+model-vs-measured comparison stays reproducible.
+
 ### REAL SENSORS: pyroomacoustics + FERS (2026-08-30, latest)
 
 The user pushed back on "no simulator does mics or radar". They were right

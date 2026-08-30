@@ -1,0 +1,25 @@
+######## FERS track: eval_birds ########
+90 dwells selected
+reference captured
+  20 dwells
+  40 dwells
+  60 dwells
+  80 dwells
+FERSTRACKDONE 90 dwells -> /mnt/c/Users/sctho/Projects/drone sim/fpv-drone-detection-sim/radar/fers_track/eval_birds
+######## FERS track: terrain_ir_canopy ########
+90 dwells selected
+reference captured
+  20 dwells
+  40 dwells
+  60 dwells
+  80 dwells
+FERSTRACKDONE 90 dwells -> /mnt/c/Users/sctho/Projects/drone sim/fpv-drone-detection-sim/radar/fers_track/terrain_ir_canopy
+######## FERS track: terrain_ir_birds ########
+90 dwells selected
+reference captured
+  20 dwells
+  40 dwells
+  60 dwells
+  80 dwells
+FERSTRACKDONE 90 dwells -> /mnt/c/Users/sctho/Projects/drone sim/fpv-drone-detection-sim/radar/fers_track/terrain_ir_birds
+FERSALLDONE

@@ -77,18 +77,21 @@ class CentroidTracker:
         max_age: frames a track may coast without a detection before deletion.
         min_hits: detections required before a track is reported as confirmed.
         base_gate_px: minimum association radius, in pixels.
-            Raised 30 -> 60 for the 150 kph requirement: a
-            crossing target at 500 m through the 6 deg lens
-            moves 68 px/frame at 15 Hz, and at 30 the gate held
-            only 40-50% above 15 px/frame. Widening it also CUT
-            clutter tracks (canopy 13 -> 9/min, sky 11 -> 7/min)
-            because an existing track absorbs a detection
-            instead of a rival track spawning on it.
+            Raised to 60 at one point for the 150 kph requirement
+            and then REVERTED, because the deployed benchmark
+            disagreed with the sub-metric that motivated it: 60
+            did cut clutter tracks, but it cost 3-4 points of
+            drone coverage in every scenario (canopy 90.0 ->
+            85.7%, birds 89.7 -> 86.6%, sky 96.0 -> 94.8%) while
+            the sweep was unchanged. The crossing test that
+            suggested 60 was itself detection-limited, not
+            association-limited: given a detection, the tracker
+            holds a 150 kph target 98% of the time at gate 30.
         accel_sigma: process noise, as pixels/second^2 of expected manoeuvre.
     """
 
     def __init__(self, max_age: int = 15, min_hits: int = 2,
-                 base_gate_px: float = 60.0, accel_sigma: float = 250.0,
+                 base_gate_px: float = 30.0, accel_sigma: float = 250.0,
                  class_consistent: bool = False,
                  suppress_spawn_near_coasting: bool = False,
                  max_size_gate_px: float = 250.0):

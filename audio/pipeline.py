@@ -346,6 +346,11 @@ def main():
                          "so 5.5 sits between them")
     ap.add_argument("--seed", type=int, default=3)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--out-name", default="acoustic_real",
+                    help="writes detections_<out-name>.jsonl. Pass "
+                         "'acoustic' to REPLACE the modelled stream that "
+                         "fusion reads - back the model up first, it is what "
+                         "every earlier benchmark used")
     ap.add_argument("--engine", default="pra", choices=["pra", "builtin"],
                     help="pra = pyroomacoustics free-field propagation + its "
                          "MUSIC/SRP direction finder (published, tested); "
@@ -422,7 +427,7 @@ def main():
         if (k + 1) % 100 == 0:
             print(f"  {k+1}/{len(recs)} frames", flush=True)
 
-    dst = clip / "detections_acoustic_real.jsonl"
+    dst = clip / f"detections_{args.out_name}.jsonl"
     with open(dst, "w") as fh:
         for r in out:
             fh.write(json.dumps(r) + "\n")

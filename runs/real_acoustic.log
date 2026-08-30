@@ -1,0 +1,43 @@
+######## eval_birds ########
+  100/600 frames
+  200/600 frames
+  300/600 frames
+  400/600 frames
+  500/600 frames
+  600/600 frames
+
+eval_birds [breeze]: heard on 503/600 frames = 83.8%
+bearing error: median 2.23 deg, p90 5.62 deg  (MEASURED from the waveform, not assumed)
+wrote data\clips\eval_birds\detections_acoustic.jsonl
+######## terrain_ir_sweep ########
+  100/400 frames
+  200/400 frames
+  300/400 frames
+  400/400 frames
+
+terrain_ir_sweep [breeze]: heard on 217/400 frames = 54.2%
+bearing error: median 2.55 deg, p90 8.29 deg  (MEASURED from the waveform, not assumed)
+wrote data\clips\terrain_ir_sweep\detections_acoustic.jsonl
+######## terrain_ir_canopy ########
+  100/600 frames
+  200/600 frames
+  300/600 frames
+  400/600 frames
+  500/600 frames
+  600/600 frames
+
+terrain_ir_canopy [breeze]: heard on 492/600 frames = 82.0%
+bearing error: median 2.18 deg, p90 5.85 deg  (MEASURED from the waveform, not assumed)
+wrote data\clips\terrain_ir_canopy\detections_acoustic.jsonl
+######## terrain_ir_birds ########
+  100/600 frames
+  200/600 frames
+  300/600 frames
+  400/600 frames
+  500/600 frames
+  600/600 frames
+
+terrain_ir_birds [breeze]: heard on 496/600 frames = 82.7%
+bearing error: median 2.15 deg, p90 5.63 deg  (MEASURED from the waveform, not assumed)
+wrote data\clips\terrain_ir_birds\detections_acoustic.jsonl
+REALACDONE

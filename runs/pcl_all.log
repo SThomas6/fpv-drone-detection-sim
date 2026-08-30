@@ -1,0 +1,13 @@
+#### terrain_ir_birds ####
+
+terrain_ir_birds: 75/90 dwells detected = 83.3%  (real I/Q, real CAF)
+range error  : median   21.5 m
+bearing error: median  23.72 deg
+wrote data\clips\terrain_ir_birds\detections_pcl_real.jsonl
+#### terrain_ir_sweep ####
+
+terrain_ir_sweep: 75/90 dwells detected = 83.3%  (real I/Q, real CAF)
+range error  : median   21.7 m
+bearing error: median   4.60 deg
+wrote data\clips\terrain_ir_sweep\detections_pcl_real.jsonl
+PCLALLDONE
