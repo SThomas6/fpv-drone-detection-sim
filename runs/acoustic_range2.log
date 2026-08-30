@@ -1,0 +1,31 @@
+  100/2600 frames
+  200/2600 frames
+  300/2600 frames
+  400/2600 frames
+  500/2600 frames
+  600/2600 frames
+  700/2600 frames
+  800/2600 frames
+  900/2600 frames
+  1000/2600 frames
+  1100/2600 frames
+  1200/2600 frames
+  1300/2600 frames
+  1400/2600 frames
+  1500/2600 frames
+  1600/2600 frames
+  1700/2600 frames
+  1800/2600 frames
+  1900/2600 frames
+  2000/2600 frames
+  2100/2600 frames
+  2200/2600 frames
+  2300/2600 frames
+  2400/2600 frames
+  2500/2600 frames
+  2600/2600 frames
+
+range_1km_hr [breeze]: heard on 990/2600 frames = 38.1%
+bearing error: median 21.06 deg, p90 138.30 deg  (MEASURED from the waveform, not assumed)
+wrote data\clips\range_1km_hr\detections_acoustic_real.jsonl
+ACDONE

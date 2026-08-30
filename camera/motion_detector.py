@@ -30,6 +30,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from camera.clutter_map import StaticClutterSuppressor  # noqa: E402
+from camera.vegetation import VegetationSuppressor  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from camera.ir_detector import _blobs  # noqa: E402
@@ -88,7 +89,8 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                   fast_mover="auto", noise_k=6.0, clutter=False,
                   flood_mode="blank", dt=0.2,
                   clutter_radius=20.0, clutter_extent=14.0,
-                  clutter_persist=10):
+                  clutter_persist=10, vegetation=False,
+                  veg_straightness=0.35, veg_cell=24.0):
     """Yield per-frame candidate lists from an iterable of RGB arrays.
 
     scene_motion: register the background model to whole-frame motion before
@@ -114,6 +116,9 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                                     max_extent=clutter_extent,
                                     min_persist=clutter_persist)
             if clutter else None)
+    veg = (VegetationSuppressor(cell_px=veg_cell,
+                                max_straightness=veg_straightness)
+           if vegetation else None)
     t_now = 0.0
     window: deque = deque(maxlen=BG_WINDOW)
     prev = None
@@ -246,6 +251,12 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
         if supp is not None:
             kept, _ = supp.step([_Blob(d) for d in dets], t_now)
             dets = [b.d for b in kept]
+        # Wind: a swaying crown accumulates path and returns; a drone
+        # travels. Runs BEFORE the flood cap so foliage is removed rather
+        # than crowding the drone out of the budget.
+        if veg is not None:
+            kept, _ = veg.step([_Blob(d) for d in dets], t_now)
+            dets = [b.d for b in kept]
 
         if len(dets) > flood_limit:
             if flood_mode == "blank":
@@ -277,7 +288,8 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
         noise_k: float = 6.0, clutter: bool = False,
         flood_mode: str = "blank",
         clutter_radius: float = 20.0, clutter_extent: float = 14.0,
-        clutter_persist: int = 10):
+        clutter_persist: int = 10, vegetation: bool = False,
+        veg_straightness: float = 0.35, veg_cell: float = 24.0):
     frames_dir = clip / "frames"
     files = sorted(frames_dir.glob("*.png"))
     out = clip / "detections_motion.jsonl"
@@ -295,7 +307,10 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
                                                 flood_mode=flood_mode,
                                                 clutter_radius=clutter_radius,
                                                 clutter_extent=clutter_extent,
-                                                clutter_persist=clutter_persist)):
+                                                clutter_persist=clutter_persist,
+                                                vegetation=vegetation,
+                                                veg_straightness=veg_straightness,
+                                                veg_cell=veg_cell)):
             fh.write(json.dumps({"frame": f.name, "detections": dets}) + "\n")
             n += 1
             if n % 100 == 0:
@@ -318,6 +333,14 @@ def main():
                          "never travel - swaying foliage. Measured: 40 wind-"
                          "driven crowns produce ~77 movers/frame and blank "
                          "the whole frame without this")
+    ap.add_argument("--vegetation", action="store_true",
+                    help="suppress movers that accumulate PATH but no NET "
+                         "displacement - wind-driven foliage. Scale-free, "
+                         "unlike the extent test, which is why it works "
+                         "where --clutter does not")
+    ap.add_argument("--veg-straightness", type=float, default=0.35,
+                    help="net/path below which a cell is called vegetation")
+    ap.add_argument("--veg-cell", type=float, default=24.0)
     ap.add_argument("--clutter-radius", type=float, default=20.0)
     ap.add_argument("--clutter-extent", type=float, default=14.0)
     ap.add_argument("--clutter-persist", type=int, default=10)
@@ -343,7 +366,10 @@ def main():
         flood_mode=args.flood_mode,
         clutter_radius=args.clutter_radius,
         clutter_extent=args.clutter_extent,
-        clutter_persist=args.clutter_persist)
+        clutter_persist=args.clutter_persist,
+        vegetation=args.vegetation,
+        veg_straightness=args.veg_straightness,
+        veg_cell=args.veg_cell)
 
 
 if __name__ == "__main__":

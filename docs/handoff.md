@@ -138,6 +138,86 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### REAL SENSORS: pyroomacoustics + FERS (2026-08-30, latest)
+
+The user pushed back on "no simulator does mics or radar". They were right
+and I was wrong. Two exist, both are now integrated, and both replace an
+ASSERTED sensor model with a MEASURED one.
+
+**ACOUSTIC - pyroomacoustics (`audio/pipeline.py`).** Free-field propagation
+via `pra.AnechoicRoom` and direction finding via its NormMUSIC, on a
+waveform synthesised from the sim's own trajectory: blade-pass harmonic comb
+from 4 rotors at slightly different RPM, Doppler, 1/r spreading,
+frequency-dependent air absorption, and coloured wind/rain noise. Everything
+after synthesis is real DSP. The library measurably beats the hand-rolled
+GCC-PHAT path (kept as `--engine builtin` precisely so that claim could be
+checked): **0.61 deg median bearing error against 2.57 deg.**
+
+Measured bearing error by environment (terrain_ir_sweep, 160 frames):
+still 0.56 deg, breeze 2.61, traffic 3.14, light_rain 4.27, heavy_rain
+10.76, windy 12.96. These are earned from the waveform, not typed in.
+
+Range, on range_1km_hr, and this is the honest part:
+
+| range | fires | median bearing err | verdict |
+|---|---|---|---|
+| 0-60 m | 92% | 1.2 deg | REAL |
+| 60-120 m | 72% | 3.1 deg | REAL |
+| 120-200 m | 37% | 8.0 deg | REAL |
+| 200-300 m | 30% | 15.8 deg | REAL |
+| 300-450 m | 28% | 39.7 deg | marginal |
+| 450 m+ | ~32% | 66-70 deg | **NOISE** |
+
+The ~30% floor past 300 m is the false-alarm rate, not detection - the
+bearing is random there. **Acoustic is genuinely good to ~300 m**, which
+matches the published literature and is the first time this project has
+earned that number rather than assumed it.
+
+**Trap:** the first comb detector reported hearing the drone 100% of the way
+to 1100 m. Its score took the max over +-2 bins at each of 6 harmonics - a
+max-of-30 statistic - and compared it to the MEDIAN spectral floor, so pure
+noise scored ~23 dB and a 9 dB threshold could never fail. Now normalised by
+the median comb sum over all candidate f0, which carries the same bias in
+both terms: measured, pure noise scores 2.7 dB and a clear comb 12.9 dB.
+**A detector that never says no is not a detector.**
+
+**PASSIVE RADAR - FERS (`scripts/build_fers.sh`, `scripts/run_fers_pcl.sh`,
+`radar/caf.py`).** FERS (UCT Radar Remote Sensing Group, GPL) simulates
+radar at the I/Q sample level and supports bistatic geometry, which is what
+passive radar is. Built via vcpkg in WSL. Two runs per geometry give the two
+real channels: `reference` (Tx + Rx, no target = the direct path) and
+`surveillance` (same scene with the drone). Then `radar/caf.py` does the
+actual chain - least-squares direct-signal cancellation, cross-ambiguity over
+delay and Doppler, CFAR against the surface's own noise.
+
+First end-to-end result, target at (600, 40, 90) with a 0.01 m^2 RCS and the
+illuminator 19.2 km away:
+
+    direct-signal cancellation   86.9 dB   (literature says 70-90)
+    CAF peak                     bistatic range 1050 m, Doppler +150 Hz
+    peak / median                46.3 dB -> DETECTION
+
+**The true bistatic range for that geometry is 1049 m.** The processing
+recovered it to within a metre from raw I/Q, having first dug the echo out
+from under a direct path ~90 dB stronger. That is a real passive radar
+working, not a model of one.
+
+Build traps, all now in the script: vcpkg must be cloned FULL (it resolves
+versions by `git show` of a baseline commit, which a shallow clone lacks);
+build in /opt, not /mnt/c, or vcpkg's tens of thousands of small file
+operations crawl; and WSL's /tmp is cleared BETWEEN `wsl` invocations, so
+anything that must survive goes in the repo or /opt.
+
+**WIND, revisited.** `camera/vegetation.py` adds the discriminator that the
+place-and-extent test could not provide: a swaying crown accumulates PATH but
+no NET displacement, so `straightness = |last-first| / path` is ~0 for
+foliage and ~1 for a drone, and is scale-free. Measured: it cuts the wind
+flood from 11,021 to 6,119 false movers/min at unchanged drone detection
+(62%), and **costs exactly nothing in calm air** (identical to as-shipped).
+But end-to-end it still does not beat blanking - fused coverage 30% against
+57% - so `blank` remains the default and this is an improvement to the
+channel, not a change to the system. Honest state: better, not solved.
+
 ### FIX PASS: two real bugs fixed, one alarm RETRACTED (2026-08-30, latest)
 
 **1. Acoustic bearing assignment - REAL BUG, FIXED.** `fuse_bearings` looped
