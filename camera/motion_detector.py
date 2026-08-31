@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from camera.clutter_map import StaticClutterSuppressor  # noqa: E402
 from camera.vegetation import VegetationSuppressor  # noqa: E402
+from camera.clutter_tracks import ClutterTrackSuppressor  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from camera.ir_detector import _blobs  # noqa: E402
@@ -91,7 +92,7 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                   clutter_radius=20.0, clutter_extent=14.0,
                   clutter_persist=10, vegetation=False,
                   veg_straightness=0.55, veg_cell=40.0,
-                  veg_peakiness=3.0):
+                  veg_peakiness=3.0, veg_mode="tracks"):
     """Yield per-frame candidate lists from an iterable of RGB arrays.
 
     scene_motion: register the background model to whole-frame motion before
@@ -117,10 +118,16 @@ def detect_stream(frames, thresh=DIFF_THRESH, rng=None,
                                     max_extent=clutter_extent,
                                     min_persist=clutter_persist)
             if clutter else None)
-    veg = (VegetationSuppressor(cell_px=veg_cell,
-                                max_straightness=veg_straightness,
-                                min_peakiness=veg_peakiness)
-           if vegetation else None)
+    # "tracks" gives the clutter a trajectory before asking about it, which
+    # is the whole reason the place-based versions failed.
+    if not vegetation:
+        veg = None
+    elif veg_mode == "tracks":
+        veg = ClutterTrackSuppressor(min_peakiness=veg_peakiness)
+    else:
+        veg = VegetationSuppressor(cell_px=veg_cell,
+                                   max_straightness=veg_straightness,
+                                   min_peakiness=veg_peakiness)
     t_now = 0.0
     window: deque = deque(maxlen=BG_WINDOW)
     prev = None
@@ -292,7 +299,7 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
         clutter_radius: float = 20.0, clutter_extent: float = 14.0,
         clutter_persist: int = 10, vegetation: bool = False,
         veg_straightness: float = 0.55, veg_cell: float = 40.0,
-        veg_peakiness: float = 3.0):
+        veg_peakiness: float = 3.0, veg_mode: str = "tracks"):
     frames_dir = clip / "frames"
     files = sorted(frames_dir.glob("*.png"))
     out = clip / "detections_motion.jsonl"
@@ -314,7 +321,8 @@ def run(clip: Path, thresh: float, scene_motion: bool = True,
                                                 vegetation=vegetation,
                                                 veg_straightness=veg_straightness,
                                                 veg_cell=veg_cell,
-                                                veg_peakiness=veg_peakiness)):
+                                                veg_peakiness=veg_peakiness,
+                                                veg_mode=veg_mode)):
             fh.write(json.dumps({"frame": f.name, "detections": dets}) + "\n")
             n += 1
             if n % 100 == 0:
@@ -345,7 +353,13 @@ def main():
     ap.add_argument("--veg-straightness", type=float, default=0.35,
                     help="net/path below which a cell is called vegetation")
     ap.add_argument("--veg-cell", type=float, default=40.0)
-    ap.add_argument("--veg-peakiness", type=float, default=3.0,
+    ap.add_argument("--veg-mode", default="tracks",
+                    choices=["tracks", "cells"],
+                    help="tracks = associate movers then test each track "
+                         "(the only version that has a trajectory to test); "
+                         "cells = the place-based version, kept because it "
+                         "is what the six failed attempts looked like")
+    ap.add_argument("--veg-peakiness", type=float, default=2.6,
                     help="spectral peakiness a cell must show to count as "
                          "wind. 0 disables the frequency test")
     ap.add_argument("--clutter-radius", type=float, default=20.0)
@@ -377,7 +391,7 @@ def main():
         vegetation=args.vegetation,
         veg_straightness=args.veg_straightness,
         veg_cell=args.veg_cell,
-        veg_peakiness=args.veg_peakiness)
+        veg_peakiness=args.veg_peakiness, veg_mode=args.veg_mode)
 
 
 if __name__ == "__main__":

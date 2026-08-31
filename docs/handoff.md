@@ -138,6 +138,56 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### WIND: SEVEN APPROACHES, AND NOW A PROOF IT CANNOT WORK (2026-08-31)
+
+The seventh approach was the one the diagnosis pointed at:
+`camera/clutter_tracks.py` associates movers into clutter TRACKS with a
+tight-gate, no-coasting tracker, so each has a real trajectory, and then
+tests straightness and periodicity per track. It suppresses nothing
+(11,000 false/min, the same as none).
+
+Measuring why produced the answer that ends this line of work:
+
+  * **Median clutter track is 5 points long.** Only 30% of wind detections
+    sit on a track long enough (>=10 points) to test at all. They are not
+    oscillating objects - they are transient flickers where foliage
+    momentarily crosses the background-difference threshold.
+  * **The survivors are not separable by any per-detection property.**
+    Measured on `sway_canopy`: drone movers have area p50 5 px, wind clutter
+    p50 7 px - the CLUTTER IS LARGER, so an area gate is worse than useless.
+    Confidence p50 is 0.543 against 0.412, and at conf>=0.35 a gate keeps
+    88.9% of drone movers and 66.2% of clutter, a ratio of 1.34.
+  * **The imbalance is 52:1** - 36,701 clutter movers against 700 drone
+    movers in one clip. Even a filter that kept every drone mover and only
+    20% of clutter would still leave 7,340 false against 700 real.
+
+So the information needed to separate them is not present in the motion
+channel's own output. That is not a tuning failure, and it is why `blank` is
+correct: the channel recognises it has lost the scene and says nothing,
+which the fused system absorbs (57% coverage under wind against 54% with
+none, because camera and thermal carry the drone).
+
+**Seven approaches, all measured: fixed threshold, truncation, clutter map
+(x3 tunings), per-cell straightness, per-cell persistence, per-cell
+periodicity, per-track periodicity. This is now a closed question at the
+motion-channel level.** If it is ever reopened, the lever is upstream - a
+detector that does not emit foliage flickers in the first place (higher
+spatial-frequency structure, or stereo/depth) - not another filter on the
+output.
+
+### CAR-MOUNTED RIG DESIGNED (`scripts/gen_rig_showcase.py`, `rig_diagram.py`)
+
+`simulator/worlds/rig_showcase.sdf` is the rig on a vehicle roof, and
+`scripts/rig_diagram.py` draws it labelled and dimensioned (the Gazebo
+render shows the shape but not the reasons - grey on grey, no labels).
+Renders in `docs/rig/`.
+
+Sized from this project's own measurements rather than by eye:
+sensor head 2.26 m above ground / 0.71 m above the roof bars, mounted on
+0.9 m roof-bar spacing; PCL array 5 elements at lambda/2 = 0.25 m for a
+1.0 m aperture; reference Yagi SEPARATE from the array; mic array 0.30 m
+square; pan-tilt head carrying wide + 6 deg telephoto + thermal.
+
 ### ALL FOUR SCENARIOS >=90% AGAIN + WIND DIAGNOSED (2026-08-30, latest)
 
 `EXTRA="--pcl" bash scripts/benchmark.sh`, deployed per-scenario config,
