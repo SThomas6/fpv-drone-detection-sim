@@ -23,13 +23,17 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 FERS=/opt/fers-build/FERS/build/packages/fers-cli/fers-cli
 DTD=$(find /opt/fers-build/FERS -name fers-xml.dtd | head -1)
 CLIP=${CLIP:-data/clips/terrain_ir_sweep}
-OUT="$REPO/radar/fers_track/$(basename "$CLIP")"
+OUT="$REPO/radar/fers_track/$(basename "$CLIP")${OUT_SUFFIX:-}"
 WORK=/opt/fers-track
 DWELLS=${DWELLS:-90}
 DUR=${DUR:-0.02}
 RATE=${RATE:-2.0e6}
 RCS=${RCS:-0.01}
 TX_X=${TX_X:--15000}; TX_Y=${TX_Y:-12000}
+# Rotate the receive array about its centre: the vehicle parked
+# facing a different way. A physically aimed reference antenna
+# would now point at nothing; a beamformer just rescans.
+ARRAY_YAW=${ARRAY_YAW:-0}
 mkdir -p "$WORK" "$OUT"; cd "$WORK"; cp "$DTD" .
 
 # Pick the dwell moments and the target state at each, from the real labels.
@@ -66,10 +70,12 @@ tgt = "" if not inc else f'''
       <azimuthrate>0</azimuthrate><elevationrate>0</elevationrate></fixedrotation>
     <target name="Drone"><rcs type="isotropic"><value>$RCS</value></rcs></target>
   </platform>'''
+import math as _m
+_yaw = _m.radians(float("$ARRAY_YAW"))
 rx = "".join(f'''
   <platform name="Rx{k}">
     <motionpath interpolation="static"><positionwaypoint>
-      <x>0.0</x><y>{off}</y><altitude>2.5</altitude><time>0.0</time></positionwaypoint></motionpath>
+      <x>{-off*_m.sin(_yaw):.4f}</x><y>{off*_m.cos(_yaw):.4f}</y><altitude>2.5</altitude><time>0.0</time></positionwaypoint></motionpath>
     <fixedrotation><startazimuth>0</startazimuth><startelevation>0</startelevation>
       <azimuthrate>0</azimuthrate><elevationrate>0</elevationrate></fixedrotation>
     <receiver name="RxA{k}" antenna="Iso" timing="Clk" nodirect="false">

@@ -1,0 +1,13 @@
+######## array yaw 40 deg ########
+40 dwells selected
+reference captured
+  20 dwells
+  40 dwells
+FERSTRACKDONE 40 dwells -> /mnt/c/Users/sctho/Projects/drone sim/fpv-drone-detection-sim/radar/fers_track/terrain_ir_sweep_yaw40
+######## array yaw 70 deg ########
+40 dwells selected
+reference captured
+  20 dwells
+  40 dwells
+FERSTRACKDONE 40 dwells -> /mnt/c/Users/sctho/Projects/drone sim/fpv-drone-detection-sim/radar/fers_track/terrain_ir_sweep_yaw70
+PARKEDDONE

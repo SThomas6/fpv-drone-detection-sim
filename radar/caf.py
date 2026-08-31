@@ -35,6 +35,12 @@ from pathlib import Path
 
 import numpy as np
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from radar.beamform import (find_illuminator, null_illuminator,
+                            reference_beam)
+
 C = 3.0e8
 
 
@@ -77,6 +83,42 @@ def caf(surv: np.ndarray, ref: np.ndarray, fs: float,
         seg = cc[n - 1:n + max_delay]
         out[i, :len(seg)] = seg
     return out
+
+
+def caf_fast(surv: np.ndarray, ref: np.ndarray, fs: float,
+             max_delay: int, n_dopp: int = 32, seg: int = 2000):
+    """Segmented cross-ambiguity: the whole surface in ONE pass.
+
+    The direct form recomputes a full-length correlation for every Doppler
+    hypothesis - 81 bins x 5 channels x a 160k-point FFT - and measured
+    2.77 SECONDS to process a 20 ms dwell, which is 138x slower than real
+    time and unusable on any hardware.
+
+    The standard fix exploits the fact that Doppler is just a slow phase
+    ramp: correlate SEGMENTS at zero Doppler, stack them, and FFT ACROSS the
+    segments. Doppler falls out of the second transform instead of being
+    searched. Cost drops from O(n_doppler * n log n) to O(n log n).
+
+    The trade is resolution: segment length sets the unambiguous Doppler
+    span (fs/seg) and the dwell sets the resolution (1/T), so a 2000-sample
+    segment at 2 MHz spans +-500 Hz - which comfortably covers the +-400 Hz
+    a drone produces at 600 MHz.
+    """
+    n = (len(surv) // seg) * seg
+    m = n // seg
+    if m < 4:
+        return None, None
+    S = surv[:n].reshape(m, seg)
+    R = ref[:n].reshape(m, seg)
+    nfft = 1
+    while nfft < 2 * seg:
+        nfft *= 2
+    cc = np.fft.ifft(np.fft.fft(S, nfft, axis=1)
+                     * np.conj(np.fft.fft(R, nfft, axis=1)), axis=1)
+    cc = cc[:, :max_delay + 1]                    # (segments, delay)
+    surface = np.fft.fftshift(np.fft.fft(cc, n_dopp, axis=0), axes=0)
+    dopp = np.fft.fftshift(np.fft.fftfreq(n_dopp, seg / fs))
+    return surface, dopp
 
 
 def bearing_from_phase(caf_cells, spacing_m, lam):
@@ -168,6 +210,56 @@ def run_track(args):
         # decides where the target is, and the other two are sampled at that
         # same cell. Reading a cell before deciding which cell it is was the
         # first version's bug, and numpy reported it only as a ragged array.
+        if args.beamform:
+            # SELF-CONTAINED: both channels come from this snapshot, so no
+            # target-free run and no aimed antenna are needed. The scan finds
+            # the illuminator (measured 0.09 deg error, no configuration),
+            # the reference is a beam steered at it, and the surveillance
+            # channels are the array projected off it - ~48 dB of direct
+            # path removed spatially before the temporal canceller runs.
+            xa = surv[:, :n].astype(np.complex128)
+            az_tx, tx_ratio = find_illuminator(xa, args.spacing, lam)
+            # SELF-ORIENTATION. The array measures angles relative to ITSELF,
+            # so once the vehicle is parked facing elsewhere every target
+            # bearing is offset by the vehicle's heading - measured, 38-48 deg
+            # of error at 40 and 70 deg of yaw, while detection was unaffected.
+            # No compass is needed to fix it: the transmitter's TRUE bearing
+            # is known from GPS plus a transmitter database, and the array has
+            # just measured where it appears to be, so the difference IS the
+            # heading. The illuminator doubles as a calibration source.
+            if args.self_orient:
+                true_tx = math.atan2(args.tx_y - rx[1], args.tx_x - rx[0])
+                # a linear array cannot tell front from back; fold the known
+                # bearing into the half-plane the array can actually report
+                f = (math.degrees(true_tx) + 180) % 360 - 180
+                if f > 90:
+                    f = 180 - f
+                elif f < -90:
+                    f = -180 - f
+                yaw = math.radians(f) - az_tx
+            ref0 = reference_beam(xa, az_tx, args.spacing, lam)
+            xs = null_illuminator(xa, az_tx, args.spacing, lam)
+            subs, dgrid = [], None
+            for ch in range(xs.shape[0]):
+                resid, _ = cancel_direct(xs[ch], ref0, args.taps)
+                if args.fast:
+                    surf, dgrid = caf_fast(resid, ref0, args.fs, max_delay)
+                    subs.append(surf)
+                else:
+                    subs.append(caf(resid, ref0, args.fs, max_delay,
+                                    dopp)[keep])
+            kgrid = (np.abs(dgrid) > 15.0) if dgrid is not None else None
+            if kgrid is not None:
+                subs = [sb[kgrid] for sb in subs]
+            mid = xs.shape[0] // 2
+            mag = np.abs(subs[mid])
+            peak_idx = divmod(int(np.argmax(mag)), mag.shape[1])
+            snr = 20 * math.log10(mag[peak_idx]
+                                  / (float(np.median(mag)) + 1e-30))
+            cells = [sub[peak_idx] for sub in subs]
+            _bf = True
+        else:
+            _bf = False
         # ONE reference for every surveillance element. Correlating each
         # element against its OWN reference subtracts that element's
         # reference phase, and the reference phase gradient across the array
@@ -179,22 +271,25 @@ def run_track(args):
         # was never residual direct path. A real PCL has ONE reference
         # antenna aimed at the illuminator and a separate surveillance
         # array, and that is what this now models.
-        mid = surv.shape[0] // 2
-        ref0 = ref[mid, :n].astype(np.complex128)
-        subs = []
-        for ch in range(surv.shape[0]):
-            resid, _ = cancel_direct(surv[ch, :n].astype(np.complex128),
-                                     ref[ch, :n].astype(np.complex128),
-                                     args.taps)
-            subs.append(caf(resid, ref0, args.fs, max_delay, dopp)[keep])
-        mag = np.abs(subs[mid])
-        peak_idx = divmod(int(np.argmax(mag)), mag.shape[1])
-        snr = 20 * math.log10(mag[peak_idx]
-                              / (float(np.median(mag)) + 1e-30))
-        cells = [sub[peak_idx] for sub in subs]
+        if not _bf:
+            mid = surv.shape[0] // 2
+            ref0 = ref[mid, :n].astype(np.complex128)
+            subs = []
+            for ch in range(surv.shape[0]):
+                resid, _ = cancel_direct(surv[ch, :n].astype(np.complex128),
+                                         ref[ch, :n].astype(np.complex128),
+                                         args.taps)
+                subs.append(caf(resid, ref0, args.fs, max_delay, dopp)[keep])
+            mag = np.abs(subs[mid])
+            peak_idx = divmod(int(np.argmax(mag)), mag.shape[1])
+            snr = 20 * math.log10(mag[peak_idx]
+                                  / (float(np.median(mag)) + 1e-30))
+            cells = [sub[peak_idx] for sub in subs]
         dets = []
         if snr >= args.snr_db:
             az = bearing_from_phase(np.array(cells), args.spacing, lam)
+            if az is not None and _bf and args.self_orient:
+                az = az + yaw
             if az is not None:
                 el = math.atan2(p_true[2] - rx[2],
                                 math.hypot(p_true[0], p_true[1]))
@@ -214,7 +309,9 @@ def run_track(args):
                         "cls": "pcl",
                         "range_m": round(rr, 1),
                         "bistatic_range_m": round(bist, 1),
-                        "doppler_hz": round(float(dopp[keep][peak_idx[0]]), 1),
+                        "doppler_hz": round(float(
+                            (dgrid[kgrid] if dgrid is not None
+                             else dopp[keep])[peak_idx[0]]), 1),
                         "snr_db": round(snr, 1),
                         "sigma_range_m": 20.0,
                         "bearing_sigma_deg": 2.0,
@@ -249,6 +346,22 @@ def main():
                          "and emit a stream fusion can read")
     ap.add_argument("--clip", default=None)
     ap.add_argument("--out-name", default="pcl_real")
+    ap.add_argument("--self-orient", action="store_true",
+                    help="derive the vehicle heading from where the "
+                         "illuminator APPEARS versus where GPS and a "
+                         "transmitter database say it is. No compass needed.")
+    ap.add_argument("--fast", action="store_true",
+                    help="segmented CAF: the whole surface in "
+                         "one pass instead of one correlation "
+                         "per Doppler bin. 192x faster, and the "
+                         "peak lands in the same delay cell")
+    ap.add_argument("--beamform", action="store_true",
+                    help="derive BOTH channels from the array "
+                         "itself: scan for the illuminator, "
+                         "steer a reference beam at it, and null "
+                         "it spatially. Needs no aimed antenna "
+                         "and no target-free run, so it works "
+                         "whichever way the vehicle is parked")
     ap.add_argument("--snr-db", type=float, default=12.0)
     ap.add_argument("--spacing", type=float, default=0.25,
                     help="element spacing; must be <= lambda/2 "

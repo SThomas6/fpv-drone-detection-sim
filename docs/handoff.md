@@ -138,6 +138,66 @@ the terrain, so the drone is against magnified **rock**, not sky. That is the
 hard background (and realistic for a terrain-hugging FPV drone), but it is
 not the easy case and should not be quoted as one.
 
+### DIGITAL BEAMFORMING + COMPUTE BUDGET (2026-08-31, latest)
+
+**`radar/beamform.py` removes the aimed reference antenna.** Both passive-
+radar channels now come from the same coherent array: scan for the
+illuminator, steer a reference beam at it, and project the array off it for
+the surveillance channel.
+
+  * **finds the illuminator with no configuration at all**: median error
+    **0.09 deg** across 12 dwells, because the direct path dominates the
+    array and the beam-power peak simply IS the transmitter.
+  * **48.5 dB of direct path removed SPATIALLY**, before the temporal
+    canceller sees anything.
+  * **it also removes a cheat.** `caf.py` used to take its reference from a
+    separate FERS run with no target in the scene, which no real receiver
+    can have. `--beamform` derives both channels from one snapshot, so the
+    chain is self-contained: 80.0% detected, 22.9 m range error, 4.62 deg
+    bearing - against 83.3% / 21.7 m / 4.60 deg with the impossible clean
+    reference. Three points of detection is the honest price of not cheating.
+
+**Parked facing anywhere (`ARRAY_YAW` in `run_fers_track.sh`).** Detection is
+unaffected by orientation (80% at 40 deg yaw, 72.5% at 70 deg) because the
+scan just returns a different angle. But the array measures bearings relative
+to ITSELF, so target bearing was 38-48 deg out.
+
+**`--self-orient` fixes that without a compass.** The transmitter's true
+bearing is known from GPS plus a transmitter database, the array has just
+measured where it appears, and the difference IS the vehicle heading. The
+illuminator doubles as a calibration source. Bearing error 38.0 -> **2.93 deg**
+at 40 deg yaw.
+
+**Hardware consequence, and it changes the drawing:** at 70 deg yaw the
+bearing only recovers to 14.94 deg, because a LINEAR array loses resolution
+end-on - its beam broadens as 1/cos(theta). For a vehicle that parks
+arbitrarily the five elements should be arranged as a CIRCLE, not a line,
+which is also what KrakenRF recommend for their own direction finding. The
+rig diagram still shows a linear rail and should be updated.
+
+**COMPUTE, measured rather than guessed** (RTX 3060 Ti + this box's CPU):
+
+| stage | cost | real-time? |
+|---|---|---|
+| YOLO detector (GPU) | 19.2 ms/frame | 52 FPS, comfortable |
+| motion detector (CPU) | 198 ms/frame | 5 FPS - the camera-chain bottleneck |
+| fusion + tracking (CPU) | 3.7 ms/frame | free |
+| acoustic dwell (CPU) | 26 ms per 0.12 s | 4.6x faster than real time |
+| passive radar, as written | **2769 ms per 20 ms dwell** | **138x TOO SLOW** |
+
+The passive radar was unusable on any hardware, and the fix was algorithmic,
+not a bigger computer. `caf_fast` correlates SEGMENTS at zero Doppler and
+FFTs across them, so Doppler falls out of a second transform instead of
+being searched: O(n log n) instead of O(n_doppler * n log n).
+
+    direct CAF     384 ms  ->  segmented CAF  2.0 ms   (192x)
+    full dwell    2769 ms  ->  158 ms with 32 taps and a subset fit
+
+Validated end to end, not just benchmarked: 78.9% detected / 23.8 m / 4.50
+deg against the slow path's 80.0% / 22.9 m / 4.62 deg. At a realistic 5 Hz
+dwell rate the budget is 200 ms, so it now fits in real time on a desktop
+CPU with no GPU at all.
+
 ### WIND: SEVEN APPROACHES, AND NOW A PROOF IT CANNOT WORK (2026-08-31)
 
 The seventh approach was the one the diagnosis pointed at:
