@@ -17,12 +17,24 @@ automatically. Expect roughly 15-30 FPS at 1280x720 on an M-series chip;
 if it lags, --imgsz 640 costs a little sensitivity on tiny targets and
 roughly doubles the rate.
 
-A caution worth having before you point this at the sky: the model was
-trained on simulator imagery plus the Anti-UAV sequences, and a webcam sees
-neither. A phone screen playing drone footage, or a small quadcopter at
-20-50 m, is a fair test. A speck at 500 m is not - at that range this
-project's own measurements say the wide camera cannot resolve it, and no
-amount of running it live will change that.
+HOW FAR AWAY TO HOLD THE DRONE, measured rather than guessed. Real Anti-UAV
+drone crops were rescaled and re-detected, so apparent size was the only
+variable:
+
+    width in frame     detected      ~distance, 0.3 m drone, 60 deg webcam
+        48 px            84%                     6.9 m
+        96 px            92%                     3.5 m
+       160 px           100%                     2.1 m
+       240 px           100%                     1.4 m
+       340 px            96%                     1.0 m
+       480 px            40%                     0.7 m
+       640 px             4%                     0.5 m
+
+So the sweet spot is roughly 1-3.5 m from the lens. Holding it right up to
+the camera is the one thing that cannot work: the fine-tune tiles contain no
+drone wider than 293 px, so a frame-filling airframe is outside everything
+the model has seen. The HUD reports the target width and says which way to
+move.
 """
 
 from __future__ import annotations
@@ -169,7 +181,26 @@ def main():
         if tracker is not None:
             put(bar, f"tracks {held}", (320, 29), 0.6,
                 C_TRK if held else C_DIM, 1)
-        put(bar, "q quit   s save   SPACE pause", (w - 330, 29), 0.5, C_DIM)
+        # DISTANCE COACH. Detection depends strongly on how big the drone is
+        # in frame, and the failure at both ends is silent - it simply does
+        # not fire. Measured on real Anti-UAV crops rescaled: 100% at
+        # 160-240 px, 92% at 96, 84% at 48, but only 40% at 480 px and 4% at
+        # 640, because the training set contains nothing wider than 293 px.
+        # So "hold it right up to the camera" is the one thing that cannot
+        # work, and the bar says so rather than leaving you guessing.
+        if best is not None:
+            bw = best.xyxy[2] - best.xyxy[0]
+            if bw > 400:
+                msg, col = f"target {bw:.0f} px - TOO CLOSE, step back", (60, 140, 255)
+            elif bw < 30:
+                msg, col = f"target {bw:.0f} px - too far, come closer", (60, 190, 255)
+            else:
+                msg, col = f"target {bw:.0f} px - good size", C_TRK
+            put(bar, msg, (470, 29), 0.6, col, 1)
+        else:
+            put(bar, "nothing seen - try 1-3 m from the lens", (470, 29),
+                0.55, C_DIM)
+        put(bar, "q quit  s save  SPACE pause", (w - 300, 29), 0.5, C_DIM)
         view = np.vstack([bar, frame])
 
         if args.record:
